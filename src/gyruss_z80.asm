@@ -1,3 +1,6 @@
+;
+; Pooyan disassembly by JOTD
+;
 ; /***************************************************************************
 ; 
 ; Gyruss memory map (preliminary)
@@ -129,7 +132,7 @@ gyruss_irq_0066:
 0071: 36 00       ld   (hl),$00
 0073: 23          inc  hl
 0074: 10 FB       djnz $0071
-0076: 32 00 C0    ld   ($C000),a
+0076: 32 00 C0    ld   (watchdog_C000),a
 0079: 06 00       ld   b,$00
 007B: 21 00 00    ld   hl,$0000
 007E: AF          xor  a
@@ -144,7 +147,7 @@ gyruss_irq_0066:
 008B: CD 38 5C    call $5C38
 008E: 3A 91 09    ld   a,($0991)
 0091: 32 80 C1    ld   ($C180),a
-0094: 32 00 C0    ld   ($C000),a
+0094: 32 00 C0    ld   (watchdog_C000),a
 0097: C3 F7 05    jp   $05F7
 
 009A: 21 20 84    ld   hl,$8420
@@ -152,7 +155,7 @@ gyruss_irq_0066:
 009F: 11 20 00    ld   de,$0020
 00A2: 19          add  hl,de
 00A3: 06 10       ld   b,$10
-00A5: CD B0 00    call $00B0
+00A5: CD B0 00    call write_to_screen_00B0
 00A8: 23          inc  hl
 00A9: 23          inc  hl
 00AA: 10 F9       djnz $00A5
@@ -160,6 +163,7 @@ gyruss_irq_0066:
 00AD: 20 F0       jr   nz,$009F
 00AF: C9          ret
 
+write_to_screen_00B0:
 00B0: E5          push hl
 00B1: 36 AF       ld   (hl),$AF
 00B3: 23          inc  hl
@@ -203,14 +207,14 @@ gyruss_irq_0066:
 011B: 32 01 A7    ld   ($A701),a
 011E: AF          xor  a
 011F: 32 02 A7    ld   ($A702),a
-0122: CD 44 02    call $0244
+0122: CD 44 02    call update_sprites_0244
 0125: AF          xor  a
 0126: 32 01 A7    ld   ($A701),a
 0129: 3E 01       ld   a,$01
 012B: 32 02 A7    ld   ($A702),a
 012E: AF          xor  a
 012F: 32 80 C1    ld   ($C180),a
-0132: 32 00 C0    ld   ($C000),a
+0132: 32 00 C0    ld   (watchdog_C000),a
 0135: 32 07 94    ld   ($9407),a
 0138: 3A 62 96    ld   a,($9662)
 013B: A7          and  a
@@ -278,6 +282,7 @@ gyruss_irq_0066:
 01BE: 22 09 94    ld   ($9409),hl
 01C1: 3E 20       ld   a,$20
 01C3: 32 08 94    ld   ($9408),a
+; ROM checksum
 01C6: 06 00       ld   b,$00
 01C8: 21 A8 37    ld   hl,$37A8
 01CB: AF          xor  a
@@ -292,6 +297,7 @@ gyruss_irq_0066:
 01D9: 22 09 94    ld   ($9409),hl
 01DC: 3E 1B       ld   a,$1B
 01DE: 32 08 94    ld   ($9408),a
+; ROM checksum
 01E1: 06 F0       ld   b,$F0
 01E3: 21 00 39    ld   hl,$3900
 01E6: AF          xor  a
@@ -299,7 +305,7 @@ gyruss_irq_0066:
 01E8: 23          inc  hl
 01E9: 10 FC       djnz $01E7
 01EB: D6 1E       sub  $1E
-01ED: C2 AB 0F    jp   nz,$0FAB
+01ED: C2 AB 0F    jp   nz,$0FAB		; failed checksum
 01F0: C9          ret
 
 0207: 2A 09 94    ld   hl,($9409)
@@ -318,9 +324,10 @@ gyruss_irq_0066:
 0224: 35          dec  (hl)
 0225: C9          ret
 
+update_sprites_0244:
 0244: 3A 00 A7    ld   a,($A700)
 0247: A7          and  a
-0248: 21 00 98    ld   hl,$9800
+0248: 21 00 98    ld   hl,sprite_shadow_ram_9800
 024B: 11 00 A0    ld   de,$A000
 024E: 28 03       jr   z,$0253
 0250: 11 00 A2    ld   de,$A200
@@ -673,8 +680,8 @@ gyruss_irq_0066:
 04E7: ED A0       ldi
 04E9: C9          ret
 
-04EA: 31 00 98    ld   sp,$9800
-04ED: 32 00 C0    ld   ($C000),a
+04EA: 31 00 98    ld   sp,stack_top_9800
+04ED: 32 00 C0    ld   (watchdog_C000),a
 04F0: 21 80 C1    ld   hl,$C180
 04F3: 06 08       ld   b,$08
 04F5: 36 00       ld   (hl),$00
@@ -684,14 +691,14 @@ gyruss_irq_0066:
 04FD: FE 55       cp   $55
 04FF: CA 00 60    jp   z,$6000
 0502: AF          xor  a
-0503: 32 00 C0    ld   ($C000),a
+0503: 32 00 C0    ld   (watchdog_C000),a
 0506: 47          ld   b,a
 0507: 21 10 0F    ld   hl,$0F10
 050A: 86          add  a,(hl)
 050B: 23          inc  hl
 050C: 10 FC       djnz $050A
 050E: D6 B3       sub  $B3
-0510: 32 00 C0    ld   ($C000),a
+0510: 32 00 C0    ld   (watchdog_C000),a
 0513: C2 85 37    jp   nz,$3785
 0516: C3 69 00    jp   $0069
 
@@ -745,7 +752,7 @@ gyruss_irq_0066:
 05DD: 01 FF 07    ld   bc,$07FF
 05E0: 36 00       ld   (hl),$00
 05E2: ED B0       ldir
-05E4: 32 00 C0    ld   ($C000),a
+05E4: 32 00 C0    ld   (watchdog_C000),a
 05E7: C3 04 4A    jp   $4A04
 
 05EA: 47          ld   b,a
@@ -788,7 +795,7 @@ gyruss_irq_0066:
 0671: 36 06       ld   (hl),$06
 0673: 01 00 00    ld   bc,$0000
 0676: 10 FE       djnz $0676
-0678: 32 00 C0    ld   ($C000),a
+0678: 32 00 C0    ld   (watchdog_C000),a
 067B: 0D          dec  c
 067C: 20 F8       jr   nz,$0676
 067E: 35          dec  (hl)
@@ -1135,7 +1142,7 @@ gyruss_irq_0066:
 095E: C9          ret
 
 0980: CD 00 14    call $1400
-0983: 32 00 C0    ld   ($C000),a
+0983: 32 00 C0    ld   (watchdog_C000),a
 0986: C3 C3 52    jp   $52C3
 
 0989: 11 09 01    ld   de,$0109
@@ -1754,7 +1761,7 @@ gyruss_irq_0066:
 0EC8: 36 00       ld   (hl),$00
 0ECA: C9          ret
 
-0ECB: 21 00 98    ld   hl,$9800
+0ECB: 21 00 98    ld   hl,sprite_shadow_ram_9800
 0ECE: 11 04 00    ld   de,$0004
 0ED1: AF          xor  a
 0ED2: 06 3C       ld   b,$3C
@@ -2082,7 +2089,7 @@ gyruss_irq_0066:
 1274: 10 FC       djnz $1272
 1276: C6 E7       add  a,$E7
 1278: C2 92 18    jp   nz,$1892
-127B: FD 21 00 98 ld   iy,$9800
+127B: FD 21 00 98 ld   iy,sprite_shadow_ram_9800
 127F: DD 21 00 90 ld   ix,$9000
 1283: DD 36 00 FF ld   (ix+$00),$FF
 1287: 21 00 93    ld   hl,$9300
@@ -2555,7 +2562,7 @@ gyruss_irq_0066:
 172C: 7E          ld   a,(hl)
 172D: C9          ret
 
-172E: FD 21 00 98 ld   iy,$9800
+172E: FD 21 00 98 ld   iy,sprite_shadow_ram_9800
 1732: DD 21 00 90 ld   ix,$9000
 1736: 06 40       ld   b,$40
 1738: 3A 07 94    ld   a,($9407)
@@ -2679,7 +2686,7 @@ gyruss_irq_0066:
 1854: C3 10 19    jp   $1910
 
 1857: DD 21 00 90 ld   ix,$9000
-185B: FD 21 00 98 ld   iy,$9800
+185B: FD 21 00 98 ld   iy,sprite_shadow_ram_9800
 185F: DD 7E 00    ld   a,(ix+$00)
 1862: A7          and  a
 1863: C8          ret  z
@@ -3002,7 +3009,7 @@ gyruss_irq_0066:
 1B30: 3E 50       ld   a,$50
 1B32: 32 CE 91    ld   ($91CE),a
 1B35: 32 FD A7    ld   ($A7FD),a
-1B38: FD 21 00 98 ld   iy,$9800
+1B38: FD 21 00 98 ld   iy,sprite_shadow_ram_9800
 1B3C: FD 36 03 00 ld   (iy+$03),$00
 1B40: FD 36 07 00 ld   (iy+$07),$00
 1B44: FD 36 0B 00 ld   (iy+$0b),$00
@@ -3034,7 +3041,7 @@ gyruss_irq_0066:
 1B85: C9          ret
 
 1B86: DD 21 00 90 ld   ix,$9000
-1B8A: FD 21 00 98 ld   iy,$9800
+1B8A: FD 21 00 98 ld   iy,sprite_shadow_ram_9800
 1B8E: 21 00 80    ld   hl,$8000
 1B91: DD 56 02    ld   d,(ix+$02)
 1B94: 1E 00       ld   e,$00
@@ -3072,7 +3079,7 @@ gyruss_irq_0066:
 1BDD: CB 1D       rr   l
 1BDF: C9          ret
 
-1BE0: FD 21 00 98 ld   iy,$9800
+1BE0: FD 21 00 98 ld   iy,sprite_shadow_ram_9800
 1BE4: DD 21 00 90 ld   ix,$9000
 1BE8: DD 46 0C    ld   b,(ix+$0c)
 1BEB: 78          ld   a,b
@@ -4896,6 +4903,25 @@ gyruss_irq_0066:
 2E68: 34          inc  (hl)
 2E69: C3 71 41    jp   $4171
 
+2E6C: 0E 00       ld   c,$00
+2E6E: CD 60 30    call $3060
+2E71: C9          ret
+
+2E72: CD 06 2F    call $2F06
+2E75: C9          ret
+2E76: CD 06 2F    call $2F06
+2E79: FD 34 02    inc  (iy+$02)
+2E7C: FD 34 06    inc  (iy+$06)
+2E7F: C9          ret
+
+2E80: 0E 00       ld   c,$00
+2E82: CD 60 30    call $3060
+2E85: FD 34 02    inc  (iy+$02)
+2E88: FD 34 06    inc  (iy+$06)
+2E8B: C9          ret
+
+2E8C: C3 06 2F    jp   $2F06
+
 2E8F: CD 07 02    call $0207
 2E92: C0          ret  nz
 2E93: CD 82 5C    call $5C82
@@ -5015,12 +5041,12 @@ gyruss_irq_0066:
 300B: FD 36 06 00 ld   (iy+$06),$00
 300F: C9          ret
 
-3010: 21 00 98    ld   hl,$9800
+3010: 21 00 98    ld   hl,sprite_shadow_ram_9800
 3013: 11 01 98    ld   de,$9801
 3016: 01 FF 07    ld   bc,$07FF
 3019: 36 00       ld   (hl),$00
 301B: ED B0       ldir
-301D: 32 00 C0    ld   ($C000),a
+301D: 32 00 C0    ld   (watchdog_C000),a
 3020: C3 D7 05    jp   $05D7
 
 304B: CD 55 30    call $3055
@@ -5620,13 +5646,13 @@ gyruss_irq_0066:
 3804: CD EF 38    call $38EF
 3807: 26 FD       ld   h,$FD
 3809: 0E C0       ld   c,$C0
-380B: CD 37 3A    call $3A37
+380B: CD 37 3A    call update_starfield_3A37
 380E: 3A C2 0C    ld   a,($0CC2)
 3811: 47          ld   b,a
 3812: 26 FC       ld   h,$FC
-3814: CD 37 3A    call $3A37
+3814: CD 37 3A    call update_starfield_3A37
 3817: 2E FE       ld   l,$FE
-3819: C3 B1 39    jp   $39B1
+3819: C3 B1 39    jp   update_starfield_39B1
 
 381C: 21 A6 40    ld   hl,$40A6
 381F: D7          rst  $10
@@ -5649,17 +5675,17 @@ gyruss_irq_0066:
 3834: 3A 3B 94    ld   a,($943B)
 3837: 67          ld   h,a
 3838: 0E C0       ld   c,$C0
-383A: CD 37 3A    call $3A37
+383A: CD 37 3A    call update_starfield_3A37
 383D: 3A FA 17    ld   a,($17FA)
 3840: 47          ld   b,a
 3841: 3A 3B 94    ld   a,($943B)
 3844: 3D          dec  a
 3845: 67          ld   h,a
-3846: CD 37 3A    call $3A37
+3846: CD 37 3A    call update_starfield_3A37
 3849: 3A 3B 94    ld   a,($943B)
 384C: D6 02       sub  $02
 384E: 6F          ld   l,a
-384F: CD B1 39    call $39B1
+384F: CD B1 39    call update_starfield_39B1
 3852: FD 21 60 98 ld   iy,$9860
 3856: DD 21 B0 90 ld   ix,$90B0
 385A: 3A 3B 94    ld   a,($943B)
@@ -5801,6 +5827,7 @@ gyruss_irq_0066:
 396A: 10 D5       djnz $3941
 396C: C9          ret
 
+update_starfield_39B1:
 39B1: DD 21 30 93 ld   ix,$9330
 39B5: FD 21 18 99 ld   iy,$9918
 39B9: 11 10 00    ld   de,$0010
@@ -5834,6 +5861,7 @@ gyruss_irq_0066:
 39F4: 10 D0       djnz $39C6
 39F6: C9          ret
 
+update_starfield_3A37:
 3A37: 2E 26       ld   l,$26
 3A39: 11 04 00    ld   de,$0004
 3A3C: FD 7E 03    ld   a,(iy+$03)
@@ -6714,6 +6742,7 @@ gyruss_irq_0066:
 49E4: 28 02       jr   z,$49E8
 49E6: 18 31       jr   $4A19
 
+; clear screen
 4A04: 21 00 80    ld   hl,$8000
 4A07: 01 00 04    ld   bc,$0400
 4A0A: 16 02       ld   d,$02
@@ -6723,7 +6752,7 @@ gyruss_irq_0066:
 4A0F: 79          ld   a,c
 4A10: B0          or   b
 4A11: 20 F9       jr   nz,$4A0C
-4A13: 32 00 C0    ld   ($C000),a
+4A13: 32 00 C0    ld   (watchdog_C000),a
 4A16: C3 54 58    jp   $5854
 
 4A19: EB          ex   de,hl
@@ -7156,7 +7185,7 @@ gyruss_irq_0066:
 4F6E: C9          ret
 
 4FAF: CD 9A 00    call $009A
-4FB2: 32 00 C0    ld   ($C000),a
+4FB2: 32 00 C0    ld   (watchdog_C000),a
 4FB5: 21 00 00    ld   hl,$0000
 4FB8: 3A 00 00    ld   a,($0000)
 4FBB: 86          add  a,(hl)
@@ -7166,7 +7195,7 @@ gyruss_irq_0066:
 4FBF: FE 60       cp   $60
 4FC1: 30 06       jr   nc,$4FC9
 4FC3: 08          ex   af,af'
-4FC4: 32 00 C0    ld   ($C000),a
+4FC4: 32 00 C0    ld   (watchdog_C000),a
 4FC7: 18 F2       jr   $4FBB
 
 4FC9: 08          ex   af,af'
@@ -7175,7 +7204,7 @@ gyruss_irq_0066:
 4FCF: C3 6E 06    jp   $066E
 
 52C3: CD 28 14    call $1428
-52C6: 32 00 C0    ld   ($C000),a
+52C6: 32 00 C0    ld   (watchdog_C000),a
 52C9: C3 BE 20    jp   $20BE
 
 57DC: 21 00 90    ld   hl,$9000
@@ -7183,9 +7212,10 @@ gyruss_irq_0066:
 57E2: 01 FF 07    ld   bc,$07FF
 57E5: 36 00       ld   (hl),$00
 57E7: ED B0       ldir
-57E9: 32 00 C0    ld   ($C000),a
+57E9: 32 00 C0    ld   (watchdog_C000),a
 57EC: C3 10 30    jp   $3010
 
+; clear screen #2
 5854: 21 00 84    ld   hl,$8400
 5857: 01 00 04    ld   bc,$0400
 585A: 16 83       ld   d,$83
@@ -7303,7 +7333,7 @@ gyruss_irq_0066:
 59CB: 0F          rrca
 59CC: E6 01       and  $01
 59CE: 32 46 94    ld   ($9446),a
-59D1: 32 00 C0    ld   ($C000),a
+59D1: 32 00 C0    ld   (watchdog_C000),a
 59D4: C3 01 19    jp   $1901
 
 59D7: 21 E7 59    ld   hl,$59E7

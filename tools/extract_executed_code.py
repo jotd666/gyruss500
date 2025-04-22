@@ -1,3 +1,6 @@
+# this tool uses the mame trace file (trace gyruss.tr) which is huge (because the whole game is played)
+# it builds a dictionnary with all addresses that have been reached while playing
+
 import re,json
 
 tr_re = re.compile("(\w+): (.*)")

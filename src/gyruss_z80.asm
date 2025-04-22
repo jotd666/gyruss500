@@ -1,3 +1,4 @@
+; rst_08: (HL+A)=>A
 0008: 85          add  a,l
 0009: 6F          ld   l,a
 000A: 30 01       jr   nc,$000D
@@ -5,6 +6,8 @@
 000D: 7E          ld   a,(hl)
 000E: C9          ret
 
+; rst_10: loads address in HL indexed by A
+; as 16 bit address in DE
 0010: 87          add  a,a
 0011: DF          rst  $18
 0012: 5E          ld   e,(hl)
@@ -13,12 +16,14 @@
 0015: 23          inc  hl
 0016: C9          ret
 
+; rst_18: add A to HL
 0018: 85          add  a,l
 0019: 6F          ld   l,a
 001A: D0          ret  nc
 001B: 24          inc  h
 001C: C9          ret
 
+; rst_20: subtract 0x20 to DE
 0020: 7B          ld   a,e
 0021: D6 20       sub  $20
 0023: 5F          ld   e,a
@@ -26,11 +31,15 @@
 0025: 15          dec  d
 0026: C9          ret
 
+; rst_30: convert the pushed HL jump table
+; (which is right after the rst 30 instruction)
+; plus index to address and jump to it
 0030: E1          pop  hl
 0031: D7          rst  $10
 0032: EB          ex   de,hl
 0033: E9          jp   (hl)
 
+; rst_38
 0038: E5          push hl
 0039: 26 95       ld   h,$95
 003B: 3A 32 94    ld   a,($9432)
@@ -182,6 +191,12 @@
 0187: E6 03       and  $03
 0189: F7          rst  $30
 
+jump_table_018A:
+	.word	$0EFE 
+	.word	$0F24 
+	.word	$101F 
+	.word	$0828
+ 
 0192: CD 1F 5C    call $5C1F
 0195: FD E1       pop  iy
 0197: DD E1       pop  ix
@@ -910,12 +925,26 @@
 082C: 3A 2C 94    ld   a,($942C)
 082F: F7          rst  $30
 
+0830  4D 5F E0 45 E9 37 CE 1F 65 38 5B 25 10 2E B3 08
+0840  55 42 54 4C 1A 0A BD 13 42 0B 71 0B 9A 0B B9 0B
+0850  E7 0B 04 0C 98 0C F7 0C 4E 40 97 0D 50 40 80 15
+0860  70 04 60 04 50 04 40 04 30 04 20 04 10 04 00 04
+0870  F0 04 E0 04 D0 04 C0 04 B0 04 A0 04 90 04 80 30
+0880  90 05 C0 05 E0 05 00 3C F0 15 E0 0A FF F4 86 01
+0890  17 83 2A EE 6D FA 83 39 B1 9E 3A 0B 96 A7 CA B6
+
 089A: 3A 0B 96    ld   a,($960B)
 089D: A7          and  a
 089E: CA B6 5D    jp   z,$5DB6
 08A1: 3C          inc  a
 08A2: E6 03       and  $03
 08A4: F7          rst  $30
+
+table_08A5:
+	.word	$5DBC  
+	.word	$5DC2  
+	.word	$5DC8  
+	.word	$5DB6  
 
 08AD: 3A 0B 96    ld   a,($960B)
 08B0: C3 A1 08    jp   $08A1

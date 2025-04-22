@@ -1,3 +1,58 @@
+; /***************************************************************************
+; 
+; Gyruss memory map (preliminary)
+; 
+; Main processor memory map.
+; 0000-5fff ROM (6000-7fff diagnostics)
+; 8000-83ff Color RAM
+; 8400-87ff Video RAM
+; 9000-a7ff RAM
+; a000-a17f \ sprites
+; a200-a27f /
+; 
+; memory mapped ports:
+; 
+; read:
+; c080      IN0  (system inputs)
+; c0a0      IN1
+; c0c0      IN2
+; c0e0      DSW1
+; c000      DSW2
+; c100      DSW3
+; 
+; write:
+; a000-a1ff  Odd frame spriteram
+; a200-a3ff  Even frame spriteram
+; a700       Frame odd or even?
+; a701       Semaphore system:  tells 6809 to draw queued sprites
+; a702       Semaphore system:  tells 6809 to queue sprites
+; c000       watchdog reset
+; c080       trigger interrupt on audio CPU
+; c100       command for the audio CPU
+; c180       interrupt enable
+; c185       flip screen
+; 
+; interrupts:
+; standard NMI at 0x66
+; 
+; 
+; SOUND BOARD:
+; 0000-3fff  Audio ROM (4000-5fff diagnostics)
+; 6000-63ff  Audio RAM
+; 8000       Read Sound Command
+; 
+; I/O:
+; 
+; Gyruss has 5 PSGs:
+; 1)  Control: 0x00    Read: 0x01    Write: 0x02
+; 2)  Control: 0x04    Read: 0x05    Write: 0x06
+; 3)  Control: 0x08    Read: 0x09    Write: 0x0a
+; 4)  Control: 0x0c    Read: 0x0d    Write: 0x0e
+; 5)  Control: 0x10    Read: 0x11    Write: 0x12
+; 
+; and 1 SFX channel controlled by an 8039:
+; 1)  SoundOn: 0x14    SoundData: 0x18
+
 ; rst_08: (HL+A)=>A
 0008: 85          add  a,l
 0009: 6F          ld   l,a
@@ -65,6 +120,7 @@
 005A: CD 88 5C    call $5C88
 005D: C9          ret
 
+gyruss_irq_0066:
 0066: C3 03 01    jp   $0103
 
 0069: 31 00 A0    ld   sp,$A000
@@ -121,6 +177,10 @@
 00FD: D6 EE       sub  $EE
 00FF: C0          ret  nz
 0100: C3 0B 08    jp   $080B
+
+; ********************************
+; IRQ routine
+; ********************************
 
 0103: F5          push af
 0104: C5          push bc
@@ -190,12 +250,12 @@
 0184: 3A 2B 94    ld   a,($942B)
 0187: E6 03       and  $03
 0189: F7          rst  $30
-
-jump_table_018A:
-	.word	$0EFE 
-	.word	$0F24 
-	.word	$101F 
+; [jump_table]
+	.word	$0EFE
+	.word	$0F24
+	.word	$101F
 	.word	$0828
+
  
 0192: CD 1F 5C    call $5C1F
 0195: FD E1       pop  iy
@@ -855,6 +915,7 @@ jump_table_018A:
 0791: 21 62 33    ld   hl,$3362
 0794: CF          rst  $08
 0795: E1          pop  hl
+; set credit character on screen
 0796: 12          ld   (de),a
 0797: CB 92       res  2,d
 0799: 79          ld   a,c
@@ -924,14 +985,60 @@ jump_table_018A:
 082B: E5          push hl
 082C: 3A 2C 94    ld   a,($942C)
 082F: F7          rst  $30
-
-0830  4D 5F E0 45 E9 37 CE 1F 65 38 5B 25 10 2E B3 08
-0840  55 42 54 4C 1A 0A BD 13 42 0B 71 0B 9A 0B B9 0B
-0850  E7 0B 04 0C 98 0C F7 0C 4E 40 97 0D 50 40 80 15
-0860  70 04 60 04 50 04 40 04 30 04 20 04 10 04 00 04
-0870  F0 04 E0 04 D0 04 C0 04 B0 04 A0 04 90 04 80 30
-0880  90 05 C0 05 E0 05 00 3C F0 15 E0 0A FF F4 86 01
-0890  17 83 2A EE 6D FA 83 39 B1 9E 3A 0B 96 A7 CA B6
+; [jump_table]
+	.word	$5F4D
+	.word	$45E0
+	.word	$37E9
+	.word	$1FCE
+	.word	$3865
+	.word	$255B
+	.word	$2E10
+	.word	$08B3
+	.word	$4255
+	.word	$4C54
+	.word	$0A1A
+	.word	$13BD
+	.word	$0B42
+	.word	$0B71
+	.word	$0B9A
+	.word	$0BB9
+	.word	$0BE7
+	.word	$0C04
+	.word	$0C98
+	.word	$0CF7
+	.word	$404E
+	.word	$0D97
+	.word	$4050
+	.word	$1580
+	.word	$0470
+	.word	$0460
+	.word	$0450
+	.word	$0440
+	.word	$0430
+	.word	$0420
+	.word	$0410
+	.word	$0400
+	.word	$04F0
+	.word	$04E0
+	.word	$04D0
+	.word	$04C0
+	.word	$04B0
+	.word	$04A0
+	.word	$0490
+	.word	$3080
+	.word	$0590
+	.word	$05C0
+	.word	$05E0
+	.word	$3C00
+	.word	$15F0
+	.word	$0AE0
+	.word	$F4FF;  bogus
+	.word	$0186
+	.word	$8317;  bogus
+	.word	$EE2A;  bogus
+	.word	$FA6D;  bogus
+	.word	$3983
+	.word	$9EB1;  bogus
 
 089A: 3A 0B 96    ld   a,($960B)
 089D: A7          and  a
@@ -939,12 +1046,12 @@ jump_table_018A:
 08A1: 3C          inc  a
 08A2: E6 03       and  $03
 08A4: F7          rst  $30
+; [jump_table]
+	.word	$5DBC
+	.word	$5DC2
+	.word	$5DC8
+	.word	$5DB6
 
-table_08A5:
-	.word	$5DBC  
-	.word	$5DC2  
-	.word	$5DC8  
-	.word	$5DB6  
 
 08AD: 3A 0B 96    ld   a,($960B)
 08B0: C3 A1 08    jp   $08A1
@@ -991,12 +1098,12 @@ table_08A5:
 090E: 1C          inc  e    ; [uncovered] 
 090F: FF          rst  $38    ; [uncovered] 
 0910: AF          xor  a
-0911: 32 0E 93    ld   ($930E),a
+0911: 32 0E 93    ld   (double_fire_930E),a
 0914: 32 FD A7    ld   ($A7FD),a
 0917: 32 9E 91    ld   ($919E),a
 091A: 21 1D 96    ld   hl,$961D
 091D: 34          inc  (hl)
-091E: 21 00 96    ld   hl,$9600
+091E: 21 00 96    ld   hl,lives_9600
 0921: 35          dec  (hl)
 0922: F5          push af
 0923: 3A 62 96    ld   a,($9662)
@@ -1004,7 +1111,7 @@ table_08A5:
 0927: 11 20 96    ld   de,$9620
 092A: 28 03       jr   z,$092F
 092C: 11 40 96    ld   de,$9640    ; [uncovered] 
-092F: 21 00 96    ld   hl,$9600
+092F: 21 00 96    ld   hl,lives_9600
 0932: 01 20 00    ld   bc,$0020
 0935: ED B0       ldir
 0937: F1          pop  af
@@ -1228,7 +1335,7 @@ table_08A5:
 0B0B: 3A 40 94    ld   a,($9440)
 0B0E: A7          and  a
 0B0F: 20 20       jr   nz,$0B31
-0B11: 3A 06 94    ld   a,($9406)
+0B11: 3A 06 94    ld   a,(nb_credits_9406)
 0B14: FE 01       cp   $01
 0B16: D8          ret  c
 0B17: 28 0D       jr   z,$0B26
@@ -1522,7 +1629,7 @@ table_08A5:
 0DBE: CA 75 0D    jp   z,$0D75
 0DC1: CD 43 0E    call $0E43
 0DC4: CD D2 09    call $09D2
-0DC7: 21 09 96    ld   hl,$9609
+0DC7: 21 09 96    ld   hl,starting_stage_9609
 0DCA: 34          inc  (hl)
 0DCB: 46          ld   b,(hl)
 0DCC: 21 0B 96    ld   hl,$960B
@@ -1676,6 +1783,14 @@ table_08A5:
 
 0EFE: 3A 2C 94    ld   a,($942C)
 0F01: F7          rst  $30
+; [jump_table]
+	.word	$0F11
+	.word	$4C00
+	.word	$85B4;  bogus
+	.word	$8301;  bogus
+	.word	$6DF5;  bogus
+	.word	$47EE
+	.word	$37F5
 
 0F11: CD BB 01    call $01BB
 0F14: 3A A9 37    ld   a,($37A9)
@@ -1690,11 +1805,28 @@ table_08A5:
 0F27: E5          push hl
 0F28: 3A 2C 94    ld   a,($942C)
 0F2B: F7          rst  $30
+; [jump_table]
+	.word	$5E1A
+	.word	$46B6
+	.word	$24C2
+	.word	$3509
+	.word	$3909
+	.word	$00F9
+	.word	$4104
+	.word	$2E8F
+	.word	$43F4
+	.word	$055C
+	.word	$8732;  bogus
+	.word	$FA01;  bogus
+	.word	$6D0F;  bogus
+	.word	$0F93
+	.word	$39DC
+	.word	$9E67;  bogus
 
 0F4C: 3A 2B 94    ld   a,($942B)
 0F4F: 3D          dec  a
 0F50: CC 04 38    call z,$3804
-0F53: 3A 06 94    ld   a,($9406)
+0F53: 3A 06 94    ld   a,(nb_credits_9406)
 0F56: A7          and  a
 0F57: CA 67 0F    jp   z,$0F67
 0F5A: 3A F1 00    ld   a,($00F1)
@@ -1739,12 +1871,27 @@ table_08A5:
 101F: CD 04 38    call $3804
 1022: 3A 2C 94    ld   a,($942C)
 1025: F7          rst  $30
+; [jump_table]
+	.word	$139D
+	.word	$06DE
+	.word	$155F
+	.word	$1043
+	.word	$105A
+	.word	$15D0
+	.word	$15E0
+	.word	$0ED0
+	.word	$07F0
+	.word	$0420
+	.word	$0440
+	.word	$0460
+	.word	$0480
+	.word	$0ED0
 
 1043: CD B6 0C    call $0CB6
 1046: 3A 2E 94    ld   a,($942E)
 1049: CB 5F       bit  3,a
 104B: C2 A0 10    jp   nz,$10A0
-104E: 3A 06 94    ld   a,($9406)
+104E: 3A 06 94    ld   a,(nb_credits_9406)
 1051: 3D          dec  a
 1052: C8          ret  z
 1053: 11 17 01    ld   de,$0117    ; [uncovered] 
@@ -1762,7 +1909,7 @@ table_08A5:
 106F: C2 FF 07    jp   nz,$07FF
 1072: C9          ret
 
-10A0: 21 06 94    ld   hl,$9406
+10A0: 21 06 94    ld   hl,nb_credits_9406
 10A3: 7E          ld   a,(hl)
 10A4: D6 01       sub  $01
 10A6: 27          daa
@@ -1865,9 +2012,10 @@ table_08A5:
 11FA: 20 10       jr   nz,$120C
 11FC: 79          ld   a,c
 11FD: E6 0F       and  $0F
-11FF: 21 06 94    ld   hl,$9406
+11FF: 21 06 94    ld   hl,nb_credits_9406
 1202: 86          add  a,(hl)
 1203: 27          daa
+; add credit
 1204: 77          ld   (hl),a
 1205: 30 02       jr   nc,$1209
 1207: 36 99       ld   (hl),$99    ; [uncovered] 
@@ -2002,7 +2150,7 @@ table_08A5:
 
 135A: 0E 10       ld   c,$10
 135C: 11 7F 84    ld   de,$847F
-135F: 21 06 94    ld   hl,$9406
+135F: 21 06 94    ld   hl,nb_credits_9406
 1362: CD 7F 07    call $077F
 1365: C9          ret
 
@@ -2172,7 +2320,7 @@ table_08A5:
 1573: FF          rst  $38
 1574: 1E 15       ld   e,$15
 1576: FF          rst  $38
-1577: 3A 06 94    ld   a,($9406)
+1577: 3A 06 94    ld   a,(nb_credits_9406)
 157A: FE 02       cp   $02
 157C: 30 18       jr   nc,$1596
 157E: 1E 16       ld   e,$16
@@ -2293,7 +2441,7 @@ table_08A5:
 1640: CB 46       bit  0,(hl)
 1642: C0          ret  nz
 1643: CB C6       set  0,(hl)
-1645: 21 00 96    ld   hl,$9600
+1645: 21 00 96    ld   hl,lives_9600
 1648: 7E          ld   a,(hl)
 1649: 34          inc  (hl)
 164A: 16 06       ld   d,$06
@@ -2657,7 +2805,7 @@ table_08A5:
 1968: 21 AD 5E    ld   hl,$5EAD
 196B: DF          rst  $18
 196C: 06 00       ld   b,$00
-196E: 3A 0E 93    ld   a,($930E)
+196E: 3A 0E 93    ld   a,(double_fire_930E)
 1971: A7          and  a
 1972: 28 02       jr   z,$1976
 1974: 06 02       ld   b,$02
@@ -3093,7 +3241,7 @@ table_08A5:
 1F71: D9          exx
 1F72: 11 08 00    ld   de,$0008
 1F75: D9          exx
-1F76: 3A 0E 93    ld   a,($930E)
+1F76: 3A 0E 93    ld   a,(double_fire_930E)
 1F79: A7          and  a
 1F7A: C2 08 20    jp   nz,$2008
 1F7D: 3A F5 24    ld   a,($24F5)
@@ -3132,7 +3280,7 @@ table_08A5:
 1FDD: 21 20 96    ld   hl,$9620
 1FE0: 28 03       jr   z,$1FE5
 1FE2: 21 40 96    ld   hl,$9640    ; [uncovered] 
-1FE5: 11 00 96    ld   de,$9600
+1FE5: 11 00 96    ld   de,lives_9600
 1FE8: 01 20 00    ld   bc,$0020
 1FEB: ED B0       ldir
 1FED: CD 2E 17    call $172E
@@ -3245,7 +3393,7 @@ table_08A5:
 214F: 30 1F       jr   nc,$2170
 2151: C3 C7 20    jp   $20C7
 
-2170: 3A 0E 93    ld   a,($930E)
+2170: 3A 0E 93    ld   a,(double_fire_930E)
 2173: A7          and  a
 2174: 20 0B       jr   nz,$2181
 2176: DD 36 00 00 ld   (ix+$00),$00
@@ -3405,7 +3553,7 @@ table_08A5:
 22C9: AF          xor  a
 22CA: 32 F0 92    ld   ($92F0),a
 22CD: 3C          inc  a
-22CE: 32 0E 93    ld   ($930E),a
+22CE: 32 0E 93    ld   (double_fire_930E),a
 22D1: C9          ret
 
 22D2: 3A 00 94    ld   a,($9400)
@@ -3649,6 +3797,20 @@ table_08A5:
 
 253D: DD 7E 0A    ld   a,(ix+$0a)
 2540: F7          rst  $30
+; [jump_table]
+	.word	$26BE
+	.word	$26CF
+	.word	$2735
+	.word	$280A
+	.word	$2978
+	.word	$29AB
+	.word	$275B
+	.word	$463A
+	.word	$4713
+	.word	$477E
+	.word	$2661
+	.word	$25F3
+	.word	$261F
 
 255B: CD 0E 59    call $590E
 255E: CD 04 38    call $3804
@@ -3688,7 +3850,7 @@ table_08A5:
 25A6: CD 82 5C    call $5C82
 25A9: C3 0B 08    jp   $080B
 
-25AC: 3A 09 96    ld   a,($9609)
+25AC: 3A 09 96    ld   a,(starting_stage_9609)
 25AF: C6 01       add  a,$01
 25B1: E6 03       and  $03
 25B3: 87          add  a,a
@@ -3774,6 +3936,20 @@ table_08A5:
 2687: 0F          rrca
 2688: E6 0F       and  $0F
 268A: F7          rst  $30
+; [jump_table]
+	.word	$26A5
+	.word	$26A5
+	.word	$26A5
+	.word	$26A5
+	.word	$26A5
+	.word	$26A5
+	.word	$26B9
+	.word	$26A5
+	.word	$26A5
+	.word	$8760;  bogus
+	.word	$171D
+	.word	$F545;  bogus
+	.word	$9EFA;  bogus
 
 26A5: 3A 1E 93    ld   a,($931E)
 26A8: 1E 93       cp   $02
@@ -3975,6 +4151,16 @@ table_08A5:
 282F: 0F          rrca
 2830: E6 0F       and  $0F
 2832: F7          rst  $30
+; [jump_table]
+	.word	$287C
+	.word	$287C
+	.word	$287C
+	.word	$2845
+	.word	$2845
+	.word	$2845
+	.word	$28AE
+	.word	$28E9
+	.word	$28E9
 
 2845: FD 7E 00    ld   a,(iy+$00)
 2848: FE 38       cp   $38
@@ -4274,7 +4460,7 @@ table_08A5:
 2B06: 7E          ld   a,(hl)
 2B07: 34          inc  (hl)
 2B08: 47          ld   b,a
-2B09: 3A 0E 93    ld   a,($930E)
+2B09: 3A 0E 93    ld   a,(double_fire_930E)
 2B0C: A7          and  a
 2B0D: 28 03       jr   z,$2B12
 2B0F: 3A 24 01    ld   a,($0124)
@@ -4719,7 +4905,7 @@ table_08A5:
 2E9F: 36 00       ld   (hl),$00
 2EA1: ED B0       ldir
 2EA3: CD CB 0E    call $0ECB
-2EA6: 21 00 96    ld   hl,$9600
+2EA6: 21 00 96    ld   hl,lives_9600
 2EA9: 11 01 96    ld   de,$9601
 2EAC: 01 1F 00    ld   bc,$001F
 2EAF: 36 00       ld   (hl),$00
@@ -4732,7 +4918,7 @@ table_08A5:
 2EC0: 32 3E 92    ld   ($923E),a
 2EC3: CD 2E 17    call $172E
 2EC6: 3A D6 09    ld   a,($09D6)
-2EC9: 32 00 96    ld   ($9600),a
+2EC9: 32 00 96    ld   (lives_9600),a
 2ECC: 32 9E 92    ld   ($929E),a
 2ECF: 3E 24       ld   a,$24
 2ED1: 32 01 96    ld   ($9601),a
@@ -4745,7 +4931,7 @@ table_08A5:
 2EDF: 87          add  a,a
 2EE0: 32 0A 96    ld   ($960A),a
 2EE3: 87          add  a,a
-2EE4: 32 09 96    ld   ($9609),a
+2EE4: 32 09 96    ld   (starting_stage_9609),a
 2EE7: 32 0B 96    ld   ($960B),a
 2EEA: AF          xor  a
 2EEB: 32 76 94    ld   ($9476),a
@@ -4996,6 +5182,108 @@ table_08A5:
 317D: 0F          rrca
 317E: E6 1F       and  $1F
 3180: F7          rst  $30
+; [jump_table]
+	.word	$2E0C
+	.word	$2E6C
+	.word	$2E72
+	.word	$2E76
+	.word	$2E80
+	.word	$2E8C
+	.word	$85B4;  bogus
+	.word	$8301;  bogus
+	.word	$8383;  bogus
+	.word	$EE3A;  bogus
+	.word	$376D
+	.word	$9E83;  bogus
+	.word	$31B9
+	.word	$31B9
+	.word	$31B9
+	.word	$31B9
+	.word	$31B9
+	.word	$31C1
+	.word	$31C1
+	.word	$31C9
+	.word	$31C9
+	.word	$31D1
+	.word	$31D1
+	.word	$31D9
+	.word	$31D9
+	.word	$31D9
+	.word	$31D9
+	.word	$31D9
+	.word	$D860;  bogus
+	.word	$D85E;  bogus
+	.word	$D85C;  bogus
+	.word	$D85E;  bogus
+	.word	$D862;  bogus
+	.word	$D860;  bogus
+	.word	$D85E;  bogus
+	.word	$D860;  bogus
+	.word	$C864;  bogus
+	.word	$D862;  bogus
+	.word	$D860;  bogus
+	.word	$D862;  bogus
+	.word	$C866;  bogus
+	.word	$C865;  bogus
+	.word	$C865;  bogus
+	.word	$C866;  bogus
+	.word	$C867;  bogus
+	.word	$C866;  bogus
+	.word	$C867;  bogus
+	.word	$C867;  bogus
+	.word	$3D91
+	.word	$3E51
+	.word	$3E51
+	.word	$3E51
+	.word	$3E51
+	.word	$3F11
+	.word	$3F11
+	.word	$3FD1
+	.word	$3FD1
+	.word	$3C11
+	.word	$3CD1
+	.word	$3CD1
+	.word	$3D91
+	.word	$3D91
+	.word	$3D91
+	.word	$3D91
+	.word	$0000
+	.word	$0100
+	.word	$0101
+	.word	$0302
+	.word	$0303
+	.word	$0300
+	.word	$3223
+	.word	$3223
+	.word	$322B
+	.word	$322B
+	.word	$3233
+	.word	$323B
+	.word	$323B
+	.word	$3243
+	.word	$3243
+	.word	$0888
+	.word	$C848;  bogus
+	.word	$3334
+	.word	$3132
+	.word	$3130
+	.word	$3332
+	.word	$3637
+	.word	$3636
+	.word	$3635
+	.word	$3636
+	.word	$393A
+	.word	$3939
+	.word	$3938
+	.word	$3939
+	.word	$3C3D
+	.word	$3C3C
+	.word	$3C3B
+	.word	$3C3C
+	.word	$2626
+	.word	$2626
+	.word	$2626
+	.word	$2626
 
 324B: 3A 00 90    ld   a,($9000)
 324E: 3C          inc  a
@@ -5870,7 +6158,7 @@ table_08A5:
 42E7: 36 83       ld   (hl),$83
 42E9: 19          add  hl,de
 42EA: 10 F8       djnz $42E4
-42EC: 3A 00 96    ld   a,($9600)
+42EC: 3A 00 96    ld   a,(lives_9600)
 42EF: A7          and  a
 42F0: C8          ret  z
 42F1: FE 06       cp   $06
@@ -6051,6 +6339,10 @@ table_08A5:
 4644: 47          ld   b,a
 4645: DD 7E 09    ld   a,(ix+$09)
 4648: F7          rst  $30
+; [jump_table]
+	.word	$464F
+	.word	$4668
+	.word	$4686
 
 464F: 3A 6E 92    ld   a,($926E)
 4652: FD 77 03    ld   (iy+$03),a
@@ -6170,7 +6462,7 @@ table_08A5:
 4740: 28 03       jr   z,$4745
 4742: C3 4B 30    jp   $304B
 
-4745: 3A 0E 93    ld   a,($930E)
+4745: 3A 0E 93    ld   a,(double_fire_930E)
 4748: A7          and  a
 4749: CA C4 30    jp   z,$30C4
 474C: C3 4B 30    jp   $304B
@@ -6187,7 +6479,7 @@ table_08A5:
 476E: DD 36 09 2C ld   (ix+$09),$2C
 4772: C9          ret
 
-4773: 3A 0E 93    ld   a,($930E)
+4773: 3A 0E 93    ld   a,(double_fire_930E)
 4776: A7          and  a
 4777: 20 F5       jr   nz,$476E
 4779: DD 36 09 28 ld   (ix+$09),$28
@@ -6227,7 +6519,7 @@ table_08A5:
 47CB: 28 03       jr   z,$47D0
 47CD: C3 4B 30    jp   $304B
 
-47D0: 3A 0E 93    ld   a,($930E)
+47D0: 3A 0E 93    ld   a,(double_fire_930E)
 47D3: A7          and  a
 47D4: CA C4 30    jp   z,$30C4
 47D7: C3 4B 30    jp   $304B    ; [uncovered] 
@@ -6543,6 +6835,13 @@ table_08A5:
 4B6C: 0F          rrca
 4B6D: E6 07       and  $07
 4B6F: F7          rst  $30
+; [jump_table]
+	.word	$4BBD
+	.word	$4BD6
+	.word	$4C9F
+	.word	$4CBA
+	.word	$4CCA
+	.word	$4CEA
 
 4B7C: 3A 69 96    ld   a,($9669)
 4B7F: A7          and  a
@@ -6691,7 +6990,7 @@ table_08A5:
 
 4E27: 3A D4 0D    ld   a,($0DD4)
 4E2A: CD E4 07    call $07E4
-4E2D: 3A 09 96    ld   a,($9609)
+4E2D: 3A 09 96    ld   a,(starting_stage_9609)
 4E30: 47          ld   b,a
 4E31: 04          inc  b
 4E32: 3A 95 12    ld   a,($1295)

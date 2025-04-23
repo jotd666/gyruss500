@@ -441,8 +441,8 @@ write_to_screen_00B0:
 	rts                                    	| [$00c0: ret]
 
 l_00f9:
-	lea	l_863B,a0                          	| [$00f9: ld   hl,$863B]
-	move.b	(a0),d0                         	| [$00fc: ld   a,(hl)]
+	lea	0x863B,a0                          	| [$00f9: ld   hl,$863B]
+	jbsr	osd_r_videoram                         	| [$00fc: ld   a,(hl)]
 	sub.b	#0xEE,d0                         	| [$00fd: sub  $EE]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$00ff: ret  nz] [...]
@@ -916,11 +916,11 @@ l_06f7:
 	jbsr	l_0755                            	| [$0703: call $0755]
 	READ_ROM_BYTE	0x006F,d0                       	| [$0706: ld   a,($006F)]
 	jbsr	erase_1up_381c                            	| [$0709: call $381C]
-	lea	l_8501,a1                          	| [$070c: ld   de,$8501]
+	lea	0x8501,a1                          	| [$070c: ld   de,$8501]
 	move.b	#0x06,d1                        	| [$070f: ld   b,$06]
 l_0711:
 	READ_ROM_BYTE	0x37AC,d0                       	| [$0711: ld   a,($37AC)]
-	move.b	d0,(a1)                         	| [$0714: ld   (de),a]
+	jbsr 	write_videoram_a1                         	| [$0714: ld   (de),a]
 	jbsr	sub_20_to_a1_0020                            	| [$0715: rst  $20]
 	subq.b	#1,d1                           	| [...]
 	jne	l_0711                             	| [$0716: djnz $0711]
@@ -933,7 +933,7 @@ l_0755:
 	jra	l_0771                             	| [$075d: jr   $0771]
 
 l_0769:
-	lea	l_8641,a1                          	| [$0769: ld   de,$8641]
+	lea	0x8641,a1                          	| [$0769: ld   de,$8641]
 	lea	l_940D(a6),a0                      	| [$076c: ld   hl,$940D]
 	move.b	#0x11,d2                        	| [$076f: ld   c,$11]
 l_0771:
@@ -1092,11 +1092,6 @@ l_0828:
 	.long	l_0ae0
 	.long	l_f4ff                           	|   bogus
 	.long	l_0186
-	.long	l_8317                           	|   bogus
-	.long	l_ee2a                           	|   bogus
-	.long	l_fa6d                           	|   bogus
-	.long	l_3983
-	.long	l_9eb1(a6)                       	|   bogus
 
 l_089a:
 	move.b	l_960B(a6),d0                   	| [$089a: ld   a,($960B)]
@@ -2681,6 +2676,7 @@ l_15e0:
 	jbsr	lddr                              	| [$15e6: lddr]
 	move.b	(a1),d0                         	| [$15e8: ld   a,(de)]
 	move.l	(sp)+,a0                        	| [$15e9: pop  hl]
+	BREAKPOINT	"video/read 2679"
 	lea	l_8531,a0                          	| [$15ea: ld   hl,$8531]
 	add.b	d0,d0                            	| [$15ed: add  a,a]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$15ee: rst  $08]
@@ -2865,10 +2861,10 @@ l_1711:
 l_1714:
 	LEA_ROM	0x3362,a0                          	| [$1714: ld   hl,$3362]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$1717: rst  $08]
-	move.b	d0,(a1)                         	| [$1718: ld   (de),a]
+	jbsr	write_videoram_a1                         	| [$1718: ld   (de),a]
 	BCLR_A1	#2                           	| [$1719: res  2,d]
 	move.b	d2,d0                           	| [$171b: ld   a,c]
-	move.b	d0,(a1)                         	| [$171c: ld   (de),a]
+	jbsr	write_videoram_a1                         	| [$171c: ld   (de),a]
 l_171d:
 	BSET_A1	#2                           	| [$171d: set  2,d]
 	rts                                    	| [$171f: ret]
@@ -4257,7 +4253,10 @@ l_24d4:
 	jne	l_07ff                             	| [$24dd: jp   nz,$07FF]
 	READ_ROM_BYTE	0x0808,d0                       	| [$24e0: ld   a,($0808)]
 	move.b	d0,d1                           	| [$24e3: ld   b,a]
-	move.b	l_867B,d0                       	| [$24e4: ld   a,($867B)]
+	move.l	a0,-(a7)
+	lea		0x867B,a0
+	jbsr 	osd_r_videoram                       	| [$24e4: ld   a,($867B)]
+	move.l	(a7)+,a0
 	cmp.b	#0xB1,d0                         	| [$24e7: cp   $B1]
 	jne	l_24ec                             	| [$24e9: jr   nz,$24EC]
 	addq.b	#1,d1                           	| [$24eb: inc  b]
@@ -4665,21 +4664,17 @@ l_275b:
 	add.b	(0x0c,a2),d0                     	| [$27b9: add  a,(ix+$0c)]
 	move.b	d0,(0x03,a3)                    	| [$27bc: ld   (iy+$03),a]
 	move.b	#0x40,(0x01,a2)                 	| [$27bf: ld   (ix+$01),$40]
-	clr.b	d5                               	| [$27c3: ld   h,$00]
-	move.b	(0x09,a2),d6                    	| [$27c5: ld   l,(ix+$09)]
-	lea	l_90B0(a6),a1                      	| [$27c8: ld   de,$90B0]
-	add.w	d5,a0                            	| [$27cb: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$27cc: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$27cd: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$27ce: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d3,a0                            	| [$27cf: add  hl,de]
-	.error	"review d3 computation above"
-	move.b	#0xFF,(a0)                      	| [$27d0: ld   (hl),$FF]
-	addq.w	#1,a0                           	| [$27d2: inc  hl]
+	clr.w	d5                               	| [$27c3: ld   h,$00]
+	move.b	(0x09,a2),d5                    	| [$27c5: ld   l,(ix+$09)]
+	move.w	#0x90B0,d3                      	| [$27c8: ld   de,$90B0]
+	add.w	d5,d5                            	| [$27cb: add  hl,hl]
+	add.w	d5,d5                            	| [$27cc: add  hl,hl]
+	add.w	d5,d5                            	| [$27cd: add  hl,hl]
+	add.w	d5,d5                            	| [$27ce: add  hl,hl]
+	add.w	d3,d5                            	| [$27cf: add  hl,de]
+	jbsr	load_ram_d5_to_a0
+	move.b	#0xFF,(a0)+                      	| [$27d0: ld   (hl),$FF]
+	                           	| [$27d2: inc  hl]
 	move.b	#0x40,(a0)                      	| [$27d3: ld   (hl),$40]
 	move.w	#0x0008,d3                      	| [$27d5: ld   de,$0008]
 	add.w	d3,a0                            	| [$27d8: add  hl,de]
@@ -4687,22 +4682,19 @@ l_275b:
 	move.b	d0,(a0)                         	| [$27dc: ld   (hl),a]
 	move.w	#0x0003,d3                      	| [$27dd: ld   de,$0003]
 	add.w	d3,a0                            	| [$27e0: add  hl,de]
-	.error	"review d3 computation above"
 	move.b	(0x0c,a2),d0                    	| [$27e1: ld   a,(ix+$0c)]
 	move.b	d0,(a0)+                         	| [$27e4: ld   (hl),a]
 	                           	| [$27e5: inc  l]
 	move.b	(0x0d,a2),d0                    	| [$27e6: ld   a,(ix+$0d)]
 	move.b	d0,(a0)                         	| [$27e9: ld   (hl),a]
-	lea	l_9860(a6),a1                      	| [$27ea: ld   de,$9860]
-	move.b	(0x09,a2),d6                    	| [$27ed: ld   l,(ix+$09)]
-	clr.b	d5                               	| [$27f0: ld   h,$00]
-	add.w	d5,a0                            	| [$27f2: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$27f3: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d3,a0                            	| [$27f4: add  hl,de]
-	.error	"review d3 computation above"
-	exg	a1,a0                              	| [$27f5: ex   de,hl]
+	move.w	#0x9860,d3                      	| [$27ea: ld   de,$9860]
+	clr.w	d5                               	| [$27f0: ld   h,$00]
+	move.b	(0x09,a2),d5                    	| [$27ed: ld   l,(ix+$09)]
+	add.w	d5,d5                            	| [$27f2: add  hl,hl]
+	add.w	d5,d5                            	| [$27f3: add  hl,hl]
+	add.w	d3,d5                            	| [$27f4: add  hl,de]
+	jbsr	load_ram_d5_to_a0
+	exg	a0,a1                             	| [$27f5: ex   de,hl]
 
 	move.l	a3,a0                        	| [$27f6: push iy]
 	                        	| [$27f8: pop  hl]
@@ -6397,14 +6389,14 @@ l_3865:
 l_388a:
 	jbsr	rst_38                            	| [$388a: rst  $38] [uncovered]
 l_388b:
-	lea	l_8040,a0                          	| [$388b: ld   hl,$8040]
+	lea	0x8040,a0                          	| [$388b: ld   hl,$8040]
 	move.w	#0x0020,d3                      	| [$388e: ld   de,$0020]
 	move.b	#0x1C,d1                        	| [$3891: ld   b,$1C]
-	jbsr	l_38b4                            	| [$3893: call $38B4]
-	lea	l_805F,a0                          	| [$3896: ld   hl,$805F]
+	jbsr	change_attribute_line_38b4                            	| [$3893: call $38B4]
+	lea	0x805F,a0                          	| [$3896: ld   hl,$805F]
 	move.w	#0x0020,d3                      	| [$3899: ld   de,$0020]
 	move.b	#0x1C,d1                        	| [$389c: ld   b,$1C]
-	jbsr	l_38b4                            	| [$389e: call $38B4]
+	jbsr	change_attribute_line_38b4                            	| [$389e: call $38B4]
 	jbsr	l_3b2d                            	| [$38a1: call $3B2D]
 	jbsr	l_080b                            	| [$38a4: call $080B]
 	move.b	l_960C(a6),d0                   	| [$38a7: ld   a,($960C)]
@@ -6413,11 +6405,16 @@ l_388b:
 	jbsr	l_38c9                            	| [$38ae: call $38C9]
 	jra	l_089a                             	| [$38b1: jp   $089A]
 
-l_38b4:
-	bset.b	#4,(a0)                         	| [$38b4: set  4,(hl)]
+change_attribute_line_38b4:
+	move.w	d0,-(a7)
+0:
+	jbsr	osd_r_videoram
+	bset.b	#4,d0                         	| [$38b4: set  4,(hl)]
+	jbsr	osd_w_videoram
 	add.w	d3,a0                            	| [$38b6: add  hl,de]
 	subq.b	#1,d1                           	| [...]
-	jne	l_38b4                             	| [$38b7: djnz $38B4]
+	jne	0b                             	| [$38b7: djnz $38B4]
+	move.w	(a7)+,d0
 	rts                                    	| [$38b9: ret]
 
 l_38ba:
@@ -6476,7 +6473,7 @@ l_3909:
 0:
 *	RAM checksum
 *	move.w	#-0x20,d3                       	| [$390e: ld   de,$FFE0]
-*	lea	l_869B,a0                          	| [$3911: ld   hl,$869B]
+*	lea	l_xx869B,a0                          	| [$3911: ld   hl,$869B]
 *	clr.b	d0                               	| [$3914: xor  a]
 *	add.b	(a0),d0                          	| [$3915: add  a,(hl)]
 *	sub.b	#0xD7,d0                         	| [$3916: sub  $D7]
@@ -6897,11 +6894,11 @@ l_4255:
 	ror.b	#3,d0                            	| [$425b: rrca] * 3
 	and.b	#0x03,d0                         	| [$425e: and  $03]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$4260: rst  $08]
-	lea	l_8270,a0                          	| [$4261: ld   hl,$8270]
+	lea	0x8270,a0                          	| [$4261: ld   hl,$8270]
 	move.w	#-0x20,d3                       	| [$4264: ld   de,$FFE0]
 	move.b	#0x0C,d1                        	| [$4267: ld   b,$0C]
 l_4269:
-	move.b	d0,(a0)                         	| [$4269: ld   (hl),a]
+	jbsr	osd_w_videoram                         	| [$4269: ld   (hl),a]
 	add.w	d3,a0                            	| [$426a: add  hl,de]
 	subq.b	#1,d1                           	| [...]
 	jne	l_4269                             	| [$426b: djnz $4269]
@@ -7088,8 +7085,9 @@ l_4579:
 	jbsr	load_rom_pointer_0010                            	| [$4590: rst  $10]
 	move.b	(0x00,a3),d5                    	| [$4591: ld   h,(iy+$00)]
 	move.b	(0x03,a2),d6                    	| [$4594: ld   l,(ix+$03)]
-	add.w	d3,a0                            	| [$4597: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D5_16_FROM_D5D6
+	add.w	d3,d5                            	| [$4597: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x00,a3)                    	| [$4598: ld   (iy+$00),h]
 	move.b	d6,(0x03,a2)                    	| [$459b: ld   (ix+$03),l]
 	move.b	d5,d0                           	| [$459e: ld   a,h]
@@ -7404,11 +7402,9 @@ l_4816:
 	rts                                    	| [$4831: ret  c] [...]
 0:
 	LOAD_RAM_POINTER	l_9611(a6),a2         	| [$4832: ld   ix,($9611)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7405 review check if pointed value is in RAM"
 	LOAD_RAM_POINTER	l_9613(a6),a3         	| [$4836: ld   iy,($9613)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7407 review check if pointed value is in RAM"
 	move.b	#0xFF,(0x00,a3)                 	| [$483a: ld   (iy+$00),$FF]
 	move.b	#0xFF,(0x01,a2)                 	| [$483e: ld   (ix+$01),$FF]
 	clr.b	(0x04,a2)                        	| [$4842: ld   (ix+$04),$00]
@@ -7418,22 +7414,19 @@ l_4816:
 	move.b	l_9400(a6),d0                   	| [$4852: ld   a,($9400)]
 	rol.b	#2,d0                            	| [$4855: rlca] * 2
 	and.b	#0x01,d0                         	| [$4857: and  $01]
-	move.b	d0,d2                           	| [$4859: ld   c,a]
+	clr.w	d1                               	| [$485d: ld   b,$00]
+	move.b	d0,d1                           	| [$4859: ld   c,a]
 	lea	l_900A(a6),a0                      	| [$485a: ld   hl,$900A]
-	clr.b	d1                               	| [$485d: ld   b,$00]
 	add.w	d1,a0                            	| [$485f: add  hl,bc]
-	.error	"review d1 computation above"
 	move.b	(a0),d0                         	| [$4860: ld   a,(hl)]
 	move.b	d0,l_932E(a6)                   	| [$4861: ld   ($932E),a]
 	add.b	#0x10,d0                         	| [$4864: add  a,$10]
 	move.b	d0,(0x03,a3)                    	| [$4866: ld   (iy+$03),a]
 	jbsr	l_4b1c                            	| [$4869: call $4B1C]
 	LOAD_RAM_POINTER	l_9615(a6),a2         	| [$486c: ld   ix,($9615)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7427 review check if pointed value is in RAM"
 	LOAD_RAM_POINTER	l_9617(a6),a3         	| [$4870: ld   iy,($9617)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7429 review check if pointed value is in RAM"
 	move.b	#0xFF,(0x01,a2)                 	| [$4874: ld   (ix+$01),$FF]
 	move.b	#0x01,(0x04,a2)                 	| [$4878: ld   (ix+$04),$01]
 	clr.b	(0x0b,a2)                        	| [$487c: ld   (ix+$0b),$00]
@@ -7445,11 +7438,9 @@ l_4816:
 	move.b	d0,(0x03,a3)                    	| [$4891: ld   (iy+$03),a]
 	jbsr	l_4b1c                            	| [$4894: call $4B1C]
 	LOAD_RAM_POINTER	l_9619(a6),a2         	| [$4897: ld   ix,($9619)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7441 review check if pointed value is in RAM"
 	LOAD_RAM_POINTER	l_961B(a6),a3         	| [$489b: ld   iy,($961B)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7443 review check if pointed value is in RAM"
 	move.b	#0xFF,(0x00,a3)                 	| [$489f: ld   (iy+$00),$FF]
 	move.b	#0xFF,(0x01,a2)                 	| [$48a3: ld   (ix+$01),$FF]
 	move.b	#0x02,(0x04,a2)                 	| [$48a7: ld   (ix+$04),$02]
@@ -7461,27 +7452,21 @@ l_4816:
 
 l_48ba:
 	LOAD_RAM_POINTER	l_9611(a6),a2         	| [$48ba: ld   ix,($9611)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7455 review check if pointed value is in RAM"
 	LOAD_RAM_POINTER	l_9613(a6),a3         	| [$48be: ld   iy,($9613)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7457 review check if pointed value is in RAM"
 	jbsr	l_4954                            	| [$48c2: call $4954]
 	move.b	(0x00,a3),d0                    	| [$48c5: ld   a,(iy+$00)]
 	move.b	d0,l_933E(a6)                   	| [$48c8: ld   ($933E),a]
 	LOAD_RAM_POINTER	l_9615(a6),a2         	| [$48cb: ld   ix,($9615)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7462 review check if pointed value is in RAM"
 	LOAD_RAM_POINTER	l_9617(a6),a3         	| [$48cf: ld   iy,($9617)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7464 review check if pointed value is in RAM"
 	jbsr	l_4954                            	| [$48d3: call $4954]
 	LOAD_RAM_POINTER	l_9619(a6),a2         	| [$48d6: ld   ix,($9619)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7467 review check if pointed value is in RAM"
 	LOAD_RAM_POINTER	l_961B(a6),a3         	| [$48da: ld   iy,($961B)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7469 review check if pointed value is in RAM"
 	move.b	l_92FE(a6),d0                   	| [$48de: ld   a,($92FE)]
 	cmp.b	#0x02,d0                         	| [$48e1: cp   $02]
 	jcs	l_4933                             	| [$48e3: jr   c,$4933]
@@ -7554,12 +7539,13 @@ l_4954:
 	move.b	(0x00,a3),d0                    	| [$4960: ld   a,(iy+$00)]
 	cmp.b	#0x20,d0                         	| [$4963: cp   $20]
 	jcs	l_49b0                             	| [$4965: jp   c,$49B0]
-	move.b	d0,d3                           	| [$4968: ld   d,a]
+	*move.b	d0,d3  | useless!                           	| [$4968: ld   d,a]
 	move.b	(0x00,a3),d5                    	| [$4969: ld   h,(iy+$00)]
 	move.b	(0x03,a2),d6                    	| [$496c: ld   l,(ix+$03)]
 	move.w	#-0x140,d3                      	| [$496f: ld   de,$FEC0]
-	add.w	d3,a0                            	| [$4972: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D5D6_FROM_D5_16
+	add.w	d3,d5                            	| [$4972: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x00,a3)                    	| [$4973: ld   (iy+$00),h]
 	move.b	d0,(0x03,a2)                    	| [$4976: ld   (ix+$03),a]
 	jbsr	l_4b1c                            	| [$4979: call $4B1C]
@@ -7589,8 +7575,7 @@ l_498a:
 l_49a4:
 	move.b	#0x20,(0x01,a2)                 	| [$49a4: ld   (ix+$01),$20]
 	LOAD_RAM_POINTER	l_961B(a6),a0         	| [$49a8: ld   hl,($961B)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7578 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$49ab: ld   (hl),$00]
 	jra	l_5d22                             	| [$49ad: jp   $5D22]
 
@@ -7634,15 +7619,15 @@ l_49de:
 
 * clear screen
 l_4a04:
-	lea	l_8000,a0                          	| [$4a04: ld   hl,$8000]
-	LEA_ROM	0x0400,a4                          	| [$4a07: ld   bc,$0400]
-	move.b	#0x02,d3                        	| [$4a0a: ld   d,$02]
+	lea	0x8000,a0                          	| [$4a04: ld   hl,$8000]
+	move.w	#0x0400,d1                          	| [$4a07: ld   bc,$0400]
+	move.b	#0x02,d0                        	| [$4a0a: ld   d,$02]
 l_4a0c:
-	move.b	d3,(a0)                         	| [$4a0c: ld   (hl),d]
+	jbsr	osd_w_videoram                         	| [$4a0c: ld   (hl),d]
 	addq.w	#1,a0                           	| [$4a0d: inc  hl]
-	subq.w	#1,a4                           	| [$4a0e: dec  bc]
-	move.b	d2,d0                           	| [$4a0f: ld   a,c]
-	or.b	d1,d0                             	| [$4a10: or   b]
+	subq.w	#1,d1                           	| [$4a0e: dec  bc]
+	                           	| [$4a0f: ld   a,c]
+	                             	| [$4a10: or   b]
 	jne	l_4a0c                             	| [$4a11: jr   nz,$4A0C]
                        	| [$4a13: ld   (watchdog_C000),a]
 	jra	l_5854                             	| [$4a16: jp   $5854]
@@ -7654,7 +7639,6 @@ l_4a19:
 	cmp.b	#0x0C,d0                         	| [$4a1e: cp   $0C]
 	jcc	l_4a35                             	| [$4a20: jr   nc,$4A35]
 	addq.w	#3,a0                           	| [$4a22: inc  l]
-	.error	"review inc register d6 or a0" * 3
 	move.b	(a0),d0                         	| [$4a25: ld   a,(hl)]
 	sub.b	(0x03,a3),d0                     	| [$4a26: sub  (iy+$03)]
 	addq.b	#0x05,d0                        	| [$4a29: add  a,$05]
@@ -7687,8 +7671,9 @@ l_4a37:
 	move.b	(0x02,a2),d4                    	| [$4a4d: ld   e,(ix+$02)]
 	move.b	(0x00,a3),d3                    	| [$4a50: ld   d,(iy+$00)]
 	move.w	#-0x90,d5                       	| [$4a53: ld   hl,$FF70]
-	add.w	d3,a0                            	| [$4a56: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D3_16_FROM_D3D4
+	add.w	d3,d5                            	| [$4a56: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d6,(0x02,a2)                    	| [$4a57: ld   (ix+$02),l]
 	move.b	d5,(0x00,a3)                    	| [$4a5a: ld   (iy+$00),h]
 	move.b	(0x01,a2),d0                    	| [$4a5d: ld   a,(ix+$01)]
@@ -7732,16 +7717,13 @@ l_4a86:
 0:
 	move.b	l_92EE(a6),d0                   	| [$4a9e: ld   a,($92EE)]
 	move.b	d0,l_92CE(a6)                   	| [$4aa1: ld   ($92CE),a]
-	CLEAR_XC_FLAGS                         	| [$4aa4: xor  a]
 	clr.b	d0                               	| [$4aa4: xor  a]
 	move.b	d0,l_92BE(a6)                   	| [$4aa5: ld   ($92BE),a]
 	LOAD_RAM_POINTER	l_9617(a6),a0         	| [$4aa8: ld   hl,($9617)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7736 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$4aab: ld   (hl),$00]
 	LOAD_RAM_POINTER	l_9613(a6),a0         	| [$4aad: ld   hl,($9613)]
-	.error	"review check if pointed value is in RAM
-"
+	BREAKPOINT	"7739 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$4ab0: ld   (hl),$00]
 	rts                                    	| [$4ab2: ret]
 

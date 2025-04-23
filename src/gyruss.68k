@@ -284,6 +284,7 @@ fetch_a0_plus_d0_0008:
 
 * load_rom_pointer_0010: loads address in HL indexed by A
 * as 16 bit address in DE
+* 68000: loads ROM data in A1, offset in D3 
 load_rom_pointer_0010:
 	add.b	d0,d0                            	| [$0010: add  a,a]
 	jbsr	add_d0_to_a0_0018                            	| [$0011: rst  $18]
@@ -2613,6 +2614,7 @@ l_1589:
 												| [$158a: inc  hl]
 	subq.b	#1,d2                           	| [$158b: dec  c]
 	jne	l_1589                             	| [$158c: jr   nz,$1589]
+	BREAKPOINT	"fuck checksum d0=?"
 	eor.b	#0x1E,d0                         	| [$158e: xor  $1E]
 	move.b	d0,l_942C(a6)                   	| [$1590: ld   ($942C),a]
 	jra	l_080b                             	| [$1593: jp   $080B]
@@ -3074,8 +3076,9 @@ l_18a9:
 	jbsr	load_rom_pointer_0010                            	| [$18b1: rst  $10]
 	move.b	(0x01,a2),d5                    	| [$18b2: ld   h,(ix+$01)]
 	move.b	(0x05,a2),d6                    	| [$18b5: ld   l,(ix+$05)]
-	add.w	d3,a0                            	| [$18b8: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D5_16_FROM_D5D6
+	add.w	d3,d5                            	| [$18b8: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x01,a2)                    	| [$18b9: ld   (ix+$01),h]
 	move.b	d6,(0x05,a2)                    	| [$18bc: ld   (ix+$05),l]
 	move.b	d5,d0                           	| [$18bf: ld   a,h]
@@ -3102,8 +3105,8 @@ l_18de:
 	jbsr	load_rom_pointer_0010                            	| [$18e6: rst  $10]
 	move.b	(0x01,a2),d5                    	| [$18e7: ld   h,(ix+$01)]
 	move.b	(0x05,a2),d6                    	| [$18ea: ld   l,(ix+$05)]
-	add.w	d3,a0                            	| [$18ed: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D5_16_FROM_D5D6
+	add.w	d3,d5                            	| [$18ed: add  hl,de]
 	move.b	d5,(0x01,a2)                    	| [$18ee: ld   (ix+$01),h]
 	move.b	d6,(0x05,a2)                    	| [$18f1: ld   (ix+$05),l]
 	move.b	d5,d0                           	| [$18f4: ld   a,h]
@@ -3415,21 +3418,23 @@ l_1b7c:
 l_1b86:
 	lea	l_9000(a6),a2                      	| [$1b86: ld   ix,$9000]
 	lea	sprite_shadow_ram_9800(a6),a3      	| [$1b8a: ld   iy,sprite_shadow_ram_9800]
-	lea	l_8000,a0                          	| [$1b8e: ld   hl,$8000]
+	move.w	#0x8000,d5                          	| [$1b8e: ld   hl,$8000]
 	move.b	(0x02,a2),d3                    	| [$1b91: ld   d,(ix+$02)]
 	clr.b	d4                               	| [$1b94: ld   e,$00]
-	tst.b	d0                               	| [$1b96: and  a]
+	CLEAR_XC_FLAGS
+	LOAD_D3_16_FROM_D3D4                        | [$1b96: and  a]
 	sub.w	d3,d5                            	| [$1b97: sbc  hl,de]
-	.error	"review compared/subbed registers"
+	LOAD_D5D6_FROM_D5_16
 	jbsr	l_1bc3                            	| [$1b99: call $1BC3]
 	move.b	d5,(0x06,a2)                    	| [$1b9c: ld   (ix+$06),h]
 	move.b	d6,(0x07,a2)                    	| [$1b9f: ld   (ix+$07),l]
-	lea	l_8000,a0                          	| [$1ba2: ld   hl,$8000]
+	move.w	#0x8000,d5                          	| [$1ba2: ld   hl,$8000]
 	move.b	(0x03,a2),d3                    	| [$1ba5: ld   d,(ix+$03)]
 	clr.b	d4                               	| [$1ba8: ld   e,$00]
-	tst.b	d0                               	| [$1baa: and  a]
+	CLEAR_XC_FLAGS
+	LOAD_D3_16_FROM_D3D4                               	| [$1baa: and  a]
 	sub.w	d3,d5                            	| [$1bab: sbc  hl,de]
-	.error	"review compared/subbed registers"
+	LOAD_D5D6_FROM_D5_16
 	jbsr	l_1bc3                            	| [$1bad: call $1BC3]
 	move.b	d5,(0x08,a2)                    	| [$1bb0: ld   (ix+$08),h]
 	move.b	d6,(0x09,a2)                    	| [$1bb3: ld   (ix+$09),l]
@@ -3440,7 +3445,6 @@ l_1b86:
 
 l_1bc3:
 	roxr.b	#1,d5                           	| [$1bc3: rr   h]
-	.error	"review cpu X flag"
 	roxr.b	#1,d6                           	| [$1bc5: rr   l]
 	asr.b	#1,d5                            	| [$1bc7: sra  h]
 	roxr.b	#1,d6                           	| [$1bc9: rr   l]
@@ -3473,16 +3477,20 @@ l_1bf9:
 	move.b	(0x0a,a2),d6                    	| [$1c00: ld   l,(ix+$0a)]
 	move.b	(0x06,a2),d3                    	| [$1c03: ld   d,(ix+$06)]
 	move.b	(0x07,a2),d4                    	| [$1c06: ld   e,(ix+$07)]
-	add.w	d3,a0                            	| [$1c09: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D3_16_FROM_D3D4
+	LOAD_D5_16_FROM_D5D6
+	add.w	d3,d5                            	| [$1c09: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x02,a2)                    	| [$1c0a: ld   (ix+$02),h]
 	move.b	d6,(0x0a,a2)                    	| [$1c0d: ld   (ix+$0a),l]
 	move.b	(0x03,a2),d5                    	| [$1c10: ld   h,(ix+$03)]
 	move.b	(0x0b,a2),d6                    	| [$1c13: ld   l,(ix+$0b)]
 	move.b	(0x08,a2),d3                    	| [$1c16: ld   d,(ix+$08)]
 	move.b	(0x09,a2),d4                    	| [$1c19: ld   e,(ix+$09)]
-	add.w	d3,a0                            	| [$1c1c: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D3_16_FROM_D3D4
+	LOAD_D5_16_FROM_D5D6
+	add.w	d3,d5                            	| [$1c1c: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x03,a2)                    	| [$1c1d: ld   (ix+$03),h]
 	move.b	d6,(0x0b,a2)                    	| [$1c20: ld   (ix+$0b),l]
 	move.b	(0x01,a2),d0                    	| [$1c23: ld   a,(ix+$01)]
@@ -3554,8 +3562,9 @@ l_1ca3:
 l_1cb7:
 	move.b	(0x00,a3),d5                    	| [$1cb7: ld   h,(iy+$00)]
 	move.b	(0x03,a2),d6                    	| [$1cba: ld   l,(ix+$03)]
-	add.w	d3,a0                            	| [$1cbd: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D5_16_FROM_D5D6
+	add.w	d3,d5                            	| [$1cbd: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x00,a3)                    	| [$1cbe: ld   (iy+$00),h]
 	move.b	d6,(0x03,a2)                    	| [$1cc1: ld   (ix+$03),l]
 	jbsr	l_1720                            	| [$1cc4: call $1720]
@@ -3591,9 +3600,10 @@ l_1cdd:
 l_1cff:
 	move.b	(0x03,a3),d5                    	| [$1cff: ld   h,(iy+$03)]
 	move.b	(0x02,a2),d6                    	| [$1d02: ld   l,(ix+$02)]
-	LEA_ROM	0x00E0,a4                          	| [$1d05: ld   bc,$00E0]
-	add.w	d1,a0                            	| [$1d08: add  hl,bc]
-	.error	"review d1 computation above"
+	LOAD_D5_16_FROM_D5D6
+	move.w	#0x00E0,d1                          	| [$1d05: ld   bc,$00E0]
+	add.w	d1,d5                            	| [$1d08: add  hl,bc]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x03,a3)                    	| [$1d09: ld   (iy+$03),h]
 	move.b	d6,(0x02,a2)                    	| [$1d0c: ld   (ix+$02),l]
 	jra	l_1d14                             	| [$1d0f: jr   $1D14]
@@ -3620,10 +3630,10 @@ l_1f30:
 	                               	| [$1f38: and  a]
 	jeq	l_1fc2                             	| [$1f39: jp   z,$1FC2]
 	jbsr	l_1720                            	| [$1f3c: call $1720]
-	rol.b	#4,d0                            	| [$1f3f: rlca] * 4
+	CLEAR_XC_FLAGS
+	roxl.b	#4,d0                            	| [$1f3f: rlca] * 4
 	lea	l_90CE(a6),a0                      	| [$1f43: ld   hl,$90CE]
-	roxl.b	#1,(a0)                         	| [$1f46: rl   (hl)]
-	.error	"review cpu X flag"
+	ROXL_A0                         	| [$1f46: rl   (hl)]
 	move.b	(a0),d0                         	| [$1f48: ld   a,(hl)]
 	and.b	#0x03,d0                         	| [$1f49: and  $03]
 	cmp.b	#0x01,d0                         	| [$1f4b: cp   $01]
@@ -3643,10 +3653,8 @@ l_1f5c:
 	lea	l_9900(a6),a3                      	| [$1f6a: ld   iy,$9900]
 	move.w	#0x0010,d3                      	| [$1f6e: ld   de,$0010]
 	jbsr	exx                               	| [$1f71: exx]
-	.error	"review special instruction inputs"
 	move.w	#0x0008,d3                      	| [$1f72: ld   de,$0008]
 	jbsr	exx                               	| [$1f75: exx]
-	.error	"review special instruction inputs"
 	move.b	double_fire_930E(a6),d0         	| [$1f76: ld   a,(double_fire_930E)]
 	                               	| [$1f79: and  a]
 	jne	l_2008                             	| [$1f7a: jp   nz,$2008]
@@ -3667,13 +3675,9 @@ l_1f82:
 
 l_1fa4:
 	add.w	d3,a2                            	| [$1fa4: add  ix,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$1fa6: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a3                            	| [$1fa7: add  iy,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$1fa9: exx]
-	.error	"review special instruction inputs"
 	subq.b	#1,d1                           	| [...]
 	jne	l_1f82                             	| [$1faa: djnz $1F82]
 	jra	l_204a                             	| [$1fac: jp   $204A]
@@ -3738,13 +3742,9 @@ l_200c:
 
 l_2042:
 	add.w	d3,a2                            	| [$2042: add  ix,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$2044: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a3                            	| [$2045: add  iy,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$2047: exx]
-	.error	"review special instruction inputs"
 	subq.b	#1,d1                           	| [...]
 	jne	l_200c                             	| [$2048: djnz $200C]
 l_204a:
@@ -3752,12 +3752,10 @@ l_204a:
 	lea	l_9900(a6),a3                      	| [$204e: ld   iy,$9900]
 	move.w	#0x0008,d3                      	| [$2052: ld   de,$0008]
 	jbsr	exx                               	| [$2055: exx]
-	.error	"review special instruction inputs"
 	move.b	#0x03,d1                        	| [$2056: ld   b,$03]
 	move.w	#0x0010,d3                      	| [$2058: ld   de,$0010]
 l_205b:
 	movem.w	d1/d2,-(sp)                    	| [$205b: push bc]
-	move.l	a4,-(sp)                        	| [$205b: push bc]
 	movem.w	d3/d4,-(sp)                    	| [$205c: push de]
 	move.l	a1,-(sp)                        	| [$205c: push de]
 	move.b	(0x00,a2),d0                    	| [$205d: ld   a,(ix+$00)]
@@ -3780,14 +3778,9 @@ l_20c7:
 	move.l	(sp)+,a1                        	| [$20c7: pop  de]
 	movem.w	(sp)+,d3/d4                    	| [$20c7: pop  de]
 	add.w	d3,a2                            	| [$20c8: add  ix,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$20ca: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a3                            	| [$20cb: add  iy,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$20cd: exx]
-	.error	"review special instruction inputs"
-	move.l	(sp)+,a4                        	| [$20ce: pop  bc]
 	movem.w	(sp)+,d1/d2                    	| [$20ce: pop  bc]
 	subq.b	#1,d1                           	| [...]
 	jne	l_205b                             	| [$20cf: djnz $205B]
@@ -3928,9 +3921,8 @@ l_2203:
 	move.b	l_92F1(a6),d0                   	| [$2213: ld   a,($92F1)]
 	                               	| [$2216: and  a]
 	jeq	l_22a9                             	| [$2217: jp   z,$22A9]
-	LOAD_RAM_POINTER	l_92F2(a6),a0         	| [$221a: ld   hl,($92F2)]
-	.error	"review check if pointed value is in RAM
-"
+	LOAD_WORD	value_16bit_92F2(a6),d5         	| [$221a: ld   hl,($92F2)]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d6,d4                           	| [$221d: ld   e,l]
 	move.b	d5,d3                           	| [$221e: ld   d,h]
 	lsr.b	#1,d3                            	| [$221f: srl  d]
@@ -3946,8 +3938,7 @@ l_2203:
 	LOAD_D3_16_FROM_D3D4
 	LOAD_D5_16_FROM_D5D6
 	sub.w	d3,d5                            	| [$2230: sbc  hl,de]
-	STORE_RAM_POINTER	a0,l_92F2(a6)        	| [$2232: ld   ($92F2),hl]
-	.error	"review check if source is in RAM"
+	STORE_WORD	d5,value_16bit_92F2(a6)        	| [$2232: ld   ($92F2),hl]
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,d0                           	| [$2235: ld   a,h]
 	add.b	#0x23,d0                         	| [$2236: add  a,$23]
@@ -3967,14 +3958,11 @@ l_224b:
 	move.b	(0x00,a3),d0                    	| [$2250: ld   a,(iy+$00)]
 	or.b	d0,d0                             	| [$2253: or   a]
 	jeq	l_227b                             	| [$2254: jr   z,$227B]
-	LOAD_RAM_POINTER	l_92F4(a6),a0         	| [$2256: ld   hl,($92F4)]
-	.error	"review check if pointed value is in RAM
-"
-	LEA_ROM	0x0360,a1                          	| [$2259: ld   de,$0360]
-	add.w	d3,a0                            	| [$225c: add  hl,de]
-	.error	"review d3 computation above"
-	STORE_RAM_POINTER	a0,l_92F4(a6)        	| [$225d: ld   ($92F4),hl]
-	.error	"review check if source is in RAM"
+	LOAD_WORD	value_16bit_92F4(a6),d5         	| [$2256: ld   hl,($92F4)]
+	move.w	#0x0360,d3                          	| [$2259: ld   de,$0360]
+	add.w	d3,d5                            	| [$225c: add  hl,de]
+	STORE_WORD	a0,value_16bit_92F4(a6)        	| [$225d: ld   ($92F4),hl]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x03,a3)                    	| [$2260: ld   (iy+$03),h]
 	move.b	(0x00,a3),d0                    	| [$2263: ld   a,(iy+$00)]
 	cmp.b	#0x2D,d0                         	| [$2266: cp   $2D]
@@ -3990,14 +3978,11 @@ l_227b:
 	move.b	(0x08,a3),d0                    	| [$227b: ld   a,(iy+$08)]
 	or.b	d0,d0                             	| [$227e: or   a]
 	jeq	l_22d2                             	| [$227f: jr   z,$22D2]
-	LOAD_RAM_POINTER	l_92F6(a6),a0         	| [$2281: ld   hl,($92F6)]
-	.error	"review check if pointed value is in RAM
-"
+	LOAD_WORD	l_92F6(a6),d5         	| [$2281: ld   hl,($92F6)]
 	move.w	#-0x360,d3                      	| [$2284: ld   de,$FCA0]
-	add.w	d3,a0                            	| [$2287: add  hl,de]
-	.error	"review d3 computation above"
-	STORE_RAM_POINTER	a0,l_92F6(a6)        	| [$2288: ld   ($92F6),hl]
-	.error	"review check if source is in RAM"
+	add.w	d3,d5                            	| [$2287: add  hl,de]
+	STORE_WORD	d5,l_92F6(a6)        	| [$2288: ld   ($92F6),hl]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x0b,a3)                    	| [$228b: ld   (iy+$0b),h]
 	move.b	(0x08,a3),d0                    	| [$228e: ld   a,(iy+$08)]
 	cmp.b	#0x2D,d0                         	| [$2291: cp   $2D]
@@ -4013,27 +3998,21 @@ l_227b:
 
 l_22a9:
 	lea	l_92F1(a6),a0                      	| [$22a9: ld   hl,$92F1]
-	move.b	#0x01,(a0)                      	| [$22ac: ld   (hl),$01]
-	addq.w	#1,a0                           	| [$22ae: inc  l]
-	.error	"review inc register d6 or a0"
-	clr.b	(a0)                             	| [$22af: ld   (hl),$00]
-	addq.w	#1,a0                           	| [$22b1: inc  l]
-	.error	"review inc register d6 or a0"
+	move.b	#0x01,(a0)+                      	| [$22ac: ld   (hl),$01]
+	                           	| [$22ae: inc  l]
+	clr.b	(a0)+                             	| [$22af: ld   (hl),$00]
+	                           	| [$22b1: inc  l]
 	move.b	(0x00,a3),d0                    	| [$22b2: ld   a,(iy+$00)]
 	sub.b	#0x23,d0                         	| [$22b5: sub  $23]
-	move.b	d0,(a0)                         	| [$22b7: ld   (hl),a]
-	addq.w	#1,a0                           	| [$22b8: inc  l]
-	.error	"review inc register d6 or a0"
-	clr.b	(a0)                             	| [$22b9: ld   (hl),$00]
-	addq.w	#1,a0                           	| [$22bb: inc  l]
-	.error	"review inc register d6 or a0"
+	move.b	d0,(a0)+                         	| [$22b7: ld   (hl),a]
+	                           	| [$22b8: inc  l]
+	clr.b	(a0)+                             	| [$22b9: ld   (hl),$00]
+	                           	| [$22bb: inc  l]
 	move.b	(0x03,a3),d0                    	| [$22bc: ld   a,(iy+$03)]
-	move.b	d0,(a0)                         	| [$22bf: ld   (hl),a]
-	addq.w	#1,a0                           	| [$22c0: inc  l]
-	.error	"review inc register d6 or a0"
-	clr.b	(a0)                             	| [$22c1: ld   (hl),$00]
-	addq.w	#1,a0                           	| [$22c3: inc  l]
-	.error	"review inc register d6 or a0"
+	move.b	d0,(a0)+                         	| [$22bf: ld   (hl),a]
+	                           	| [$22c0: inc  l]
+	clr.b	(a0)+                             	| [$22c1: ld   (hl),$00]
+	                           	| [$22c3: inc  l]
 	move.b	(0x0b,a3),d0                    	| [$22c4: ld   a,(iy+$0b)]
 	move.b	d0,(a0)                         	| [$22c7: ld   (hl),a]
 	rts                                    	| [$22c8: ret]
@@ -4169,7 +4148,6 @@ l_23b0:
 	jbsr	exx                               	| [$23ea: exx]
 l_23eb:
 	movem.w	d1/d2,-(sp)                    	| [$23eb: push bc]
-	move.l	a4,-(sp)                        	| [$23eb: push bc]
 	move.b	(0x00,a2),d0                    	| [$23ec: ld   a,(ix+$00)]
 	                               	| [$23ef: and  a]
 	jeq	l_2411                             	| [$23f0: jr   z,$2411]
@@ -4189,14 +4167,9 @@ l_23fc:
 	move.b	d0,(0x00,a3)                    	| [$240e: ld   (iy+$00),a]
 l_2411:
 	jbsr	exx                               	| [$2411: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a2                            	| [$2412: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d1,a3                            	| [$2414: add  iy,bc]
-	.error	"review d1 computation above"
 	jbsr	exx                               	| [$2416: exx]
-	.error	"review special instruction inputs"
-	move.l	(sp)+,a4                        	| [$2417: pop  bc]
 	movem.w	(sp)+,d1/d2                    	| [$2417: pop  bc]
 	subq.b	#1,d1                           	| [...]
 	jne	l_23eb                             	| [$2418: djnz $23EB]
@@ -4237,24 +4210,23 @@ l_249b:
 	move.l	a3,-(sp)                        	| [$24ab: push iy]
 	move.l	(sp)+,a1                        	| [$24ad: pop  de]
 	movem.w	(sp)+,d3/d4                    	| [$24ad: pop  de]
+* < D1/D2/D3/D4
 l_24ae:
 	lea	l_9610(a6),a0                      	| [$24ae: ld   hl,$9610]
+	moveq	#0,d0
 	move.b	(a0),d0                         	| [$24b1: ld   a,(hl)]
 	addq.b	#1,(a0)                         	| [$24b2: inc  (hl)]
 	add.b	d0,d0                            	| [$24b3: add  a,a]
 	add.b	d0,d0                            	| [$24b4: add  a,a]
 	lea	l_9611(a6),a0                      	| [$24b5: ld   hl,$9611]
-	add.b	d6,d0                            	| [$24b8: add  a,l]
-	move.b	d0,d6                           	| [$24b9: ld   l,a]
-	move.b	d2,(a0)                         	| [$24ba: ld   (hl),c]
-	addq.w	#1,a0                           	| [$24bb: inc  l]
-	.error	"review inc register d6 or a0"
-	move.b	d1,(a0)                         	| [$24bc: ld   (hl),b]
-	addq.w	#1,a0                           	| [$24bd: inc  l]
-	.error	"review inc register d6 or a0"
-	move.b	d4,(a0)                         	| [$24be: ld   (hl),e]
-	addq.w	#1,a0                           	| [$24bf: inc  l]
-	.error	"review inc register d6 or a0"
+	add.w	d0,a0                            	| [$24b8: add  a,l]
+	                           	| [$24b9: ld   l,a]
+	move.b	d2,(a0)+                         	| [$24ba: ld   (hl),c]
+	                           	| [$24bb: inc  l]
+	move.b	d1,(a0)+                         	| [$24bc: ld   (hl),b]
+	                           	| [$24bd: inc  l]
+	move.b	d4,(a0)+                         	| [$24be: ld   (hl),e]
+	                           	| [$24bf: inc  l]
 	move.b	d3,(a0)                         	| [$24c0: ld   (hl),d]
 	rts                                    	| [$24c1: ret]
 
@@ -4300,32 +4272,27 @@ l_24ec:
 	jra	l_080b                             	| [$24f9: jp   $080B]
 
 l_24fc:
-	clr.b	d5                               	| [$24fc: ld   h,$00]
+	clr.w	d5                               	| [$24fc: ld   h,$00]
 	move.b	(0x09,a2),d0                    	| [$24fe: ld   a,(ix+$09)]
-	move.b	d0,d6                           	| [$2501: ld   l,a]
-	lea	l_90B0(a6),a1                      	| [$2502: ld   de,$90B0]
-	add.w	d5,a0                            	| [$2505: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$2506: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$2507: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$2508: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d3,a0                            	| [$2509: add  hl,de]
-	.error	"review d3 computation above"
+	move.b	d0,d5                           	| [$2501: ld   l,a]
+	move.w	#0x90B0,d3                      	| [$2502: ld   de,$90B0]
+	add.w	d5,d5                            	| [$2505: add  hl,hl]
+	add.w	d5,d5                            	| [$2506: add  hl,hl]
+	add.w	d5,d5                            	| [$2507: add  hl,hl]
+	add.w	d5,d5                            	| [$2508: add  hl,hl]
+	add.w	d3,d5                            	| [$2509: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,d1                           	| [$250a: ld   b,h]
 	move.b	d6,d2                           	| [$250b: ld   c,l]
-	move.b	d0,d6                           	| [$250c: ld   l,a]
-	clr.b	d5                               	| [$250d: ld   h,$00]
-	lea	l_9860(a6),a1                      	| [$250f: ld   de,$9860]
-	add.w	d5,a0                            	| [$2512: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$2513: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d3,a0                            	| [$2514: add  hl,de]
-	.error	"review d3 computation above"
-	exg	a1,a0                              	| [$2515: ex   de,hl]
+	clr.w	d5                               	| [$250d: ld   h,$00]
+	move.b	d0,d5                           	| [$250c: ld   l,a]
+	move.w	#0x9860,d3                      	| [$250f: ld   de,$9860]
+	add.w	d5,d5                            	| [$2512: add  hl,hl]
+	add.w	d5,d5                            	| [$2513: add  hl,hl]
+	add.w	d3,d5                            	| [$2514: add  hl,de]
+	exg	d3,d5                              	| [$2515: ex   de,hl]
+	LOAD_D3D4_FROM_D3_16
+	
 	jra	l_24ae                             	| [$2516: jr   $24AE]
 
 l_2518:
@@ -4430,13 +4397,12 @@ l_25ac:
 	ror.b	#3,d0                            	| [$25bc: rrca] * 3
 	and.b	#0x03,d0                         	| [$25bf: and  $03]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$25c1: rst  $08]
-	lea	l_8334,a0                          	| [$25c2: ld   hl,$8334]
+	lea	0x8334,a0                          	| [$25c2: ld   hl,$8334]
 	move.w	#-0x20,d3                       	| [$25c5: ld   de,$FFE0]
 	move.b	#0x16,d1                        	| [$25c8: ld   b,$16]
 l_25ca:
-	move.b	d0,(a0)                         	| [$25ca: ld   (hl),a]
+	jbsr	osd_w_videoram                         	| [$25ca: ld   (hl),a]
 	add.w	d3,a0                            	| [$25cb: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_25ca                             	| [$25cc: djnz $25CA]
 	rts                                    	| [$25ce: ret]
@@ -4498,11 +4464,10 @@ l_264d:
 l_2661:
 	subq.b	#1,(0x05,a2)                    	| [$2661: dec  (ix+$05)]
 	jeq	l_2683                             	| [$2664: jp   z,$2683]
-	btst.b	#0,(0x07,a2)                    	| [$2667: bit  0,(ix+$07)]
 	READ_ROM_BYTE	0x0120,d0                       	| [$266b: ld   a,($0120)]
 	move.b	d0,d1                           	| [$266e: ld   b,a]
+	btst.b	#0,(0x07,a2)                    	| [$2667: bit  0,(ix+$07)]
 	jeq	l_2673                             	| [$266f: jr   z,$2673]
-	.error	"review cpu flags (move.b,jeq)"
 	move.b	#0xFE,d1                        	| [$2671: ld   b,$FE]
 l_2673:
 	move.b	(0x01,a2),d0                    	| [$2673: ld   a,(ix+$01)]
@@ -4718,16 +4683,14 @@ l_275b:
 	move.b	#0x40,(a0)                      	| [$27d3: ld   (hl),$40]
 	move.w	#0x0008,d3                      	| [$27d5: ld   de,$0008]
 	add.w	d3,a0                            	| [$27d8: add  hl,de]
-	.error	"review d3 computation above"
 	move.b	(0x09,a2),d0                    	| [$27d9: ld   a,(ix+$09)]
 	move.b	d0,(a0)                         	| [$27dc: ld   (hl),a]
 	move.w	#0x0003,d3                      	| [$27dd: ld   de,$0003]
 	add.w	d3,a0                            	| [$27e0: add  hl,de]
 	.error	"review d3 computation above"
 	move.b	(0x0c,a2),d0                    	| [$27e1: ld   a,(ix+$0c)]
-	move.b	d0,(a0)                         	| [$27e4: ld   (hl),a]
-	addq.w	#1,a0                           	| [$27e5: inc  l]
-	.error	"review inc register d6 or a0"
+	move.b	d0,(a0)+                         	| [$27e4: ld   (hl),a]
+	                           	| [$27e5: inc  l]
 	move.b	(0x0d,a2),d0                    	| [$27e6: ld   a,(ix+$0d)]
 	move.b	d0,(a0)                         	| [$27e9: ld   (hl),a]
 	lea	l_9860(a6),a1                      	| [$27ea: ld   de,$9860]
@@ -4741,16 +4704,12 @@ l_275b:
 	.error	"review d3 computation above"
 	exg	a1,a0                              	| [$27f5: ex   de,hl]
 
-	move.l	a3,-(sp)                        	| [$27f6: push iy]
-	move.l	(sp)+,a0                        	| [$27f8: pop  hl]
+	move.l	a3,a0                        	| [$27f6: push iy]
+	                        	| [$27f8: pop  hl]
 	jbsr	ldi                               	| [$27f9: ldi]
-	.error	"review special instruction inputs"
 	jbsr	ldi                               	| [$27fb: ldi]
-	.error	"review special instruction inputs"
 	jbsr	ldi                               	| [$27fd: ldi]
-	.error	"review special instruction inputs"
 	jbsr	ldi                               	| [$27ff: ldi]
-	.error	"review special instruction inputs"
 	clr.b	(0x00,a2)                        	| [$2801: ld   (ix+$00),$00]
 	clr.b	(0x00,a3)                        	| [$2805: ld   (iy+$00),$00]
 	rts                                    	| [$2809: ret]
@@ -4913,14 +4872,11 @@ l_2920:
 	btst.b	#0,(0x0b,a2)                    	| [$292f: bit  0,(ix+$0b)]
 	jeq	l_2936                             	| [$2933: jr   z,$2936]
 	addq.w	#1,a1                           	| [$2935: inc  e]
-	.error	"review inc register d4 or a1"
 l_2936:
 	addq.w	#1,a1                           	| [$2936: inc  e]
-	.error	"review inc register d4 or a1"
 	btst.b	#0,(0x0f,a2)                    	| [$2937: bit  0,(ix+$0f)]
 	jeq	l_293e                             	| [$293b: jr   z,$293E]
 	addq.w	#1,a1                           	| [$293d: inc  e]
-	.error	"review inc register d4 or a1"
 l_293e:
 	move.b	(a1),d0                         	| [$293e: ld   a,(de)]
 	move.b	d0,d5                           	| [$293f: ld   h,a]
@@ -5324,22 +5280,17 @@ l_2c1d:
 	lea	l_9330(a6),a0                      	| [$2c1e: ld   hl,$9330]
 	move.w	#0x0010,d3                      	| [$2c21: ld   de,$0010]
 	jbsr	exx                               	| [$2c24: exx]
-	.error	"review special instruction inputs"
 	lea	l_9918(a6),a0                      	| [$2c25: ld   hl,$9918]
 	move.w	#0x0004,d3                      	| [$2c28: ld   de,$0004]
 	move.b	d0,d1                           	| [$2c2b: ld   b,a]
 l_2c2c:
 	jbsr	exx                               	| [$2c2c: exx]
-	.error	"review special instruction inputs"
 	move.b	(a0),d0                         	| [$2c2d: ld   a,(hl)]
 	                               	| [$2c2e: and  a]
 	jeq	l_2c55                             	| [$2c2f: jr   z,$2C55]
 	add.w	d3,a0                            	| [$2c31: add  hl,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$2c32: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a0                            	| [$2c33: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_2c2c                             	| [$2c34: djnz $2C2C]
 	rts                                    	| [$2c36: ret] [uncovered]
@@ -5354,15 +5305,13 @@ l_2c55:
 
 	move.l	a3,-(sp)                        	| [$2c63: push iy]
 
-	move.l	a0,-(sp)                        	| [$2c65: push hl]
-	move.l	(sp)+,a2                        	| [$2c66: pop  ix]
+	move.l	a0,a2                        	| [$2c65: push hl]
+	                        	| [$2c66: pop  ix]
 	jbsr	exx                               	| [$2c68: exx]
-	.error	"review special instruction inputs"
 
-	move.l	a0,-(sp)                        	| [$2c69: push hl]
-	move.l	(sp)+,a3                        	| [$2c6a: pop  iy]
+	move.l	a0,a3                        	| [$2c69: push hl]
+	                        	| [$2c6a: pop  iy]
 	jbsr	exx                               	| [$2c6c: exx]
-	.error	"review special instruction inputs"
 	move.b	d1,(0x03,a3)                    	| [$2c6d: ld   (iy+$03),b]
 	move.b	d2,(0x02,a2)                    	| [$2c70: ld   (ix+$02),c]
 	move.b	d3,(0x00,a3)                    	| [$2c73: ld   (iy+$00),d]
@@ -5386,9 +5335,9 @@ l_2c55:
 	roxr.b	#1,d4                           	| [$2c97: rr   e]
 	lsr.b	#1,d3                            	| [$2c99: srl  d]
 	roxr.b	#1,d4                           	| [$2c9b: rr   e]
-	tst.b	d0                               	| [$2c9d: and  a]
+	LOAD_D3_16_FROM_D3D4                               	| [$2c9d: and  a]
+	LOAD_D5_16_FROM_D5D6
 	sub.w	d3,d5                            	| [$2c9e: sbc  hl,de]
-	.error	"review compared/subbed registers"
 	move.b	l_943C(a6),d0                   	| [$2ca0: ld   a,($943C)]
 	and.b	#0x0F,d0                         	| [$2ca3: and  $0F]
 	cmp.b	#0x0F,d0                         	| [$2ca5: cp   $0F]
@@ -5418,28 +5367,23 @@ l_2ccc:
 	move.b	d0,d3                           	| [$2ccf: ld   d,a]
 	CLEAR_XC_FLAGS                         	| [$2cd0: xor  a]
 	clr.b	d0                               	| [$2cd0: xor  a]
+	LOAD_D3_16_FROM_D3D4                               	| [$2c9d: and  a]
 l_2cd1:
-	sub.w	d3,d5                            	| [$2cd1: sbc  hl,de]
-	.error	"review compared/subbed registers"
 	addq.b	#1,d0                           	| [$2cd3: inc  a]
+	sub.w	d3,d5                            	| [$2cd1: sbc  hl,de]
 	jcc	l_2cd1                             	| [$2cd4: jr   nc,$2CD1]
 	move.b	d0,(0x05,a2)                    	| [$2cd6: ld   (ix+$05),a]
 	move.b	d0,(0x09,a2)                    	| [$2cd9: ld   (ix+$09),a]
-	add.w	d5,a0                            	| [$2cdc: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$2cdd: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$2cde: add  hl,hl]
-	.error	"review d5 computation above"
-	add.w	d5,a0                            	| [$2cdf: add  hl,hl]
-	.error	"review d5 computation above"
-	CLEAR_XC_FLAGS                         	| [$2ce0: xor  a]
+	add.w	d5,d5                            	| [$2cdc: add  hl,hl]
+	add.w	d5,d5                            	| [$2cdd: add  hl,hl]
+	add.w	d5,d5                            	| [$2cde: add  hl,hl]
+	add.w	d5,d5                            	| [$2cdf: add  hl,hl]
+	                         	| [$2ce0: xor  a]
 	clr.b	d0                               	| [$2ce0: xor  a]
 l_2ce1:
-	sub.w	d3,d5                            	| [$2ce1: sbc  hl,de]
-	.error	"review compared/subbed registers"
 	addq.b	#1,d0                           	| [$2ce3: inc  a]
-	jcc	l_2ce1                             	| [$2ce4: jr   nc,$2CE1]
+	sub.w	d3,d5                            	| [$2ce1: sbc  hl,de]
+	jcc	l_2ce1                             	    | [$2ce4: jr   nc,$2CE1]
 	move.b	d0,(0x06,a2)                    	| [$2ce6: ld   (ix+$06),a]
 	move.b	d0,(0x0a,a2)                    	| [$2ce9: ld   (ix+$0a),a]
 	move.b	l_905E(a6),d0                   	| [$2cec: ld   a,($905E)]
@@ -5535,23 +5479,23 @@ l_2d8e:
 	jbsr	load_rom_pointer_0010                            	| [$2d9a: rst  $10]
 	movem.w	d3/d4,-(sp)                    	| [$2d9b: push de]
 	move.l	a1,-(sp)                        	| [$2d9b: push de]
+	moveq	#0,d0
 	move.b	(0x01,a2),d0                    	| [$2d9c: ld   a,(ix+$01)]
 	add.b	#0x08,d0                         	| [$2d9f: add  a,$08]
 	ror.b	#4,d0                            	| [$2da1: rrca] * 4
 	and.b	#0x0E,d0                         	| [$2da5: and  $0E]
 	LEA_ROM	0x3B71,a0                          	| [$2da7: ld   hl,$3B71]
-	add.b	d6,d0                            	| [$2daa: add  a,l]
-	move.b	d0,d6                           	| [$2dab: ld   l,a]
-	jcc	l_2daf                             	| [$2dac: jr   nc,$2DAF]
-	.error	"review cpu flags (move.b,jcc)"
-	addq.b	#1,d5                           	| [$2dae: inc  h] [uncovered]
+	add.w	d0,a0                           	| [$2daa: add  a,l]
+	                           	| [$2dab: ld   l,a]
+	                          	| [$2dac: jr   nc,$2DAF]
+	                           	| [$2dae: inc  h] [uncovered]
 l_2daf:
-	move.b	(a0),d4                         	| [$2daf: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$2db0: inc  hl]
+	move.b	(a0)+,d4                         	| [$2daf: ld   e,(hl)]
+	                           	| [$2db0: inc  hl]
 	move.b	(a0),d3                         	| [$2db1: ld   d,(hl)]
 	move.l	(sp)+,a0                        	| [$2db2: pop  hl]
+	LOAD_D3_16_FROM_D3D4
 	add.w	d3,a0                            	| [$2db3: add  hl,de]
-	.error	"review d3 computation above"
 l_2db4:
 	move.b	(0x03,a3),d0                    	| [$2db4: ld   a,(iy+$03)]
 	add.b	#0x08,d0                         	| [$2db7: add  a,$08]
@@ -5628,13 +5572,12 @@ l_2e10:
 	CLEAR_XC_FLAGS                         	| [$2e31: xor  a]
 	clr.b	d0                               	| [$2e31: xor  a]
 l_2e32:
-	add.b	(a0),d0                          	| [$2e32: add  a,(hl)]
-	addq.w	#1,a0                           	| [$2e33: inc  hl]
+	add.b	(a0)+,d0                          	| [$2e32: add  a,(hl)]
+	                           	| [$2e33: inc  hl]
 	subq.b	#1,d1                           	| [...]
 	jne	l_2e32                             	| [$2e34: djnz $2E32]
 	sub.b	#0x8C,d0                         	| [$2e36: sub  $8C]
 	jne	l_0000                             	| [$2e38: jp   nz,$0000]
-	CLEAR_XC_FLAGS                         	| [$2e3b: xor  a]
 	clr.b	d0                               	| [$2e3b: xor  a]
 	move.b	d0,l_93AD(a6)                   	| [$2e3c: ld   ($93AD),a]
 	move.b	d0,l_924E(a6)                   	| [$2e3f: ld   ($924E),a]
@@ -5805,13 +5748,12 @@ l_2fff:
 	clr.b	(0x06,a3)                        	| [$300b: ld   (iy+$06),$00]
 	rts                                    	| [$300f: ret]
 
-l_3010:
+clear_sprite_mem_blocks_3010:
 	lea	sprite_shadow_ram_9800(a6),a0      	| [$3010: ld   hl,sprite_shadow_ram_9800]
 	lea	l_9801(a6),a1                      	| [$3013: ld   de,$9801]
-	LEA_ROM	0x07FF,a4                          	| [$3016: ld   bc,$07FF]
+	move.w	#0x07FF,d1                          	| [$3016: ld   bc,$07FF]
 	clr.b	(a0)                             	| [$3019: ld   (hl),$00]
 	jbsr	ldir                              	| [$301b: ldir]
-	.error	"review special instruction inputs"
                        	| [$301d: ld   (watchdog_C000),a]
 	jra	clear_sprites_05d7                             	| [$3020: jp   $05D7]
 
@@ -5921,15 +5863,15 @@ l_311b:
 	and.b	#0x0F,d0                         	| [$3125: and  $0F]
 	jbsr	load_rom_pointer_0010                            	| [$3127: rst  $10]
 	exg	a1,a0                              	| [$3128: ex   de,hl]
+	moveq	#0,d0
 	move.b	(0x00,a2),d0                    	| [$3129: ld   a,(ix+$00)]
 	ror.b	#3,d0                            	| [$312c: rrca] * 3
 	and.b	#0x06,d0                         	| [$312f: and  $06]
-	add.b	d6,d0                            	| [$3131: add  a,l]
-l_3132:
-	move.b	d0,d6                           	| [$3132: ld   l,a]
-	jcc	l_3136                             	| [$3133: jr   nc,$3136]
-	.error	"review cpu flags (move.b,jcc)"
-	addq.b	#1,d5                           	| [$3135: inc  h] [uncovered]
+	add.w	d0,a0                            	| [$3131: add  a,l]
+
+	                         	| [$3132: ld   l,a]
+	                        	| [$3133: jr   nc,$3136]
+	                         	| [$3135: inc  h] [uncovered]
 l_3136:
 	move.b	(a0),d0                         	| [$3136: ld   a,(hl)]
 	move.b	d0,(0x01,a3)                    	| [$3137: ld   (iy+$01),a]
@@ -6041,40 +5983,32 @@ l_3280:
 	move.b	(a0),d4                         	| [$3292: ld   e,(hl)]
 	addq.w	#1,a0                           	| [$3293: inc  hl]
 	move.b	(a0),d3                         	| [$3294: ld   d,(hl)]
+	BREAKPOINT	"d3/D4/A1 val 5989"
 	exg	a1,a0                              	| [$3295: ex   de,hl]
 	move.w	#0x0010,d3                      	| [$3296: ld   de,$0010]
 	jbsr	exx                               	| [$3299: exx]
-	.error	"review special instruction inputs"
 	move.l	(sp)+,a0                        	| [$329a: pop  hl]
 	move.w	#0x0004,d3                      	| [$329b: ld   de,$0004]
 	move.b	#0x05,d1                        	| [$329e: ld   b,$05]
 l_32a0:
 	jbsr	exx                               	| [$32a0: exx]
-	.error	"review special instruction inputs"
 	move.b	(a0),d0                         	| [$32a1: ld   a,(hl)]
 	addq.b	#1,d0                           	| [$32a2: inc  a]
 	jeq	l_32ac                             	| [$32a3: jp   z,$32AC]
 	add.w	d3,a0                            	| [$32a6: add  hl,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$32a7: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a0                            	| [$32a8: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_32a0                             	| [$32a9: djnz $32A0]
 	rts                                    	| [$32ab: ret]
 
 l_32ac:
 	STORE_RAM_POINTER	a0,l_946B(a6)        	| [$32ac: ld   ($946B),hl]
-	.error	"review check if source is in RAM"
 	jbsr	exx                               	| [$32af: exx]
-	.error	"review special instruction inputs"
 	STORE_RAM_POINTER	a0,l_946D(a6)        	| [$32b0: ld   ($946D),hl]
-	.error	"review check if source is in RAM"
 	lea	l_9010(a6),a0                      	| [$32b3: ld   hl,$9010]
 	move.w	#0x0010,d3                      	| [$32b6: ld   de,$0010]
 	jbsr	exx                               	| [$32b9: exx]
-	.error	"review special instruction inputs"
 	lea	l_9810(a6),a0                      	| [$32ba: ld   hl,$9810]
 	move.w	#0x0008,d3                      	| [$32bd: ld   de,$0008]
 	move.b	l_924E(a6),d0                   	| [$32c0: ld   a,($924E)]
@@ -6096,27 +6030,21 @@ l_32d7:
 	move.b	d0,d1                           	| [$32e1: ld   b,a]
 l_32e2:
 	jbsr	exx                               	| [$32e2: exx]
-	.error	"review special instruction inputs"
 	move.b	(a0),d0                         	| [$32e3: ld   a,(hl)]
 	                               	| [$32e4: and  a]
 	jeq	l_32ee                             	| [$32e5: jp   z,$32EE]
 	add.w	d3,a0                            	| [$32e8: add  hl,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$32e9: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a0                            	| [$32ea: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_32e2                             	| [$32eb: djnz $32E2]
 	rts                                    	| [$32ed: ret] [uncovered]
 
 l_32ee:
 
-	move.l	a0,-(sp)                        	| [$32ee: push hl]
-	move.l	(sp)+,a3                        	| [$32ef: pop  iy]
+	move.l	a0,a3                        	| [$32ee: push hl]
+	                        	| [$32ef: pop  iy]
 	LOAD_RAM_POINTER	l_946B(a6),a2         	| [$32f1: ld   ix,($946B)]
-	.error	"review check if pointed value is in RAM
-"
 	subq.b	#1,(0x00,a3)                    	| [$32f5: dec  (iy+$00)]
 	move.b	#0xC0,(0x01,a3)                 	| [$32f8: ld   (iy+$01),$C0]
 	clr.b	(0x06,a3)                        	| [$32fc: ld   (iy+$06),$00]
@@ -6130,28 +6058,20 @@ l_32ee:
 	move.b	d0,(0x0d,a3)                    	| [$3317: ld   (iy+$0d),a]
 	clr.b	(0x00,a2)                        	| [$331a: ld   (ix+$00),$00]
 	jbsr	exx                               	| [$331e: exx]
-	.error	"review special instruction inputs"
 	exg	a1,a0                              	| [$331f: ex   de,hl]
 	LOAD_RAM_POINTER	l_946D(a6),a0         	| [$3320: ld   hl,($946D)]
-	.error	"review check if pointed value is in RAM
-"
+
 	move.b	(a0),d0                         	| [$3323: ld   a,(hl)]
-	move.b	d0,(a1)                         	| [$3324: ld   (de),a]
-	clr.b	(a0)                             	| [$3325: ld   (hl),$00]
+	move.b	d0,(a1)+                         	| [$3324: ld   (de),a]
+	clr.b	(a0)+                             	| [$3325: ld   (hl),$00]
 	addq.w	#1,a0                           	| [$3327: inc  l]
-	.error	"review inc register d6 or a0"
 	addq.w	#1,a1                           	| [$3328: inc  e]
-	.error	"review inc register d4 or a1"
 	jbsr	ldi                               	| [$3329: ldi]
-	.error	"review special instruction inputs"
 	jbsr	ldi                               	| [$332b: ldi]
-	.error	"review special instruction inputs"
 	jbsr	ldi                               	| [$332d: ldi]
-	.error	"review special instruction inputs"
 	move.b	l_9605(a6),d0                   	| [$332f: ld   a,($9605)]
 l_3332:
 	cmp.b	#0x03,d0                         	| [$3332: cp   $03]
-l_3334:
 	jcc	l_333a                             	| [$3334: jr   nc,$333A]
 	lea	l_931E(a6),a0                      	| [$3336: ld   hl,$931E] [uncovered]
 	addq.b	#1,(a0)                         	| [$3339: inc  (hl)] [uncovered]
@@ -6275,11 +6195,8 @@ l_3567:
 	move.b	d0,l_9602(a6)                   	| [$356f: ld   ($9602),a]
 	jbsr	l_3581                            	| [$3572: call $3581]
 	add.w	d3,a2                            	| [$3575: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3577: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a3                            	| [$3579: add  iy,de]
-	.error	"review d3 computation above"
 	move.l	(sp)+,a4                        	| [$357b: pop  bc]
 	movem.w	(sp)+,d1/d2                    	| [$357b: pop  bc]
 	subq.b	#1,d1                           	| [...]
@@ -6305,7 +6222,6 @@ l_3581:
 	clr.b	(0x02,a3)                        	| [$35a5: ld   (iy+$02),$00]
 	addq.w	#1,a0                           	| [$35a9: inc  hl]
 	jbsr	exx                               	| [$35aa: exx]
-	.error	"review special instruction inputs"
 	move.b	(0x09,a2),d0                    	| [$35ab: ld   a,(ix+$09)]
 	LEA_ROM	0x3760,a0                          	| [$35ae: ld   hl,$3760]
 	add.b	d0,d0                            	| [$35b1: add  a,a]
@@ -6317,7 +6233,6 @@ l_3581:
 	lea	l_913E(a6),a0                      	| [$35bb: ld   hl,$913E]
 	addq.b	#1,(a0)                         	| [$35be: inc  (hl)]
 	jbsr	exx                               	| [$35bf: exx]
-	.error	"review special instruction inputs"
 	clr.b	(0x0a,a2)                        	| [$35c0: ld   (ix+$0a),$00]
 	move.b	#0xFF,(0x00,a2)                 	| [$35c4: ld   (ix+$00),$FF]
 	rts                                    	| [$35c8: ret]
@@ -6335,10 +6250,8 @@ l_35d4:
 	rts                                    	| [$35d6: ret  nz] [...]
 0:
 	add.w	d3,a0                            	| [$35d7: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_35d4                             	| [$35d8: djnz $35D4]
-	CLEAR_XC_FLAGS                         	| [$35da: xor  a]
 	clr.b	d0                               	| [$35da: xor  a]
 	move.b	d0,l_902E(a6)                   	| [$35db: ld   ($902E),a]
 	rts                                    	| [$35de: ret]
@@ -6347,7 +6260,6 @@ l_35df:
 	move.b	l_91AE(a6),d0                   	| [$35df: ld   a,($91AE)]
 	                               	| [$35e2: and  a]
 	jne	l_361b                             	| [$35e3: jr   nz,$361B]
-	CLEAR_XC_FLAGS                         	| [$35e5: xor  a]
 	clr.b	d0                               	| [$35e5: xor  a]
 	move.b	d0,l_9601(a6)                   	| [$35e6: ld   ($9601),a]
 	move.b	d0,l_922E(a6)                   	| [$35e9: ld   ($922E),a]
@@ -6562,34 +6474,28 @@ l_3909:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$390d: ret  nz] [...]
 0:
-	move.w	#-0x20,d3                       	| [$390e: ld   de,$FFE0]
-	lea	l_869B,a0                          	| [$3911: ld   hl,$869B]
-	CLEAR_XC_FLAGS                         	| [$3914: xor  a]
-	clr.b	d0                               	| [$3914: xor  a]
-	add.b	(a0),d0                          	| [$3915: add  a,(hl)]
-	sub.b	#0xD7,d0                         	| [$3916: sub  $D7]
-	add.w	d3,a0                            	| [$3918: add  hl,de]
-	.error	"review d3 computation above"
-	add.b	(a0),d0                          	| [$3919: add  a,(hl)]
-	sub.b	#0xB1,d0                         	| [$391a: sub  $B1]
-	add.w	d3,a0                            	| [$391c: add  hl,de]
-	.error	"review d3 computation above"
-	add.b	(a0),d0                          	| [$391d: add  a,(hl)]
-	sub.b	#0x47,d0                         	| [$391e: sub  $47]
-	jne	l_07ff                             	| [$3920: jp   nz,$07FF]
-	LOAD_RAM_POINTER	l_37AA,a2             	| [$3923: ld   ix,($37AA)]
-	.error	"review check if pointed value is in RAM
-"
-	LOAD_RAM_POINTER	l_37AD,a3             	| [$3927: ld   iy,($37AD)]
-	.error	"review check if pointed value is in RAM
-"
-	move.b	ixl,d0                          	| [$392b: ld   a,ixl]
-	add.b	#ixh,d0                          	| [$392d: add  a,ixh]
-	add.b	d6,d0                            	| [$392f: add  a,l]
-	addq.b	#0x00,d0                        	| [$3930: add  a,$00]
-	nop                                    	| [$3932: nop]
-	nop                                    	| [$3933: nop]
-	nop                                    	| [$3934: nop]
+*	RAM checksum
+*	move.w	#-0x20,d3                       	| [$390e: ld   de,$FFE0]
+*	lea	l_869B,a0                          	| [$3911: ld   hl,$869B]
+*	clr.b	d0                               	| [$3914: xor  a]
+*	add.b	(a0),d0                          	| [$3915: add  a,(hl)]
+*	sub.b	#0xD7,d0                         	| [$3916: sub  $D7]
+*	add.w	d3,a0                            	| [$3918: add  hl,de]
+*	add.b	(a0),d0                          	| [$3919: add  a,(hl)]
+*	sub.b	#0xB1,d0                         	| [$391a: sub  $B1]
+*	add.w	d3,a0                            	| [$391c: add  hl,de]
+*	add.b	(a0),d0                          	| [$391d: add  a,(hl)]
+*	sub.b	#0x47,d0                         	| [$391e: sub  $47]
+*	jne	l_07ff                             	| [$3920: jp   nz,$07FF]
+*	LOAD_RAM_POINTER	l_37AA,a2             	| [$3923: ld   ix,($37AA)]
+*	LOAD_RAM_POINTER	l_37AD,a3             	| [$3927: ld   iy,($37AD)]
+*	move.b	ixl,d0                          	| [$392b: ld   a,ixl]
+*	add.b	#ixh,d0                          	| [$392d: add  a,ixh]
+*	add.b	d6,d0                            	| [$392f: add  a,l]
+*	addq.b	#0x00,d0                        	| [$3930: add  a,$00]
+*	nop                                    	| [$3932: nop]
+*	nop                                    	| [$3933: nop]
+*	nop                                    	| [$3934: nop]
 	jra	l_080b                             	| [$3935: jp   $080B]
 
 l_3938:
@@ -6616,15 +6522,10 @@ l_3941:
 	move.b	d6,(0x01,a3)                    	| [$395d: ld   (iy+$01),l]
 l_3960:
 	add.w	d3,a3                            	| [$3960: add  iy,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3962: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3964: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3966: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3968: add  ix,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_3941                             	| [$396a: djnz $3941]
 	rts                                    	| [$396c: ret]
@@ -6636,12 +6537,10 @@ update_starfield_39B1:
 	move.w	#0x0004,d1                      	| [$39bc: ld   bc,$0004]
 	move.b	#0x80,d5                        	| [$39bf: ld   h,$80]
 	jbsr	exx                               	| [$39c1: exx]
-	.error	"review special instruction inputs"
 	READ_ROM_BYTE	0x00A3,d0                       	| [$39c2: ld   a,($00A3)]
 	move.b	d0,d1                           	| [$39c5: ld   b,a]
 l_39c6:
 	jbsr	exx                               	| [$39c6: exx]
-	.error	"review special instruction inputs"
 	move.b	(0x00,a2),d0                    	| [$39c7: ld   a,(ix+$00)]
 	                               	| [$39ca: and  a]
 	jne	l_39ef                             	| [$39cb: jp   nz,$39EF]
@@ -6663,11 +6562,8 @@ l_39c6:
 	move.b	#0x26,(0x01,a3)                 	| [$39eb: ld   (iy+$01),$26]
 l_39ef:
 	add.w	d1,a3                            	| [$39ef: add  iy,bc]
-	.error	"review d1 computation above"
 	add.w	d3,a2                            	| [$39f1: add  ix,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$39f3: exx]
-	.error	"review special instruction inputs"
 	subq.b	#1,d1                           	| [...]
 	jne	l_39c6                             	| [$39f4: djnz $39C6]
 	rts                                    	| [$39f6: ret]
@@ -6695,16 +6591,13 @@ l_3a3c:
 	move.b	d6,(0x01,a2)                    	| [$3a5d: ld   (ix+$01),l]
 	move.b	d6,(0x21,a2)                    	| [$3a60: ld   (ix+$21),l]
 	add.w	d3,a3                            	| [$3a63: add  iy,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3a65: add  ix,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_3a3c                             	| [$3a67: djnz $3A3C]
 	rts                                    	| [$3a69: ret]
 
 l_3a6a:
 	jbsr	exx                               	| [$3a6a: exx]
-	.error	"review special instruction inputs"
 	move.b	l_9400(a6),d0                   	| [$3a6b: ld   a,($9400)]
 	move.b	d0,d5                           	| [$3a6e: ld   h,a]
 	ror.b	#3,d0                            	| [$3a6f: rrca] * 3
@@ -6713,7 +6606,6 @@ l_3a6a:
 	and.b	#0x0F,d0                         	| [$3a76: and  $0F]
 	add.b	#0xEC,d0                         	| [$3a78: add  a,$EC]
 	jbsr	exx                               	| [$3a7a: exx]
-	.error	"review special instruction inputs"
 	rts                                    	| [$3a7b: ret]
 
 l_3aae:
@@ -6732,26 +6624,18 @@ l_3ab8:
 l_3ac7:
 	jbsr	l_3ae4                            	| [$3ac7: call $3AE4]
 	add.w	d3,a3                            	| [$3aca: add  iy,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3acc: add  ix,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_3ac7                             	| [$3ace: djnz $3AC7]
 	add.w	d3,a2                            	| [$3ad0: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3ad2: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a3                            	| [$3ad4: add  iy,de]
-	.error	"review d3 computation above"
 	add.w	d3,a3                            	| [$3ad6: add  iy,de]
-	.error	"review d3 computation above"
 	move.b	#0x08,d1                        	| [$3ad8: ld   b,$08]
 l_3ada:
 	jbsr	l_3ae4                            	| [$3ada: call $3AE4]
 	add.w	d3,a2                            	| [$3add: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a3                            	| [$3adf: add  iy,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_3ada                             	| [$3ae1: djnz $3ADA]
 	rts                                    	| [$3ae3: ret]
@@ -6778,15 +6662,10 @@ l_3b01:
 	clr.b	(0x02,a3)                        	| [$3b0e: ld   (iy+$02),$00]
 l_3b12:
 	add.w	d3,a3                            	| [$3b12: add  iy,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3b14: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3b16: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3b18: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3b1a: add  ix,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_3b01                             	| [$3b1c: djnz $3B01]
 	rts                                    	| [$3b1e: ret]
@@ -6803,15 +6682,10 @@ l_3b3a:
 	clr.b	(0x00,a3)                        	| [$3b40: ld   (iy+$00),$00]
 l_3b44:
 	add.w	d3,a3                            	| [$3b44: add  iy,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3b46: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3b48: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3b4a: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$3b4c: add  ix,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_3b3a                             	| [$3b4e: djnz $3B3A]
 	rts                                    	| [$3b50: ret]
@@ -6892,27 +6766,30 @@ l_4062:
 
 l_4073:
 	READ_ROM_BYTE	0x0661,d0                       	| [$4073: ld   a,($0661)]
+	moveq	#0,d1
 	move.b	d0,d1                           	| [$4076: ld   b,a]
+	subq	#1,d1		| for dbf
 	CLEAR_XC_FLAGS                         	| [$4077: xor  a]
 	clr.b	d0                               	| [$4077: xor  a]
 l_4078:
-	addx.w	d5,a0                           	| [$4078: adc  hl,hl]
-	.error	"review cpu X flag"
-	.error	"review {source} computation above"
+	LOAD_D3_16_FROM_D3D4
+	LOAD_D5D6_FROM_D5_16
+	add.w	d5,d5                           	| [$4078: adc  hl,hl]
+	scs		d7
+	LOAD_D5D6_FROM_D5_16
+	LOAD_D3D4_FROM_D3_16
 	move.b	d5,d0                           	| [$407a: ld   a,h]
-	jcs	l_4080                             	| [$407b: jr   c,$4080]
-	.error	"review cpu flags (move.b,jcs)"
+	tst.b	d7
+	jne	l_4080                             	| [$407b: jr   c,$4080]
 	cmp.b	d4,d0                            	| [$407d: cp   e]
 	jcs	l_4083                             	| [$407e: jr   c,$4083]
 l_4080:
 	sub.b	d4,d0                            	| [$4080: sub  e]
 	move.b	d0,d5                           	| [$4081: ld   h,a]
 	CLEAR_XC_FLAGS                         	| [$4082: xor  a]
-	clr.b	d0                               	| [$4082: xor  a]
 l_4083:
 	INVERT_XC_FLAGS                        	| [$4083: ccf]
-	subq.b	#1,d1                           	| [...]
-	jne	l_4078                             	| [$4084: djnz $4078]
+	dbf	d1,l_4078                             	| [$4084: djnz $4078]
 	move.b	d6,d1                           	| [$4086: ld   b,l]
 	rts                                    	| [$4087: ret]
 
@@ -7062,13 +6939,12 @@ l_42a3:
 
 	move.b	#0x0E,d1                        	| [$42dc: ld   b,$0E]
 	move.w	#0x001F,d3                      	| [$42de: ld   de,$001F]
-	lea	l_869E,a0                          	| [$42e1: ld   hl,$869E]
+	lea	0x869E,a0                          	| [$42e1: ld   hl,$869E]
 l_42e4:
-	move.b	#0x83,(a0)                      	| [$42e4: ld   (hl),$83]
+	WRITE_VIDEORAM	0x83                      	| [$42e4: ld   (hl),$83]
 	addq.w	#1,a0                           	| [$42e6: inc  hl]
-	move.b	#0x83,(a0)                      	| [$42e7: ld   (hl),$83]
+	WRITE_VIDEORAM	0x83                      	| [$42e7: ld   (hl),$83]
 	add.w	d3,a0                            	| [$42e9: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_42e4                             	| [$42ea: djnz $42E4]
 	move.b	lives_9600(a6),d0               	| [$42ec: ld   a,(lives_9600)]
@@ -7182,7 +7058,6 @@ l_4516:
 	and.b	#0x01,d0                         	| [$4557: and  $01]
 	jeq	l_455c                             	| [$4559: jr   z,$455C]
 	addq.w	#1,a0                           	| [$455b: inc  l]
-	.error	"review inc register d6 or a0"
 l_455c:
 	move.b	(a0),d0                         	| [$455c: ld   a,(hl)]
 	move.b	d0,(0x03,a3)                    	| [$455d: ld   (iy+$03),a]
@@ -7194,8 +7069,8 @@ l_455c:
 	clr.b	d0                               	| [$456c: xor  a]
 	move.b	#0x80,d1                        	| [$456d: ld   b,$80]
 l_456f:
-	sub.b	(a0),d0                          	| [$456f: sub  (hl)]
-	addq.w	#1,a0                           	| [$4570: inc  hl]
+	sub.b	(a0)+,d0                          	| [$456f: sub  (hl)]
+	                           	| [$4570: inc  hl]
 	subq.b	#1,d1                           	| [...]
 	jne	l_456f                             	| [$4571: djnz $456F]
 	add.b	#0x9F,d0                         	| [$4573: add  a,$9F]
@@ -8325,7 +8200,7 @@ clear_ram_57dc:
 	clr.b	(a0)                             	| [$57e5: ld   (hl),$00]
 	jbsr	ldir                              	| [$57e7: ldir]
                        	| [$57e9: ld   (watchdog_C000),a]
-	jra	l_3010                             	| [$57ec: jp   $3010]
+	jra	clear_sprite_mem_blocks_3010                             	| [$57ec: jp   $3010]
 
 * clear screen #2
 l_5854:

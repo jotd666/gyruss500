@@ -693,6 +693,7 @@ update_sprites_0244:
 0502: AF          xor  a
 0503: 32 00 C0    ld   (watchdog_C000),a
 0506: 47          ld   b,a
+; ROM checksum
 0507: 21 10 0F    ld   hl,$0F10
 050A: 86          add  a,(hl)
 050B: 23          inc  hl

@@ -91,6 +91,16 @@
 	move.l	d7,-(a7)
 	move.l	\src,d7
 	sub.l	a6,d7
+	.ifndef	RELEASE
+	jpl		111f
+	add.l	a6,d7
+	BREAKPOINT	"D7 < not in RAM!"
+111:
+	cmp.w	#0x1000,d7
+	jcs		112f
+	BREAKPOINT	"D7 > not in RAM!"	
+112:
+	.endif
 	add.l	#0x9000,d7
 	move.b	d7,\dest
 	rol.w	#8,d7
@@ -98,6 +108,25 @@
 	move.l	(a7)+,d7
 	.endm
 
+	.macro	STORE_VIDEO_POINTER	src,dest
+	move.l	d7,-(a7)
+	move.l	\src,d7
+	move.b	d7,\dest
+	rol.w	#8,d7
+	move.b	d7,1+\dest
+	move.l	(a7)+,d7
+	.endm
+	
+	.macro	LOAD_VIDEO_POINTER  src,dest
+	move.l	d7,-(a7)
+	moveq	#0,d7
+	move.b	1+\src,d7
+	rol.w	#8,d7
+	move.b	\src,d7
+	move.l	d7,\dest
+	move.l	(a7)+,d7
+	.endm
+	
 	.macro	LOAD_RAM_POINTER  src,dest
 	move.l	d7,-(a7)
 	moveq	#0,d7
@@ -128,6 +157,47 @@
 	lea		(a5,\offset),\dest
 	.endm
 	
+	.macro	BSET_Ax	bitnum,dreg,areg
+	move.l	\areg,\dreg
+	bset	#\bitnum,\dreg
+	move.l	\dreg,\areg
+	.endm
+	
+	.macro	BCLR_Ax	bitnum,dreg,areg
+	move.l	\areg,\dreg
+	bclr	#\bitnum,\dreg
+	move.l	\dreg,\areg
+	.endm
+	
+	.macro	BSET_A1	bitnum
+	BSET_Ax	\bitnum,d3,a1
+	.endm
+	
+	.macro	BCLR_A1	bitnum
+	BCLR_Ax	\bitnum,d3,a1
+	.endm
+	
+	.macro	BSET_A0	bitnum
+	BSET_Ax	\bitnum,d5,a0
+	.endm
+	
+	.macro	BCLR_A0	bitnum
+	BCLR_Ax	\bitnum,d5,a0
+	.endm
+	
+	
+	.macro	WRITE_VIDEORAM	param
+	move.w	d0,-(a7)
+	move.b	#\param,d0
+	jbsr	osd_w_videoram
+	move.w	(a7)+,d0
+	.endm
+	
+write_videoram_a1:
+	exg	a0,a1
+	jbsr	osd_w_videoram
+	exg	a0,a1
+	rts
 load_ram_d5_to_a0:
 	move.w	d5,-(a7)
 	sub.w	#0x9000,d5
@@ -203,8 +273,8 @@ load_ram_d5_to_a0:
 * and 1 SFX channel controlled by an 8039:
 * 1)  SoundOn: 0x14    SoundData: 0x18
 
-* rst_08: (HL+A)=>A
-rst_08:
+* fetch_a0_plus_d0_0008: (HL+A)=>A
+fetch_a0_plus_d0_0008:
 	and.w	#0xFF,d0            | [$0008: add  a,l]
 	add.w	d0,a0               | [$0009: ld   l,a]
 	                         	| [$000a: jr   nc,$000D]
@@ -327,7 +397,7 @@ l_0069:
 	                             	| [$0085: jp   $0088]
 
 l_0088:
-	jra	l_57dc                             	| [$0088: jp   $57DC]
+	jra	clear_ram_57dc                             	| [$0088: jp   $57DC]
 
 l_008b:
 	jbsr	l_5c38                            	| [$008b: call $5C38]
@@ -535,8 +605,7 @@ l_0207:
 l_020f:
 	move.b	#0x83,d0                      	| [$020f: ld   (hl),$83]
 	jbsr	osd_w_videoram
-	bclr.b	#2,d5                           	| [$0211: res  2,h]
-	move.l	d5,a0
+	BCLR_A0	#2                           	| [$0211: res  2,h]
 	moveq	#0,d0                             	| [$0213: ld   (hl),$00]
 	jbsr	osd_w_videoram
 	bset.b	#2,d5                           	| [$0215: set  2,h]
@@ -674,14 +743,10 @@ l_0597:
 l_0599:
 	move.b	(a1)+,d0                         	| [$0599: ld   a,(de)]
 	jbsr	osd_w_videoram                         	| [$059a: ld   (hl),a]
-	move.l	a0,d5
-	bclr.b	#2,d5                           	| [$059b: res  2,h]
-	move.l	d5,a0
+	BCLR_A0	#2                           	| [$059b: res  2,h]
 	move.b	#0x25,d0
 	jbsr	osd_w_videoram                      	| [$059d: ld   (hl),$25]
-	move.l	a0,d5
-	bset.b	#2,d5                           	| [$059f: set  2,h]
-	move.l	d5,a0
+	BSET_A0	#2                           	| [$059f: set  2,h]
 	addq.w	#1,a0                           	| [$05a1: inc  l]
 	                           	| [$05a2: inc  de]
 	subq.b	#1,d1                           	| [...]
@@ -846,10 +911,10 @@ l_06f7:
 	                               	| [$06fa: and  a]
 	jne	l_0719                             	| [$06fb: jr   nz,$0719]
 	READ_ROM_BYTE	0x3022,d0                       	| [$06fd: ld   a,($3022)]
-	jbsr	l_07e4                            	| [$0700: call $07E4]
+	jbsr	write_1up_07eA                            	| [$0700: call $07E4]
 	jbsr	l_0755                            	| [$0703: call $0755]
 	READ_ROM_BYTE	0x006F,d0                       	| [$0706: ld   a,($006F)]
-	jbsr	l_381c                            	| [$0709: call $381C]
+	jbsr	erase_1up_381c                            	| [$0709: call $381C]
 	lea	l_8501,a1                          	| [$070c: ld   de,$8501]
 	move.b	#0x06,d1                        	| [$070f: ld   b,$06]
 l_0711:
@@ -891,17 +956,16 @@ l_077f:
 
 l_078e:
 	and.b	#0x0F,d0                         	| [$078e: and  $0F]
-
 	move.l	a0,-(sp)                        	| [$0790: push hl]
 	LEA_ROM	0x3362,a0                          	| [$0791: ld   hl,$3362]
-	jbsr	rst_08                            	| [$0794: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$0794: rst  $08]
 	move.l	(sp)+,a0                        	| [$0795: pop  hl]
 * set credit character on screen
-	move.b	d0,(a1)                         	| [$0796: ld   (de),a]
-	bclr.b	#2,d3                           	| [$0797: res  2,d]
+	jbsr	write_videoram_a1                         	| [$0796: ld   (de),a]
+	BCLR_A1	#2                           	| [$0797: res  2,d]
 	move.b	d2,d0                           	| [$0799: ld   a,c]
-	move.b	d0,(a1)                         	| [$079a: ld   (de),a]
-	bset.b	#2,d3                           	| [$079b: set  2,d]
+	jbsr	write_videoram_a1                         	| [$079a: ld   (de),a]
+	BSET_A1	#2                           	| [$079b: set  2,d]
 	rts                                    	| [$079d: ret]
 
 l_079e:
@@ -928,28 +992,29 @@ l_07b4:
 	CLEAR_XC_FLAGS                         	| [$07ba: xor  a]
 	clr.b	d0                               	| [$07ba: xor  a]
 l_07bb:
-
 	move.l	a0,-(sp)                        	| [$07bb: push hl]
 	LEA_ROM	0x3362,a0                          	| [$07bc: ld   hl,$3362]
-	jbsr	rst_08                            	| [$07bf: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$07bf: rst  $08]
 	move.l	(sp)+,a0                        	| [$07c0: pop  hl]
-	move.b	d0,(a1)                         	| [$07c1: ld   (de),a]
-	bclr.b	#2,d3                           	| [$07c2: res  2,d]
+	jbsr	write_videoram_a1                         	| [$07c1: ld   (de),a]
+	BCLR_A1	#2                           	| [$07c2: res  2,d]
 	move.b	d2,d0                           	| [$07c4: ld   a,c]
-	move.b	d0,(a1)                         	| [$07c5: ld   (de),a]
-	bset.b	#2,d3                           	| [$07c6: set  2,d]
+	jbsr	write_videoram_a1                         	| [$07c5: ld   (de),a]
+	BSET_A1	#2                           	| [$07c6: set  2,d]
 	rts                                    	| [$07c8: ret]
 
-l_07e4:
+write_1up_07eA:
 	LEA_ROM	0x40A6,a0                          	| [$07e4: ld   hl,$40A6]
 	jbsr	load_rom_pointer_0010                            	| [$07e7: rst  $10]
 	exg	a1,a0                              	| [$07e8: ex   de,hl]
-	move.b	(a0),d4                         	| [$07e9: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$07ea: inc  hl]
-	move.b	(a0),d3                         	| [$07eb: ld   d,(hl)]
-	addq.w	#1,a0                           	| [$07ec: inc  hl]
-	move.b	(a0),d2                         	| [$07ed: ld   c,(hl)]
-	addq.w	#1,a0                           	| [$07ee: inc  hl]
+	move.b	(a0)+,d4                         	| [$07e9: ld   e,(hl)]
+	                           	| [$07ea: inc  hl]
+	move.b	(a0)+,d3                         	| [$07eb: ld   d,(hl)]
+	                           	| [$07ec: inc  hl]
+	move.b	(a0)+,d2                         	| [$07ed: ld   c,(hl)]
+	                           	| [$07ee: inc  hl]
+	LOAD_D3_16_FROM_D3D4
+	move.l	d3,a1
 l_07ef:
 	move.b	(a0),d0                         	| [$07ef: ld   a,(hl)]
 l_07f0:
@@ -957,11 +1022,11 @@ l_07f0:
 	bne.b	0f                               	| [...]
 	rts                                    	| [$07f2: ret  z] [...]
 0:
-	move.b	d0,(a1)                         	| [$07f3: ld   (de),a]
-	bclr.b	#2,d3                           	| [$07f4: res  2,d]
+	jbsr	write_videoram_a1                         	| [$07f3: ld   (de),a]
+	BCLR_A1	#2                           	| [$07f4: res  2,d]
 	move.b	d2,d0                           	| [$07f6: ld   a,c]
-	move.b	d0,(a1)                         	| [$07f7: ld   (de),a]
-	bset.b	#2,d3                           	| [$07f8: set  2,d]
+	jbsr	write_videoram_a1                         	| [$07f7: ld   (de),a]
+	BSET_A1	#2                           	| [$07f8: set  2,d]
 	addq.w	#1,a0                           	| [$07fa: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$07fb: rst  $20]
 	jra	l_07ef                             	| [$07fc: jp   $07EF]
@@ -1314,25 +1379,20 @@ l_0a75:
 l_0a82:
 	move.b	l_9419(a6),d0                   	| [$0a82: ld   a,($9419)]
 	LEA_ROM	0x4DDC,a0                          	| [$0a85: ld   hl,$4DDC]
-	jbsr	rst_08                            	| [$0a88: rst  $08]
-	LOAD_RAM_POINTER	l_9411(a6),a0         	| [$0a89: ld   hl,($9411)]
-	.error	"review check if pointed value is in RAM
-"
-	LOAD_RAM_POINTER	l_9413(a6),a1         	| [$0a8c: ld   de,($9413)]
-	.error	"review check if pointed value is in RAM
-"
-	move.b	d0,(a1)                         	| [$0a90: ld   (de),a]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$0a88: rst  $08]
+	LOAD_RAM_POINTER	ram_pointer_9411(a6),a0         	| [$0a89: ld   hl,($9411)]
+
+	LOAD_VIDEO_POINTER	video_address_9413(a6),a1         	| [$0a8c: ld   de,($9413)]
+	jbsr	write_videoram_a1                         	| [$0a90: ld   (de),a]
 	move.b	d0,(a0)                         	| [$0a91: ld   (hl),a]
-	move.b	l_9410(a6),d0                   	| [$0a92: ld   a,($9410)]
-	bclr.b	#2,d3                           	| [$0a95: res  2,d]
-	move.b	d0,(a1)                         	| [$0a97: ld   (de),a]
-	bset.b	#2,d3                           	| [$0a98: set  2,d]
+	move.b	saved_character_9410(a6),d0                   	| [$0a92: ld   a,($9410)]
+	BCLR_A1	#2                           	| [$0a95: res  2,d]
+	jbsr	write_videoram_a1                         	| [$0a97: ld   (de),a]
+	BSET_A1	#2                           	| [$0a98: set  2,d]
 	jbsr	sub_20_to_a1_0020                            	| [$0a9a: rst  $20]
 	addq.w	#1,a0                           	| [$0a9b: inc  hl]
-	STORE_RAM_POINTER	a0,l_9411(a6)        	| [$0a9c: ld   ($9411),hl]
-	.error	"review check if source is in RAM"
-	STORE_RAM_POINTER	a1,l_9413(a6)        	| [$0a9f: ld   ($9413),de]
-	.error	"review check if source is in RAM"
+	STORE_RAM_POINTER	a0,ram_pointer_9411(a6)        	| [$0a9c: ld   ($9411),hl]
+	STORE_VIDEO_POINTER	a1,video_address_9413(a6)        	| [$0a9f: ld   ($9413),de]
 	lea	l_941A(a6),a0                      	| [$0aa3: ld   hl,$941A]
 	subq.b	#1,(a0)                         	| [$0aa6: dec  (hl)]
 	jeq	l_0ad7                             	| [$0aa7: jr   z,$0AD7]
@@ -1340,18 +1400,14 @@ l_0a82:
 	move.b	d0,l_9419(a6)                   	| [$0aaa: ld   ($9419),a]
 	jbsr	l_5daa                            	| [$0aad: call $5DAA]
 l_0ab0:
-	LOAD_RAM_POINTER	l_9413(a6),a1         	| [$0ab0: ld   de,($9413)]
-	.error	"review check if pointed value is in RAM
-"
+	LOAD_VIDEO_POINTER	video_address_9413(a6),a1         	| [$0ab0: ld   de,($9413)]
 	move.b	l_9419(a6),d0                   	| [$0ab4: ld   a,($9419)]
 	LEA_ROM	0x4DDC,a0                          	| [$0ab7: ld   hl,$4DDC]
-	jbsr	rst_08                            	| [$0aba: rst  $08]
-	move.b	d0,(a1)                         	| [$0abb: ld   (de),a]
-	move.l	a1,d3
-	bclr.b	#2,d3                           	| [$0abc: res  2,d]
-	move.l	d3,a1
+	jbsr	fetch_a0_plus_d0_0008                            	| [$0aba: rst  $08]
+	jbsr	write_videoram_a1                         	| [$0abb: ld   (de),a]
+	BCLR_A1	#2                           	    | [$0abc: res  2,d]
 	move.b	#0x0E,d0                        	| [$0abe: ld   a,$0E]
-	move.b	d0,(a1)                         	| [$0ac0: ld   (de),a]
+	jbsr	write_videoram_a1                         	| [$0ac0: ld   (de),a]
 	clr.b	d0                               	| [$0ac1: xor  a]
 	move.b	d0,l_941C(a6)                   	| [$0ac2: ld   ($941C),a]
 l_0ac5:
@@ -1361,10 +1417,8 @@ l_0ac5:
 	lea	l_9465(a6),a0                      	| [$0acc: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$0acf: dec  (hl)]
 	jne	l_0b03                             	| [$0ad0: jr   nz,$0B03]
-	LOAD_RAM_POINTER	l_9413(a6),a0         	| [$0ad2: ld   hl,($9413)] [uncovered]
-	.error	"review check if pointed value is in RAM
-"
-	move.b	#0x83,(a0)                      	| [$0ad5: ld   (hl),$83] [uncovered]
+	LOAD_VIDEO_POINTER	video_address_9413(a6),a0         	| [$0ad2: ld   hl,($9413)] [uncovered]
+	WRITE_VIDEORAM	0x83                      	| [$0ad5: ld   (hl),$83] [uncovered]
 l_0ad7:
 	move.b	#0x78,d0                        	| [$0ad7: ld   a,$78]
 	move.b	d0,l_9465(a6)                   	| [$0ad9: ld   ($9465),a]
@@ -1374,14 +1428,12 @@ l_0ad7:
 l_0aed:
 	lea	l_941C(a6),a0                      	| [$0aed: ld   hl,$941C]
 	addq.b	#1,(a0)                         	| [$0af0: inc  (hl)]
-	LOAD_RAM_POINTER	l_9413(a6),a0         	| [$0af1: ld   hl,($9413)]
-	.error	"review check if pointed value is in RAM
-"
-	bclr.b	#2,d5   TODO                           	| [$0af4: res  2,h]
+	LOAD_VIDEO_POINTER	video_address_9413(a6),a0         	| [$0af1: ld   hl,($9413)]
+	BCLR_A0	#2                           	| [$0af4: res  2,h]
 	move.b	l_941C(a6),d0                   	| [$0af6: ld   a,($941C)]
 	btst.b	#4,d0                           	| [$0af9: bit  4,a]
 	jeq	l_0b01                             	| [$0afb: jr   z,$0B01]
-	move.b	#0x0E,(a0)                      	| [$0afd: ld   (hl),$0E]
+	WRITE_VIDEORAM	0x0E                      	| [$0afd: ld   (hl),$0E]
 	jra	l_0b03                             	| [$0aff: jr   $0B03]
 
 l_0b01:
@@ -1424,24 +1476,21 @@ l_0b2e:
 l_0b42:
 	jbsr	l_3b2d                            	| [$0b42: call $3B2D]
 	jbsr	l_0e43                            	| [$0b45: call $0E43]
-	CLEAR_XC_FLAGS                         	| [$0b48: xor  a]
 	clr.b	d0                               	| [$0b48: xor  a]
 	move.b	d0,l_9669(a6)                   	| [$0b49: ld   ($9669),a]
 	move.b	d0,l_9662(a6)                   	| [$0b4c: ld   ($9662),a]
-	CLEAR_XC_FLAGS                         	| [$0b4f: xor  a]
-	clr.b	d0                               	| [$0b4f: xor  a]
-	LOAD_RAM_POINTER	l_0A10,a0             	| [$0b50: ld   hl,($0A10)]
-	.error	"review check if pointed value is in RAM
-"
-	READ_ROM_WORD	0x0A12,d3             	| [$0b53: ld   de,($0A12)]
-	READ_ROM_WORD	0x0A14,d1             	| [$0b57: ld   bc,($0A14)]
-	add.w	d3,a0                            	| [$0b5b: add  hl,de]
-	add.w	d1,a0                            	| [$0b5c: add  hl,bc]
-	.error	"d6/D5 A0 mix"
-	add.b	d6,d0                            	| [$0b5d: add  a,l]
-	add.b	d5,d0                            	| [$0b5e: add  a,h]
-	sub.b	#0xDA,d0                         	| [$0b5f: sub  $DA]
-	jne	l_2964                             	| [$0b61: jp   nz,$2964]
+*	clr.b	d0                               	| [$0b4f: xor  a]
+*  ROM checksum
+*	READ_ROM_WORD	0x0A10,d5             	| [$0b50: ld   hl,($0A10)]
+*	READ_ROM_WORD	0x0A12,d3             	| [$0b53: ld   de,($0A12)]
+*	READ_ROM_WORD	0x0A14,d1             	| [$0b57: ld   bc,($0A14)]
+*	add.w	d3,d5                            	| [$0b5b: add  hl,de]
+*	add.w	d1,d5                            	| [$0b5c: add  hl,bc]
+*	
+*	add.b	d6,d0                            	| [$0b5d: add  a,l]
+*	add.b	d5,d0                            	| [$0b5e: add  a,h]
+*	sub.b	#0xDA,d0                         	| [$0b5f: sub  $DA]
+*	jne	l_2964                             	| [$0b61: jp   nz,$2964]
 	READ_ROM_BYTE	0x0068,d0                       	| [$0b64: ld   a,($0068)]
 	move.b	d0,l_942B(a6)                   	| [$0b67: ld   ($942B),a]
 	READ_ROM_BYTE	0x0102,d0                       	| [$0b6a: ld   a,($0102)]
@@ -1618,15 +1667,15 @@ l_0cb6:
 	ror.b	#3,d0                            	| [$0cbe: rrca] * 3
 	and.b	#0x03,d0                         	| [$0cc1: and  $03]
 	LEA_ROM	0x0CF3,a0                          	| [$0cc3: ld   hl,$0CF3]
-	jbsr	rst_08                            	| [$0cc6: rst  $08]
-	lea	l_832E,a0                          	| [$0cc7: ld   hl,$832E]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$0cc6: rst  $08]
+	lea	0x832E,a0                          	| [$0cc7: ld   hl,$832E]
 	move.w	#-0x25,d3                       	| [$0cca: ld   de,$FFDB]
 	move.b	#0x14,d2                        	| [$0ccd: ld   c,$14]
 l_0ccf:
 	move.b	#0x05,d1                        	| [$0ccf: ld   b,$05]
 l_0cd1:
-	move.b	d0,(a0)+                         	| [$0cd1: ld   (hl),a]
-	                           	| [$0cd2: inc  l]
+	jbsr	osd_w_videoram                         	| [$0cd1: ld   (hl),a]
+	addq	#1,a0                           	| [$0cd2: inc  l]
 	subq.b	#1,d1                           	| [...]
 	jne	l_0cd1                             	| [$0cd3: djnz $0CD1]
 	add.w	d3,a0                            	| [$0cd5: add  hl,de]
@@ -2248,22 +2297,16 @@ l_122c:
 	move.b	#0x0B,d1                        	| [$1246: ld   b,$0B]
 l_1248:
 	movem.w	d1/d2,-(sp)                    	| [$1248: push bc]
-	move.l	a4,-(sp)                        	| [$1248: push bc]
 	jbsr	l_4ec5                            	| [$1249: call $4EC5]
 	move.b	#0x28,(0x01,a3)                 	| [$124c: ld   (iy+$01),$28]
 	move.b	#0x08,(0x02,a3)                 	| [$1250: ld   (iy+$02),$08]
 	move.w	#0x0004,d3                      	| [$1254: ld   de,$0004]
 	add.w	d3,a3                            	| [$1257: add  iy,de]
-	.error	"review d3 computation above"
+	move.w	#0x0004*4,d3                      	| [$1254: ld   de,$0004]
 	add.w	d3,a2                            	| [$1259: add  ix,de]
-	.error	"review d3 computation above"
-	add.w	d3,a2                            	| [$125b: add  ix,de]
-	.error	"review d3 computation above"
-	add.w	d3,a2                            	| [$125d: add  ix,de]
-	.error	"review d3 computation above"
-	add.w	d3,a2                            	| [$125f: add  ix,de]
-	.error	"review d3 computation above"
-	move.l	(sp)+,a4                        	| [$1261: pop  bc]
+												| [$125b: add  ix,de]
+												| [$125d: add  ix,de]
+												| [$125f: add  ix,de]
 	movem.w	(sp)+,d1/d2                    	| [$1261: pop  bc]
 	subq.b	#1,d1                           	| [...]
 	jne	l_1248                             	| [$1262: djnz $1248]
@@ -2294,21 +2337,18 @@ l_1272:
 	move.b	#0xFF,(0x00,a2)                 	| [$1283: ld   (ix+$00),$FF]
 	lea	l_9300(a6),a0                      	| [$1287: ld   hl,$9300]
 	move.w	#0x0010,d3                      	| [$128a: ld   de,$0010]
-	CLEAR_XC_FLAGS                         	| [$128d: xor  a]
 	clr.b	d0                               	| [$128d: xor  a]
 	move.b	#0x0B,d1                        	| [$128e: ld   b,$0B]
 l_1290:
 	move.b	d0,(a0)                         	| [$1290: ld   (hl),a]
 	add.w	d3,a0                            	| [$1291: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_1290                             	| [$1292: djnz $1290]
 	lea	l_9900(a6),a0                      	| [$1294: ld   hl,$9900]
 	move.b	#0x2C,d1                        	| [$1297: ld   b,$2C]
 l_1299:
-	move.b	d0,(a0)                         	| [$1299: ld   (hl),a]
+	move.b	d0,(a0)+                         	| [$1299: ld   (hl),a]
 	addq.w	#1,a0                           	| [$129a: inc  l]
-	.error	"review inc register d6 or a0"
 	subq.b	#1,d1                           	| [...]
 	jne	l_1299                             	| [$129b: djnz $1299]
 	move.b	d0,l_9476(a6)                   	| [$129d: ld   ($9476),a]
@@ -2355,7 +2395,7 @@ l_130f:
 	move.b	#0xFF,(a0)                      	| [$131b: ld   (hl),$FF] [uncovered]
 l_131d:
 	LEA_ROM	0x133E,a0                          	| [$131d: ld   hl,$133E]
-	jbsr	rst_08                            	| [$1320: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$1320: rst  $08]
 	move.b	d0,l_9449(a6)                   	| [$1321: ld   ($9449),a]
 	move.b	l_9431(a6),d0                   	| [$1324: ld   a,($9431)]
 	ror.b	#4,d0                            	| [$1327: rrca] * 4
@@ -2366,7 +2406,7 @@ l_131d:
 	move.b	#0xFF,(a0)                      	| [$1334: ld   (hl),$FF] [uncovered]
 l_1336:
 	LEA_ROM	0x133E,a0                          	| [$1336: ld   hl,$133E]
-	jbsr	rst_08                            	| [$1339: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$1339: rst  $08]
 	move.b	d0,l_944C(a6)                   	| [$133a: ld   ($944C),a]
 	rts                                    	| [$133d: ret]
 
@@ -2481,65 +2521,64 @@ l_1476:
 	add.b	d0,d0                            	| [$1478: add  a,a]
 	add.b	(a0),d0                          	| [$1479: add  a,(hl)]
 	LEA_ROM	0x14CC,a0                          	| [$147a: ld   hl,$14CC]
-	jbsr	rst_08                            	| [$147d: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$147d: rst  $08]
+	BREAKPOINT	"write to screen?"
 	move.b	d0,(a1)                         	| [$147e: ld   (de),a]
-	bclr.b	#2,d3                           	| [$147f: res  2,d]
+	BCLR_A1	#2                           	| [$147f: res  2,d]
 	move.b	d2,d0                           	| [$1481: ld   a,c]
 	move.b	d0,(a1)                         	| [$1482: ld   (de),a]
-	bset.b	#2,d3                           	| [$1483: set  2,d]
+	BSET_A1	#2                           	| [$1483: set  2,d]
 	addq.w	#1,a0                           	| [$1485: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$1486: rst  $20]
 	move.b	(a0),d0                         	| [$1487: ld   a,(hl)]
 	move.b	d0,(a1)                         	| [$1488: ld   (de),a]
-	bclr.b	#2,d3                           	| [$1489: res  2,d]
+	BCLR_A1	#2                           	| [$1489: res  2,d]
 	move.b	d2,d0                           	| [$148b: ld   a,c]
 	move.b	d0,(a1)                         	| [$148c: ld   (de),a]
-	bset.b	#2,d3                           	| [$148d: set  2,d]
+	BSET_A1	#2                           	| [$148d: set  2,d]
 	addq.w	#1,a0                           	| [$148f: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$1490: rst  $20]
 	move.b	(a0),d0                         	| [$1491: ld   a,(hl)]
 	move.b	d0,(a1)                         	| [$1492: ld   (de),a]
-	bclr.b	#2,d3                           	| [$1493: res  2,d]
+	BCLR_A1	#2                           	| [$1493: res  2,d]
 	move.b	d2,d0                           	| [$1495: ld   a,c]
 	move.b	d0,(a1)                         	| [$1496: ld   (de),a]
-	bset.b	#2,d3                           	| [$1497: set  2,d]
+	BSET_A1	#2                           	| [$1497: set  2,d]
 	move.w	#-0x80,d5                       	| [$1499: ld   hl,$FF80]
-	add.w	d3,a0                            	| [$149c: add  hl,de]
-	.error	"review d3 computation above"
-	exg	a1,a0                              	| [$149d: ex   de,hl]
+	add.w	d3,d5                            	| [$149c: add  hl,de]
+	exg	d3,d5                              	| [$149d: ex   de,hl]
 	move.l	(sp)+,a0                        	| [$149e: pop  hl]
 	addq.w	#3,a0                           	| [$149f: inc  hl] * 3
 	jbsr	l_0771                            	| [$14a2: call $0771]
 
-	move.l	a0,-(sp)                        	| [$14a5: push hl]
+	                        	| [$14a5: push hl]
 	move.w	#-0x60,d5                       	| [$14a6: ld   hl,$FFA0]
-	add.w	d3,a0                            	| [$14a9: add  hl,de]
-	.error	"review d3 computation above"
-	exg	a1,a0                              	| [$14aa: ex   de,hl]
-	move.l	(sp)+,a0                        	| [$14ab: pop  hl]
+	add.w	d3,d5                            	| [$14a9: add  hl,de]
+	exg	d3,d5                              	| [$14aa: ex   de,hl]
+	BREAKPOINT	"d3: video address"                        	| [$14ab: pop  hl]
 	addq.w	#3,a0                           	| [$14ac: inc  hl] * 3
 	move.b	(a0),d0                         	| [$14af: ld   a,(hl)]
 	move.b	d0,(a1)                         	| [$14b0: ld   (de),a]
-	bclr.b	#2,d3                           	| [$14b1: res  2,d]
+	BCLR_A1	#2                           	| [$14b1: res  2,d]
 	move.b	d2,d0                           	| [$14b3: ld   a,c]
 	move.b	d0,(a1)                         	| [$14b4: ld   (de),a]
-	bset.b	#2,d3                           	| [$14b5: set  2,d]
+	BSET_A1	#2                           	| [$14b5: set  2,d]
 	addq.w	#1,a0                           	| [$14b7: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$14b8: rst  $20]
 	move.b	(a0),d0                         	| [$14b9: ld   a,(hl)]
 	move.b	d0,(a1)                         	| [$14ba: ld   (de),a]
-	bclr.b	#2,d3                           	| [$14bb: res  2,d]
+	BCLR_A1	#2                           	| [$14bb: res  2,d]
 	move.b	d2,d0                           	| [$14bd: ld   a,c]
 	move.b	d0,(a1)                         	| [$14be: ld   (de),a]
-	bset.b	#2,d3                           	| [$14bf: set  2,d]
+	BSET_A1	#2                           	| [$14bf: set  2,d]
 	addq.w	#1,a0                           	| [$14c1: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$14c2: rst  $20]
 	move.b	(a0),d0                         	| [$14c3: ld   a,(hl)]
 	move.b	d0,(a1)                         	| [$14c4: ld   (de),a]
-	bclr.b	#2,d3                           	| [$14c5: res  2,d]
+	BCLR_A1	#2                           	| [$14c5: res  2,d]
 	move.b	d2,d0                           	| [$14c7: ld   a,c]
 	move.b	d0,(a1)                         	| [$14c8: ld   (de),a]
-	bset.b	#2,d3                           	| [$14c9: set  2,d]
+	BSET_A1	#2                           	| [$14c9: set  2,d]
 	rts                                    	| [$14cb: ret]
 
 l_155f:
@@ -2604,7 +2643,7 @@ l_15b1:
 	movem.w	(sp)+,d3/d4                    	| [$15b8: pop  de]
 	move.l	(sp)+,a0                        	| [$15b9: pop  hl]
 	move.b	#0x08,d0                        	| [$15ba: ld   a,$08]
-	jbsr	rst_08                            	| [$15bc: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$15bc: rst  $08]
 	subq.b	#1,d1                           	| [...]
 	jne	l_15b1                             	| [$15bd: djnz $15B1]
 	SET_XC_FLAGS                           	| [$15bf: scf] [uncovered]
@@ -2619,20 +2658,18 @@ l_15c1:
 	add.b	d0,d0                            	| [$15cb: add  a,a]
 	add.b	d0,d0                            	| [$15cc: add  a,a]
 	add.b	d0,d0                            	| [$15cd: add  a,a]
-	move.b	d0,d2                           	| [$15ce: ld   c,a]
-	clr.b	d1                               	| [$15cf: ld   b,$00]
+	clr.w	d1                               	| [$15cf: ld   b,$00]
+	move.b	d0,d1                           	| [$15ce: ld   c,a]
 	jbsr	lddr                              	| [$15d1: lddr]
-	.error	"review special instruction inputs"
 	exg	a1,a0                              	| [$15d3: ex   de,hl]
 l_15d4:
-	subq.w	#1,a0                           	| [$15d4: dec  hl]
-	move.b	#0x83,(a0)                      	| [$15d5: ld   (hl),$83]
-	subq.w	#1,a0                           	| [$15d7: dec  hl]
-	move.b	#0x83,(a0)                      	| [$15d8: ld   (hl),$83]
-	subq.w	#1,a0                           	| [$15da: dec  hl]
-	move.b	#0x83,(a0)                      	| [$15db: ld   (hl),$83]
-	STORE_RAM_POINTER	a0,l_9411(a6)        	| [$15dd: ld   ($9411),hl]
-	.error	"review check if source is in RAM"
+	                           	| [$15d4: dec  hl]
+	move.b	#0x83,-(a0)                      	| [$15d5: ld   (hl),$83]
+	                           	| [$15d7: dec  hl]
+	move.b	#0x83,-(a0)                      	| [$15d8: ld   (hl),$83]
+	                           	| [$15da: dec  hl]
+	move.b	#0x83,-(a0)                      	| [$15db: ld   (hl),$83]
+	STORE_RAM_POINTER	a0,ram_pointer_9411(a6)        	| [$15dd: ld   ($9411),hl]
 l_15e0:
 	subq.w	#1,a0                           	| [$15e0: dec  hl]
 	move.l	(sp)+,a1                        	| [$15e1: pop  de]
@@ -2644,18 +2681,15 @@ l_15e0:
 	move.l	(sp)+,a0                        	| [$15e9: pop  hl]
 	lea	l_8531,a0                          	| [$15ea: ld   hl,$8531]
 	add.b	d0,d0                            	| [$15ed: add  a,a]
-	jbsr	rst_08                            	| [$15ee: rst  $08]
-	STORE_RAM_POINTER	a0,l_9413(a6)        	| [$15ef: ld   ($9413),hl]
-	.error	"review check if source is in RAM"
+	jbsr	fetch_a0_plus_d0_0008                            	| [$15ee: rst  $08]
+	STORE_VIDEO_POINTER	a0,video_address_9413(a6)        	| [$15ef: ld   ($9413),hl]
 	lea	l_9488(a6),a0                      	| [$15f2: ld   hl,$9488]
 	move.w	#0x0008,d3                      	| [$15f5: ld   de,$0008]
 	move.b	#0x05,d1                        	| [$15f8: ld   b,$05]
-	CLEAR_XC_FLAGS                         	| [$15fa: xor  a]
 	clr.b	d0                               	| [$15fa: xor  a]
 l_15fb:
 	move.b	d0,(a0)                         	| [$15fb: ld   (hl),a]
 	add.w	d3,a0                            	| [$15fc: add  hl,de]
-	.error	"review d3 computation above"
 	addq.b	#1,d0                           	| [$15fd: inc  a]
 	subq.b	#1,d1                           	| [...]
 	jne	l_15fb                             	| [$15fe: djnz $15FB]
@@ -2697,18 +2731,16 @@ l_1617:
 	jeq	l_1629                             	| [$1624: jr   z,$1629]
 	LEA_ROM	0x4BF3,a0                          	| [$1626: ld   hl,$4BF3] [uncovered]
 l_1629:
-	move.b	(a0),d2                         	| [$1629: ld   c,(hl)]
-	clr.b	d1                               	| [$162a: ld   b,$00]
-	addq.w	#1,a0                           	| [$162c: inc  hl]
-	move.b	l_9662(a6),d0                   	| [$162d: ld   a,($9662)]
+	clr.w	d1                               	| [$162a: ld   b,$00]
+	move.b	(a0)+,d1                         	| [$1629: ld   c,(hl)]
+	                           	| [$162c: inc  hl]
 	                               	| [$1630: and  a]
 	move.b	l_9665(a6),d0                   	| [$1631: ld   a,($9665)]
+	tst.b	l_9662(a6)                   	| [$162d: ld   a,($9662)]
 	jeq	l_1639                             	| [$1634: jr   z,$1639]
-	.error	"review cpu flags (move.b,jeq)"
 	move.b	l_9668(a6),d0                   	| [$1636: ld   a,($9668)] [uncovered]
 l_1639:
 	jbsr	cpir                              	| [$1639: cpir]
-	.error	"review special instruction inputs"
 	lea	l_9604(a6),a0                      	| [$163b: ld   hl,$9604]
 	jne	l_1650                             	| [$163e: jr   nz,$1650]
 	btst.b	#0,(a0)                         	| [$1640: bit  0,(hl)]
@@ -2824,20 +2856,19 @@ l_1708:
 	exg	a1,a0                              	| [$170b: ex   de,hl]
 	move.w	#-0x20,d3                       	| [$170c: ld   de,$FFE0]
 	add.w	d3,a0                            	| [$170f: add  hl,de]
-	.error	"review d3 computation above"
 	exg	a1,a0                              	| [$1710: ex   de,hl]
 l_1711:
 	move.b	d1,d0                           	| [$1711: ld   a,b]
 	and.b	#0x0F,d0                         	| [$1712: and  $0F]
 l_1714:
 	LEA_ROM	0x3362,a0                          	| [$1714: ld   hl,$3362]
-	jbsr	rst_08                            	| [$1717: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$1717: rst  $08]
 	move.b	d0,(a1)                         	| [$1718: ld   (de),a]
-	bclr.b	#2,d3                           	| [$1719: res  2,d]
+	BCLR_A1	#2                           	| [$1719: res  2,d]
 	move.b	d2,d0                           	| [$171b: ld   a,c]
 	move.b	d0,(a1)                         	| [$171c: ld   (de),a]
 l_171d:
-	bset.b	#2,d3                           	| [$171d: set  2,d]
+	BSET_A1	#2                           	| [$171d: set  2,d]
 	rts                                    	| [$171f: ret]
 
 l_1720:
@@ -2871,7 +2902,6 @@ l_1756:
 	move.b	d0,(0x0f,a2)                    	| [$1756: ld   (ix+$0f),a]
 	addq.b	#1,d0                           	| [$1759: inc  a]
 	add.w	d3,a2                            	| [$175a: add  ix,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_1756                             	| [$175c: djnz $1756]
 	READ_ROM_BYTE	0x011B,d0                       	| [$175e: ld   a,($011B)]
@@ -2888,13 +2918,14 @@ l_1756:
 	and.b	#0x03,d0                         	| [$177a: and  $03]
 	LEA_ROM	0x17B7,a0                          	| [$177c: ld   hl,$17B7]
 	jbsr	load_rom_pointer_0010                            	| [$177f: rst  $10]
+	BREAKPOINT	"value of A1??? 2921"
 	move.b	(a1),d0                         	| [$1780: ld   a,(de)]
 	addq.b	#1,d0                           	| [$1781: inc  a]
 	move.b	d0,l_9438(a6)                   	| [$1782: ld   ($9438),a]
 	lea	l_9439(a6),a0                      	| [$1785: ld   hl,$9439]
-	move.b	d4,(a0)                         	| [$1788: ld   (hl),e]
-	addq.w	#1,a0                           	| [$1789: inc  l]
-	.error	"review inc register d6 or a0"
+	* convert A1 => D3.D4
+	move.b	d4,(a0)+                         	| [$1788: ld   (hl),e]
+											| [$1789: inc  l]
 	move.b	d3,(a0)                         	| [$178a: ld   (hl),d]
 	CLEAR_XC_FLAGS                         	| [$178b: xor  a]
 	clr.b	d0                               	| [$178b: xor  a]
@@ -2940,15 +2971,10 @@ l_17c8:
 	move.b	d0,(0x01,a2)                    	| [$17d9: ld   (ix+$01),a]
 	move.b	#0xFF,(0x00,a2)                 	| [$17dc: ld   (ix+$00),$FF]
 	add.w	d3,a3                            	| [$17e0: add  iy,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$17e2: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$17e4: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$17e6: add  ix,de]
-	.error	"review d3 computation above"
 	add.w	d3,a2                            	| [$17e8: add  ix,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_17a0                             	| [$17ea: djnz $17A0]
 	clr.b	(0x00,a3)                        	| [$17ec: ld   (iy+$00),$00]
@@ -2971,13 +2997,16 @@ l_182b:
 
 l_183b:
 	addq.w	#1,a0                           	| [$183b: inc  hl]
-	move.b	(a0),d4                         	| [$183c: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$183d: inc  hl]
+	move.b	(a0)+,d4                         	| [$183c: ld   e,(hl)]
+	                           	| [$183d: inc  hl]
 	move.b	(a0),d3                         	| [$183e: ld   d,(hl)]
-	addq.w	#1,a1                           	| [$183f: inc  de]
+	LOAD_D3_16_FROM_D3D4
+	addq.w	#1,d3                           	| [$183f: inc  de]
+	LOAD_D3D4_FROM_D3_16
 	move.b	d3,(a0)                         	| [$1840: ld   (hl),d]
-	subq.w	#1,a0                           	| [$1841: dec  hl]
-	move.b	d4,(a0)                         	| [$1842: ld   (hl),e]
+	                           	| [$1841: dec  hl]
+	move.b	d4,-(a0)                         	| [$1842: ld   (hl),e]
+	BREAKPOINT	"3009 a1/d3/D4"
 	exg	a1,a0                              	| [$1843: ex   de,hl]
 	move.b	(a0),d0                         	| [$1844: ld   a,(hl)]
 l_1845:
@@ -2997,7 +3026,7 @@ l_184a:
 l_1857:
 	lea	l_9000(a6),a2                      	| [$1857: ld   ix,$9000]
 	lea	sprite_shadow_ram_9800(a6),a3      	| [$185b: ld   iy,sprite_shadow_ram_9800]
-	move.b	(0x00,a2),d0                    	| [$185f: ld   a,(ix+$00)]
+	move.b	(a2),d0                    	| [$185f: ld   a,(ix+$00)]
 	                               	| [$1862: and  a]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$1863: ret  z] [...]
@@ -3011,7 +3040,7 @@ l_1857:
 	and.b	#0x0F,d0                         	| [$1872: and  $0F]
 	jeq	l_1910                             	| [$1874: jp   z,$1910]
 	LEA_ROM	0x1D1F,a0                          	| [$1877: ld   hl,$1D1F]
-	jbsr	rst_08                            	| [$187a: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$187a: rst  $08]
 	move.b	d0,d1                           	| [$187b: ld   b,a]
 	move.b	l_9407(a6),d0                   	| [$187c: ld   a,($9407)]
 	                               	| [$187f: and  a]
@@ -3177,7 +3206,7 @@ l_19a1:
 	sub.b	d2,d0                            	| [$19ad: sub  c]
 l_19ae:
 	LEA_ROM	0x5DDA,a0                          	| [$19ae: ld   hl,$5DDA]
-	jbsr	rst_08                            	| [$19b1: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$19b1: rst  $08]
 l_19b2:
 	btst.b	#7,d1                           	| [$19b2: bit  7,b]
 	jeq	l_19bb                             	| [$19b4: jr   z,$19BB]
@@ -3493,7 +3522,7 @@ l_1c61:
 	add.b	d0,d0                            	| [$1c6f: add  a,a]
 	add.b	d0,d0                            	| [$1c70: add  a,a]
 	LEA_ROM	0x5FC0,a0                          	| [$1c71: ld   hl,$5FC0]
-	jbsr	rst_08                            	| [$1c74: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$1c74: rst  $08]
 	jbsr	l_198e                            	| [$1c75: call $198E]
 	move.b	(0x02,a3),d0                    	| [$1c78: ld   a,(iy+$02)]
 	bset.b	#5,d0                           	| [$1c7b: set  5,a]
@@ -3534,7 +3563,7 @@ l_1cb7:
 	jeq	l_1d14                             	| [$1cc9: jr   z,$1D14]
 	move.b	#0x80,d1                        	| [$1ccb: ld   b,$80]
 	LEA_ROM	0x1D1F,a0                          	| [$1ccd: ld   hl,$1D1F]
-	jbsr	rst_08                            	| [$1cd0: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$1cd0: rst  $08]
 	move.b	d0,d1                           	| [$1cd1: ld   b,a]
 	move.b	l_9407(a6),d0                   	| [$1cd2: ld   a,($9407)]
 	                               	| [$1cd5: and  a]
@@ -4022,7 +4051,7 @@ l_22d2:
 	ror.b	#1,d0                            	| [$22d5: rrca]
 	and.b	#0x03,d0                         	| [$22d6: and  $03]
 	LEA_ROM	0x22EF,a0                          	| [$22d8: ld   hl,$22EF]
-	jbsr	rst_08                            	| [$22db: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$22db: rst  $08]
 	lea	l_990C(a6),a3                      	| [$22dc: ld   iy,$990C]
 	move.b	d0,(0x01,a3)                    	| [$22e0: ld   (iy+$01),a]
 	move.b	d0,(-0x07,a3)                   	| [$22e3: ld   (iy-$07),a]
@@ -4400,7 +4429,7 @@ l_25ac:
 	move.b	l_9400(a6),d0                   	| [$25b9: ld   a,($9400)]
 	ror.b	#3,d0                            	| [$25bc: rrca] * 3
 	and.b	#0x03,d0                         	| [$25bf: and  $03]
-	jbsr	rst_08                            	| [$25c1: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$25c1: rst  $08]
 	lea	l_8334,a0                          	| [$25c2: ld   hl,$8334]
 	move.w	#-0x20,d3                       	| [$25c5: ld   de,$FFE0]
 	move.b	#0x16,d1                        	| [$25c8: ld   b,$16]
@@ -4555,7 +4584,7 @@ l_26ef:
 	exg	a1,a0                              	| [$26f9: ex   de,hl]
 	move.b	(0x06,a2),d0                    	| [$26fa: ld   a,(ix+$06)]
 	add.b	d0,d0                            	| [$26fd: add  a,a]
-	jbsr	rst_08                            	| [$26fe: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$26fe: rst  $08]
 	cmp.b	#0xFF,d0                         	| [$26ff: cp   $FF]
 	jeq	l_271c                             	| [$2701: jr   z,$271C]
 	cmp.b	#0xFE,d0                         	| [$2703: cp   $FE]
@@ -5081,7 +5110,7 @@ l_2a7e:
 	addq.b	#1,(a0)                         	| [$2a93: inc  (hl)] [uncovered]
 	LEA_ROM	0x2AA5,a0                          	| [$2a94: ld   hl,$2AA5] [uncovered]
 	add.b	d0,d0                            	| [$2a97: add  a,a] [uncovered]
-	jbsr	rst_08                            	| [$2a98: rst  $08] [uncovered]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2a98: rst  $08] [uncovered]
 	move.b	#0x20,(0x00,a2)                 	| [$2a99: ld   (ix+$00),$20] [uncovered]
 	move.b	d0,(0x01,a3)                    	| [$2a9d: ld   (iy+$01),a] [uncovered]
 	addq.w	#1,a0                           	| [$2aa0: inc  hl] [uncovered]
@@ -5095,7 +5124,7 @@ l_2abd:
 	and.b	#0x3F,d0                         	| [$2ac2: and  $3F]
 	add.b	d0,d0                            	| [$2ac4: add  a,a]
 	LEA_ROM	0x2AD3,a0                          	| [$2ac5: ld   hl,$2AD3]
-	jbsr	rst_08                            	| [$2ac8: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2ac8: rst  $08]
 	move.b	d0,(0x01,a3)                    	| [$2ac9: ld   (iy+$01),a]
 	addq.w	#1,a0                           	| [$2acc: inc  hl]
 	move.b	(a0),d4                         	| [$2acd: ld   e,(hl)]
@@ -5127,7 +5156,7 @@ l_2b12:
 	add.b	d1,d0                            	| [$2b12: add  a,b]
 	add.b	d0,d0                            	| [$2b13: add  a,a]
 	LEA_ROM	0x2B22,a0                          	| [$2b14: ld   hl,$2B22]
-	jbsr	rst_08                            	| [$2b17: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2b17: rst  $08]
 	move.b	d0,(0x01,a3)                    	| [$2b18: ld   (iy+$01),a]
 	addq.w	#1,a0                           	| [$2b1b: inc  hl]
 	move.b	(a0),d4                         	| [$2b1c: ld   e,(hl)]
@@ -5341,7 +5370,7 @@ l_2c55:
 	move.b	l_960A(a6),d0                   	| [$2c79: ld   a,($960A)]
 	add.b	d0,d0                            	| [$2c7c: add  a,a]
 	LEA_ROM	0x4474,a0                          	| [$2c7d: ld   hl,$4474]
-	jbsr	rst_08                            	| [$2c80: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2c80: rst  $08]
 	move.b	d0,(0x08,a2)                    	| [$2c81: ld   (ix+$08),a]
 	addq.w	#1,a0                           	| [$2c84: inc  hl]
 	move.b	(a0),d0                         	| [$2c85: ld   a,(hl)]
@@ -5452,7 +5481,7 @@ l_2d1a:
 	move.b	d0,d2                           	| [$2d2e: ld   c,a]
 	and.b	#0x03,d0                         	| [$2d2f: and  $03]
 	LEA_ROM	0x321F,a0                          	| [$2d31: ld   hl,$321F]
-	jbsr	rst_08                            	| [$2d34: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2d34: rst  $08]
 	move.b	d0,(0x02,a3)                    	| [$2d35: ld   (iy+$02),a]
 	move.b	(0x00,a3),d0                    	| [$2d38: ld   a,(iy+$00)]
 	rol.b	#3,d0                            	| [$2d3b: rlca] * 3
@@ -5463,7 +5492,7 @@ l_2d1a:
 	rol.b	#2,d0                            	| [$2d45: rlca] * 2
 	and.b	#0x07,d0                         	| [$2d47: and  $07]
 	exg	a1,a0                              	| [$2d49: ex   de,hl]
-	jbsr	rst_08                            	| [$2d4a: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2d4a: rst  $08]
 	move.b	d0,(0x01,a3)                    	| [$2d4b: ld   (iy+$01),a]
 	rts                                    	| [$2d4e: ret]
 
@@ -5747,7 +5776,7 @@ l_2f94:
 	ror.b	#3,d0                            	| [$2fa6: rrca] * 3
 	and.b	#0x0E,d0                         	| [$2fa9: and  $0E]
 	exg	a1,a0                              	| [$2fab: ex   de,hl]
-	jbsr	rst_08                            	| [$2fac: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2fac: rst  $08]
 	jra	l_2f25                             	| [$2fad: jp   $2F25]
 
 l_2fd9:
@@ -5766,7 +5795,7 @@ l_2ff0:
 	move.b	d0,d2                           	| [$2ff5: ld   c,a]
 	ror.b	#3,d0                            	| [$2ff6: rrca] * 3
 	and.b	#0x0E,d0                         	| [$2ff9: and  $0E]
-	jbsr	rst_08                            	| [$2ffb: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2ffb: rst  $08]
 	jra	l_2f25                             	| [$2ffc: jp   $2F25]
 
 l_2fff:
@@ -5809,7 +5838,7 @@ l_3060:
 	ror.b	#3,d0                            	| [$3070: rrca] * 3
 	and.b	#0x0E,d0                         	| [$3073: and  $0E]
 	LEA_ROM	0x30A1,a0                          	| [$3075: ld   hl,$30A1]
-	jbsr	rst_08                            	| [$3078: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$3078: rst  $08]
 	btst.b	#7,d1                           	| [$3079: bit  7,b]
 	jne	l_308e                             	| [$307b: jr   nz,$308E]
 	add.b	d2,d0                            	| [$307d: add  a,c]
@@ -5868,7 +5897,7 @@ l_30db:
 	add.b	d0,d0                            	| [$30fd: add  a,a]
 	add.b	d3,d0                            	| [$30fe: add  a,d]
 	LEA_ROM	0x3D31,a0                          	| [$30ff: ld   hl,$3D31]
-	jbsr	rst_08                            	| [$3102: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$3102: rst  $08]
 	move.b	d0,(0x01,a3)                    	| [$3103: ld   (iy+$01),a]
 	addq.w	#2,a0                           	| [$3106: inc  hl] * 2
 	move.b	(a0),d3                         	| [$3108: ld   d,(hl)]
@@ -5880,7 +5909,7 @@ l_30db:
 l_3111:
 	move.b	d2,d0                           	| [$3111: ld   a,c]
 	LEA_ROM	0x3201,a0                          	| [$3112: ld   hl,$3201]
-	jbsr	rst_08                            	| [$3115: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$3115: rst  $08]
 	add.b	d3,d0                            	| [$3116: add  a,d]
 	move.b	d0,(0x02,a3)                    	| [$3117: ld   (iy+$02),a]
 	rts                                    	| [$311a: ret]
@@ -6280,7 +6309,7 @@ l_3581:
 	move.b	(0x09,a2),d0                    	| [$35ab: ld   a,(ix+$09)]
 	LEA_ROM	0x3760,a0                          	| [$35ae: ld   hl,$3760]
 	add.b	d0,d0                            	| [$35b1: add  a,a]
-	jbsr	rst_08                            	| [$35b2: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$35b2: rst  $08]
 	move.b	d0,(0x0c,a2)                    	| [$35b3: ld   (ix+$0c),a]
 	addq.w	#1,a0                           	| [$35b6: inc  hl]
 	move.b	(a0),d0                         	| [$35b7: ld   a,(hl)]
@@ -6388,14 +6417,16 @@ l_3804:
 	move.b	#0xFE,d6                        	| [$3817: ld   l,$FE]
 	jra	update_starfield_39B1              	| [$3819: jp   update_starfield_39B1]
 
-l_381c:
+erase_1up_381c:
 	LEA_ROM	0x40A6,a0                          	| [$381c: ld   hl,$40A6]
 	jbsr	load_rom_pointer_0010                            	| [$381f: rst  $10]
 	exg	a1,a0                              	| [$3820: ex   de,hl]
-	move.b	(a0),d4                         	| [$3821: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$3822: inc  hl]
-	move.b	(a0),d3                         	| [$3823: ld   d,(hl)]
-	addq.w	#2,a0                           	| [$3824: inc  hl] * 2
+	move.b	(a0)+,d4                         	| [$3821: ld   e,(hl)]
+	                           	| [$3822: inc  hl]
+	move.b	(a0)+,d3                         	| [$3823: ld   d,(hl)]
+	LOAD_D3_16_FROM_D3D4
+	move.l	d3,a1
+	addq.w	#1,a0                           	| [$3824: inc  hl] * 2
 l_3826:
 	move.b	(a0),d0                         	| [$3826: ld   a,(hl)]
 	cmp.b	#0x9E,d0                         	| [$3827: cp   $9E]
@@ -6888,7 +6919,7 @@ l_4083:
 l_4095:
 	LEA_ROM	0x416D,a0                          	| [$4095: ld   hl,$416D]
 	move.b	d2,d0                           	| [$4098: ld   a,c]
-	jbsr	rst_08                            	| [$4099: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$4099: rst  $08]
 	move.b	d0,(0x04,a2)                    	| [$409a: ld   (ix+$04),a]
 	rts                                    	| [$409d: ret]
 
@@ -6988,7 +7019,7 @@ l_4255:
 	move.b	l_9400(a6),d0                   	| [$4258: ld   a,($9400)]
 	ror.b	#3,d0                            	| [$425b: rrca] * 3
 	and.b	#0x03,d0                         	| [$425e: and  $03]
-	jbsr	rst_08                            	| [$4260: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$4260: rst  $08]
 	lea	l_8270,a0                          	| [$4261: ld   hl,$8270]
 	move.w	#-0x20,d3                       	| [$4264: ld   de,$FFE0]
 	move.b	#0x0C,d1                        	| [$4267: ld   b,$0C]
@@ -7056,30 +7087,26 @@ l_42f8:
 l_42fe:
 	move.w	#0x001F,d3                      	| [$42fe: ld   de,$001F]
 l_4301:
-	move.b	#0x68,(a0)                      	| [$4301: ld   (hl),$68]
-	bclr.b	#2,d5   TODO                           	| [$4303: res  2,h]
-	move.b	#0x02,(a0)                      	| [$4305: ld   (hl),$02]
-	bset.b	#2,d5                           	| [$4307: set  2,h]
+	WRITE_VIDEORAM	0x68                      	| [$4301: ld   (hl),$68]
+	BCLR_A0	#2                           	| [$4303: res  2,h]
+	WRITE_VIDEORAM	0x02                      	| [$4305: ld   (hl),$02]
+	BSET_A0	#2                           	| [$4307: set  2,h]
 	addq.w	#1,a0                           	| [$4309: inc  l]
-	.error	"review inc register d6 or a0"
-	move.b	#0x1F,(a0)                      	| [$430a: ld   (hl),$1F]
-	bclr.b	#2,d5   TODO                           	| [$430c: res  2,h]
-	move.b	#0x02,(a0)                      	| [$430e: ld   (hl),$02]
-	bset.b	#2,d5                           	| [$4310: set  2,h]
+	WRITE_VIDEORAM	0x1F                      	| [$430a: ld   (hl),$1F]
+	BCLR_A0	#2                          	| [$430c: res  2,h]
+	WRITE_VIDEORAM	0x02                      	| [$430e: ld   (hl),$02]
+	BSET_A0	#2                           	| [$4310: set  2,h]
 	add.w	d3,a0                            	| [$4312: add  hl,de]
-	.error	"review d3 computation above"
-	move.b	#0xF2,(a0)                      	| [$4313: ld   (hl),$F2]
-	bclr.b	#2,d5   TODO                           	| [$4315: res  2,h]
-	move.b	#0x02,(a0)                      	| [$4317: ld   (hl),$02]
-	bset.b	#2,d5                           	| [$4319: set  2,h]
+	WRITE_VIDEORAM	0xF2                      	| [$4313: ld   (hl),$F2]
+	BCLR_A0	#2                           	| [$4315: res  2,h]
+	WRITE_VIDEORAM	0x02                      	| [$4317: ld   (hl),$02]
+	BSET_A0	#2                          	| [$4319: set  2,h]
 	addq.w	#1,a0                           	| [$431b: inc  l]
-	.error	"review inc register d6 or a0"
-	move.b	#0x61,(a0)                      	| [$431c: ld   (hl),$61]
-	bclr.b	#2,d5   TODO                           	| [$431e: res  2,h]
-	move.b	#0x02,(a0)                      	| [$4320: ld   (hl),$02]
-	bset.b	#2,d5                           	| [$4322: set  2,h]
+	WRITE_VIDEORAM	0x61                      	| [$431c: ld   (hl),$61]
+	BCLR_A0	#2                           	| [$431e: res  2,h]
+	WRITE_VIDEORAM	0x02                      	| [$4320: ld   (hl),$02]
+	BSET_A0	#2                          	| [$4322: set  2,h]
 	add.w	d3,a0                            	| [$4324: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#0x03,d0                        	| [$4325: sub  $03]
 	subq.b	#1,d1                           	| [...]
 	jne	l_4301                             	| [$4327: djnz $4301]
@@ -7197,7 +7224,7 @@ l_45a3:
 	LEA_ROM	0x460A,a0                          	| [$45a3: ld   hl,$460A]
 	ror.b	#4,d0                            	| [$45a6: rrca] * 4
 	and.b	#0x0E,d0                         	| [$45aa: and  $0E]
-	jbsr	rst_08                            	| [$45ac: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$45ac: rst  $08]
 	move.b	d0,(0x01,a3)                    	| [$45ad: ld   (iy+$01),a]
 	move.b	d0,d1                           	| [$45b0: ld   b,a]
 	addq.w	#1,a0                           	| [$45b1: inc  hl]
@@ -7323,7 +7350,7 @@ l_46a3:
 	move.b	d1,d0                           	| [$46a6: ld   a,b]
 	ror.b	#4,d0                            	| [$46a7: rrca] * 4
 	and.b	#0x07,d0                         	| [$46ab: and  $07]
-	jbsr	rst_08                            	| [$46ad: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$46ad: rst  $08]
 	move.b	d0,(0x01,a3)                    	| [$46ae: ld   (iy+$01),a]
 	move.b	#0x08,(0x02,a3)                 	| [$46b1: ld   (iy+$02),$08]
 	rts                                    	| [$46b5: ret]
@@ -7443,7 +7470,7 @@ l_477e:
 	LEA_ROM	0x47ED,a0                          	| [$4795: ld   hl,$47ED]
 	addq.b	#1,(0x06,a2)                    	| [$4798: inc  (ix+$06)]
 	move.b	(0x06,a2),d0                    	| [$479b: ld   a,(ix+$06)]
-	jbsr	rst_08                            	| [$479e: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$479e: rst  $08]
 	cmp.b	#0xFF,d0                         	| [$479f: cp   $FF]
 	jeq	l_47ac                             	| [$47a1: jr   z,$47AC]
 	move.b	d0,(0x01,a2)                    	| [$47a3: ld   (ix+$01),a]
@@ -7804,7 +7831,7 @@ l_4a69:
 	add.b	d0,d0                            	| [$4a70: add  a,a]
 	add.b	d1,d0                            	| [$4a71: add  a,b]
 	LEA_ROM	0x4AB3,a0                          	| [$4a72: ld   hl,$4AB3]
-	jbsr	rst_08                            	| [$4a75: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$4a75: rst  $08]
 	move.b	d0,(0x01,a3)                    	| [$4a76: ld   (iy+$01),a]
 	rts                                    	| [$4a79: ret]
 
@@ -7849,7 +7876,7 @@ l_4b1c:
 	rol.b	#2,d0                            	| [$4b20: rlca] * 2
 	and.b	#0x03,d0                         	| [$4b22: and  $03]
 	LEA_ROM	0x4B44,a0                          	| [$4b24: ld   hl,$4B44]
-	jbsr	rst_08                            	| [$4b27: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$4b27: rst  $08]
 	move.b	d0,(0x02,a3)                    	| [$4b28: ld   (iy+$02),a]
 	move.b	(0x00,a3),d0                    	| [$4b2b: ld   a,(iy+$00)]
 	ror.b	#3,d0                            	| [$4b2e: rrca] * 3
@@ -7860,7 +7887,7 @@ l_4b1c:
 	and.b	#0x07,d0                         	| [$4b39: and  $07]
 	add.b	d2,d0                            	| [$4b3b: add  a,c]
 	LEA_ROM	0x4B48,a0                          	| [$4b3c: ld   hl,$4B48]
-	jbsr	rst_08                            	| [$4b3f: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$4b3f: rst  $08]
 	move.b	d0,(0x01,a3)                    	| [$4b40: ld   (iy+$01),a]
 	rts                                    	| [$4b43: ret]
 
@@ -8005,15 +8032,14 @@ l_4c84:
 	subq.b	#1,d1                           	| [...]
 	jne	l_4c84                             	| [$4c86: djnz $4C84]
 	move.b	#0x03,(a0)                      	| [$4c88: ld   (hl),$03]
-	LOAD_RAM_POINTER	l_9413(a6),a1         	| [$4c8a: ld   de,($9413)]
-	.error	"review check if pointed value is in RAM"
+	LOAD_VIDEO_POINTER	video_address_9413(a6),a1         	| [$4c8a: ld   de,($9413)]
 	move.b	l_9419(a6),d0                   	| [$4c8e: ld   a,($9419)]
 	LEA_ROM	0x4DDC,a0                          	| [$4c91: ld   hl,$4DDC]
-	jbsr	rst_08                            	| [$4c94: rst  $08]
-	move.b	d0,(a1)                         	| [$4c95: ld   (de),a]
-	bclr.b	#2,d3                           	| [$4c96: res  2,d]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$4c94: rst  $08]
+	jbsr	write_videoram_a1                  	| [$4c95: ld   (de),a]
+	BCLR_A1	#2                           	| [$4c96: res  2,d]
 	move.b	(a1),d0                         	| [$4c98: ld   a,(de)]
-	move.b	d0,l_9410(a6)                   	| [$4c99: ld   ($9410),a]
+	move.b	d0,saved_character_9410(a6)                   	| [$4c99: ld   ($9410),a]
 	jra	l_080b                             	| [$4c9c: jp   $080B]
 
 l_4cea:
@@ -8056,20 +8082,19 @@ l_4d0f:
 	rts                                    	| [$4d21: ret]
 
 	READ_ROM_BYTE	0x0DD4,d0                       	| [$4e27: ld   a,($0DD4)]
-	jbsr	l_07e4                            	| [$4e2a: call $07E4]
+	jbsr	write_1up_07eA                            	| [$4e2a: call $07E4]
 	move.b	starting_stage_9609(a6),d0      	| [$4e2d: ld   a,(starting_stage_9609)]
+	moveq	#0,d1
 	move.b	d0,d1                           	| [$4e30: ld   b,a]
-	addq.b	#1,d1                           	| [$4e31: inc  b]
+	*addq.b	#1,d1    | don't add: dbf                       	| [$4e31: inc  b]
 	READ_ROM_BYTE	0x1295,d0                       	| [$4e32: ld   a,($1295)]
 l_4e35:
-	addq.b	#0x01,d0                        	| [$4e35: add  a,$01]
-daa
-	subq.b	#1,d1                           	| [...]
-	jne	l_4e35                             	| [$4e38: djnz $4E35]
+	moveq	#1,d7
+	abcdb	d7,d0                        	| [$4e35: add  a,$01] + daa
+	dbf	d1,l_4e35                             	| [$4e38: djnz $4E35]
 	move.w	#0x0040,d5                      	| [$4e3a: ld   hl,$0040]
-	add.w	d3,a0                            	| [$4e3d: add  hl,de]
-	.error	"review d3 computation above"
-	exg	a1,a0                              	| [$4e3e: ex   de,hl]
+	add.w	d3,d5                            	| [$4e3d: add  hl,de]
+	exg	d3,d5                              	| [$4e3e: ex   de,hl]
 	move.b	#0x05,d2                        	| [$4e3f: ld   c,$05]
 	jbsr	l_16ff                            	| [$4e41: call $16FF]
 	rts                                    	| [$4e44: ret]
@@ -8083,16 +8108,15 @@ l_4e45:
 write_to_screen_4e77:
 	move.b	d1,d0                           	| [$4e77: ld   a,b]
 	exg	d0,d7                              	| [$4e78: ex   af,af']
-	.error	"review carry flags used below? if so, adapt"
 l_4e79:
-	move.b	(a1),d0                         	| [$4e79: ld   a,(de)]
-	addq.w	#1,a1                           	| [$4e7a: inc  de]
-	move.b	d0,(a0)                         	| [$4e7b: ld   (hl),a]
-	move.b	(a1),d0                         	| [$4e7c: ld   a,(de)]
-	addq.w	#1,a1                           	| [$4e7d: inc  de]
-	bclr.b	#2,d5   TODO                           	| [$4e7e: res  2,h]
-	move.b	d0,(a0)                         	| [$4e80: ld   (hl),a]
-	bset.b	#2,d5                           	| [$4e81: set  2,h]
+	move.b	(a1)+,d0                         	| [$4e79: ld   a,(de)]
+	                           	| [$4e7a: inc  de]
+	jbsr	osd_w_videoram                         	| [$4e7b: ld   (hl),a]
+	move.b	(a1)+,d0                         	| [$4e7c: ld   a,(de)]
+	                           	| [$4e7d: inc  de]
+	BCLR_A0	#2                           	| [$4e7e: res  2,h]
+	jbsr	osd_w_videoram                         	| [$4e80: ld   (hl),a]
+	BSET_A0	#2                           	| [$4e81: set  2,h]
 	addq.w	#1,a0                           	| [$4e83: inc  hl]
 	subq.b	#1,d1                           	| [...]
 	jne	l_4e79                             	| [$4e84: djnz $4E79]
@@ -8101,10 +8125,8 @@ l_4e79:
 	rts                                    	| [$4e87: ret  z] [...]
 0:
 	exg	d0,d7                              	| [$4e88: ex   af,af']
-	.error	"review carry flags used below? if so, adapt"
 	move.b	d0,d1                           	| [$4e89: ld   b,a]
 	exg	d0,d7                              	| [$4e8a: ex   af,af']
-	.error	"review carry flags used below? if so, adapt"
 	READ_ROM_BYTE	0x1216,d0                       	| [$4e8b: ld   a,($1216)]
 	sub.b	d1,d0                            	| [$4e8e: sub  b]
 	jbsr	add_d0_to_a0_0018                            	| [$4e8f: rst  $18]
@@ -8121,9 +8143,9 @@ l_4e9e:
 	move.b	d0,d1                           	| [$4ea0: ld   b,a]
 l_4ea1:
 	move.b	#0x83,(a0)                      	| [$4ea1: ld   (hl),$83]
-	bclr.b	#2,d5   TODO                           	| [$4ea3: res  2,h]
-	clr.b	(a0)                             	| [$4ea5: ld   (hl),$00]
-	bset.b	#2,d5                           	| [$4ea7: set  2,h]
+	BSET_A0	#2                           	| [$4ea3: res  2,h]
+	WRITE_VIDEORAM	0                             	| [$4ea5: ld   (hl),$00]
+	BCLR_A0	#2                           	| [$4ea7: set  2,h]
 	addq.w	#1,a0                           	| [$4ea9: inc  l]
 	subq.b	#1,d1                           	| [...]
 	jne	l_4ea1                             	| [$4eaa: djnz $4EA1]
@@ -8135,7 +8157,7 @@ l_4ea1:
 	move.b	d0,d1                           	| [$4eb5: ld   b,a]
 	move.w	#0x0008,d3                      	| [$4eb6: ld   de,$0008]
 l_4eb9:
-	clr.b	(a0)                             	| [$4eb9: ld   (hl),$00]
+	WRITE_VIDEORAM	0                             	| [$4eb9: ld   (hl),$00]
 	add.w	d3,a0                            	| [$4ebb: add  hl,de]
 	subq.b	#1,d1                           	| [...]
 	jne	l_4eb9                             	| [$4ebc: djnz $4EB9]
@@ -8150,18 +8172,20 @@ l_4ec5:
 	jra	l_4f37                             	| [$4ec8: jp   $4F37]
 
 l_4ecb:
+	moveq	#0,d0
 	move.b	l_960A(a6),d0                   	| [$4ecb: ld   a,($960A)]
 	add.b	d0,d0                            	| [$4ece: add  a,a]
 	LEA_ROM	0x44A2,a0                          	| [$4ecf: ld   hl,$44A2]
-	add.b	d6,d0                            	| [$4ed2: add  a,l]
-	move.b	d0,d6                           	| [$4ed3: ld   l,a]
-	jcc	l_4ed7                             	| [$4ed4: jr   nc,$4ED7]
-	.error	"review cpu flags (move.b,jcc)"
-	addq.b	#1,d5                           	| [$4ed6: inc  h] [uncovered]
+	add.w	d0,a0                            	| [$4ed2: add  a,l]
+	                           	| [$4ed3: ld   l,a]
+	                             	| [$4ed4: jr   nc,$4ED7]
+	                           	| [$4ed6: inc  h] [uncovered]
 l_4ed7:
-	move.b	(a0),d4                         	| [$4ed7: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$4ed8: inc  hl]
+	move.b	(a0)+,d4                         	| [$4ed7: ld   e,(hl)]
+	                           	| [$4ed8: inc  hl]
 	move.b	(a0),d3                         	| [$4ed9: ld   d,(hl)]
+	LOAD_D3_16_FROM_D3D4
+	BREAKPOINT 	"8183 fix this"
 	exg	a1,a0                              	| [$4eda: ex   de,hl]
 l_4edb:
 	move.b	(0x01,a2),d0                    	| [$4edb: ld   a,(ix+$01)]
@@ -8171,28 +8195,31 @@ l_4edb:
 	jcc	l_4eea                             	| [$4ee5: jr   nc,$4EEA]
 	move.w	#0x0030,d1                      	| [$4ee7: ld   bc,$0030]
 l_4eea:
-	ror.b	#1,d0                            	| [$4eea: rrca]
-	ror.b	#1,d0                            	| [$4eeb: rrca]
+	ror.b	#2,d0                            	| [$4eea: rrca]
+	                            	| [$4eeb: rrca]
 	and.b	#0x3E,d0                         	| [$4eec: and  $3E]
 	jbsr	add_d0_to_a0_0018                            	| [$4eee: rst  $18]
-	move.b	(a0),d4                         	| [$4eef: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$4ef0: inc  hl]
+	move.b	(a0)+,d4                         	| [$4eef: ld   e,(hl)]
+	                           	| [$4ef0: inc  hl]
 	move.b	(a0),d3                         	| [$4ef1: ld   d,(hl)]
+	LOAD_D3_16_FROM_D3D4
 	add.w	d1,a0                            	| [$4ef2: add  hl,bc]
-	.error	"review d1 computation above"
 	move.b	(a0),d1                         	| [$4ef3: ld   b,(hl)]
-	subq.w	#1,a0                           	| [$4ef4: dec  hl]
-	move.b	(a0),d2                         	| [$4ef5: ld   c,(hl)]
+	                           	| [$4ef4: dec  hl]
+	move.b	-(a0),d2                         	| [$4ef5: ld   c,(hl)]
+	LOAD_D1_16_FROM_D1D2
 	move.b	(0x02,a2),d6                    	| [$4ef6: ld   l,(ix+$02)]
 	move.b	(0x03,a3),d5                    	| [$4ef9: ld   h,(iy+$03)]
-	add.w	d3,a0                            	| [$4efc: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D5_16_FROM_D5D6
+	add.w	d3,d5                            	| [$4efc: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x03,a3)                    	| [$4efd: ld   (iy+$03),h]
 	move.b	d6,(0x02,a2)                    	| [$4f00: ld   (ix+$02),l]
 	move.b	(0x03,a2),d6                    	| [$4f03: ld   l,(ix+$03)]
 	move.b	(0x00,a3),d5                    	| [$4f06: ld   h,(iy+$00)]
-	add.w	d1,a0                            	| [$4f09: add  hl,bc]
-	.error	"review d1 computation above"
+	LOAD_D5_16_FROM_D5D6
+	add.w	d1,d5                            	| [$4f09: add  hl,bc]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x00,a3)                    	| [$4f0a: ld   (iy+$00),h]
 	move.b	d6,(0x03,a2)                    	| [$4f0d: ld   (ix+$03),l]
 	rts                                    	| [$4f10: ret]
@@ -8208,22 +8235,22 @@ l_4f16:
 	move.b	l_9478(a6),d0                   	| [$4f1c: ld   a,($9478)]
 	                               	| [$4f1f: and  a]
 	jne	l_4f27                             	| [$4f20: jr   nz,$4F27]
+	moveq	#0,d0
 	move.b	l_960B(a6),d0                   	| [$4f22: ld   a,($960B)]
-	jra	l_4f2a                             	| [$4f25: jr   $4F2A]
+	                             	| [$4f25: jr   $4F2A]
 
-l_4f2a:
 	add.b	d0,d0                            	| [$4f2a: add  a,a]
 	LEA_ROM	0x37B9,a0                          	| [$4f2b: ld   hl,$37B9]
-	add.b	d6,d0                            	| [$4f2e: add  a,l]
-	move.b	d0,d6                           	| [$4f2f: ld   l,a]
-	jcc	l_4f33                             	| [$4f30: jr   nc,$4F33]
-	.error	"review cpu flags (move.b,jcc)"
-	addq.b	#1,d5                           	| [$4f32: inc  h] [uncovered]
+	add.w	d0,a0                            	| [$4f2e: add  a,l]
+	                           	| [$4f2f: ld   l,a]
+	                          	| [$4f30: jr   nc,$4F33]
+	                           	| [$4f32: inc  h] [uncovered]
 l_4f33:
-	move.b	(a0),d4                         	| [$4f33: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$4f34: inc  hl]
+	move.b	(a0)+,d4                         	| [$4f33: ld   e,(hl)]
+	                           	| [$4f34: inc  hl]
 	move.b	(a0),d3                         	| [$4f35: ld   d,(hl)]
-	exg	a1,a0                              	| [$4f36: ex   de,hl]
+	LOAD_D3_16_FROM_D3D4                              	| [$4f36: ex   de,hl]
+	BREAKPOINT	"address??? d3 8244"
 l_4f37:
 	move.b	(0x01,a2),d0                    	| [$4f37: ld   a,(ix+$01)]
 	addq.b	#0x04,d0                        	| [$4f3a: add  a,$04]
@@ -8232,32 +8259,32 @@ l_4f37:
 	jcc	l_4f46                             	| [$4f41: jr   nc,$4F46]
 	move.w	#0x0030,d1                      	| [$4f43: ld   bc,$0030]
 l_4f46:
-	ror.b	#1,d0                            	| [$4f46: rrca]
-	ror.b	#1,d0                            	| [$4f47: rrca]
+	ror.b	#2,d0                            	| [$4f46: rrca]
+	                            	| [$4f47: rrca]
 	and.b	#0x3E,d0                         	| [$4f48: and  $3E]
 	jbsr	add_d0_to_a0_0018                            	| [$4f4a: rst  $18]
 	move.b	(a0),d4                         	| [$4f4b: ld   e,(hl)]
 	addq.w	#1,a0                           	| [$4f4c: inc  hl]
 	move.b	(a0),d3                         	| [$4f4d: ld   d,(hl)]
+	LOAD_D3_16_FROM_D3D4
 	add.w	d1,a0                            	| [$4f4e: add  hl,bc]
-	.error	"review d1 computation above"
 	move.b	(a0),d1                         	| [$4f4f: ld   b,(hl)]
-	subq.w	#1,a0                           	| [$4f50: dec  hl]
-	move.b	(a0),d2                         	| [$4f51: ld   c,(hl)]
+	                           	| [$4f50: dec  hl]
+	move.b	-(a0),d2                         	| [$4f51: ld   c,(hl)]
 	move.b	(0x02,a2),d6                    	| [$4f52: ld   l,(ix+$02)]
 	move.b	(0x03,a3),d5                    	| [$4f55: ld   h,(iy+$03)]
-	add.w	d3,a0                            	| [$4f58: add  hl,de]
-	.error	"review d3 computation above"
-	add.w	d3,a0                            	| [$4f59: add  hl,de]
-	.error	"review d3 computation above"
+	LOAD_D5_16_FROM_D5D6
+	add.w	d3,d5                            	| [$4f58: add  hl,de]
+	add.w	d3,d5                            	| [$4f59: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x03,a3)                    	| [$4f5a: ld   (iy+$03),h]
 	move.b	d6,(0x02,a2)                    	| [$4f5d: ld   (ix+$02),l]
 	move.b	(0x03,a2),d6                    	| [$4f60: ld   l,(ix+$03)]
 	move.b	(0x00,a3),d5                    	| [$4f63: ld   h,(iy+$00)]
-	add.w	d1,a0                            	| [$4f66: add  hl,bc]
-	.error	"review d1 computation above"
-	add.w	d1,a0                            	| [$4f67: add  hl,bc]
-	.error	"review d1 computation above"
+	LOAD_D5_16_FROM_D5D6
+	add.w	d1,d5                            	| [$4f66: add  hl,bc]
+	add.w	d1,d5                            	| [$4f67: add  hl,bc]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x00,a3)                    	| [$4f68: ld   (iy+$00),h]
 	move.b	d6,(0x03,a2)                    	| [$4f6b: ld   (ix+$03),l]
 	rts                                    	| [$4f6e: ret]
@@ -8265,27 +8292,25 @@ l_4f46:
 l_4faf:
 	jbsr	l_009a                            	| [$4faf: call $009A]
                        	| [$4fb2: ld   (watchdog_C000),a]
-	move.w	#0x0000,d5                      	| [$4fb5: ld   hl,$0000]
-	READ_ROM_BYTE	0x0000,d0                       	| [$4fb8: ld   a,($0000)]
-l_4fbb:
-	add.b	(a0),d0                          	| [$4fbb: add  a,(hl)]
-	addq.w	#1,a0                           	| [$4fbc: inc  hl]
-	exg	d0,d7                              	| [$4fbd: ex   af,af']
-	.error	"review carry flags used below? if so, adapt"
-	move.b	d5,d0                           	| [$4fbe: ld   a,h]
-	cmp.b	#0x60,d0                         	| [$4fbf: cp   $60]
-	jcc	l_4fc9                             	| [$4fc1: jr   nc,$4FC9]
-	exg	d0,d7                              	| [$4fc3: ex   af,af']
-	.error	"review carry flags used below? if so, adapt"
-                       	| [$4fc4: ld   (watchdog_C000),a]
-	jra	l_4fbb                             	| [$4fc7: jr   $4FBB]
-
-l_4fc9:
-	exg	d0,d7                              	| [$4fc9: ex   af,af']
-	.error	"review carry flags used below? if so, adapt"
-	subq.b	#0x00,d0                        	| [$4fca: sub  $00]
-l_4fcc:
-	jne	l_4fcc                             	| [$4fcc: jp   nz,$4FCC]
+	* rom checksum
+*	move.w	#0x0000,d5                      	| [$4fb5: ld   hl,$0000]
+*	READ_ROM_BYTE	0x0000,d0                       	| [$4fb8: ld   a,($0000)]
+*l_4fbb:
+*	add.b	(a0),d0                          	| [$4fbb: add  a,(hl)]
+*	addq.w	#1,a0                           	| [$4fbc: inc  hl]
+*	exg	d0,d7                              	| [$4fbd: ex   af,af']
+*	move.b	d5,d0                           	| [$4fbe: ld   a,h]
+*	cmp.b	#0x60,d0                         	| [$4fbf: cp   $60]
+*	jcc	l_4fc9                             	| [$4fc1: jr   nc,$4FC9]
+*	exg	d0,d7                              	| [$4fc3: ex   af,af']
+*                       	| [$4fc4: ld   (watchdog_C000),a]
+*	jra	l_4fbb                             	| [$4fc7: jr   $4FBB]
+*
+*l_4fc9:
+*	exg	d0,d7                              	| [$4fc9: ex   af,af']
+*	subq.b	#0x00,d0                        	| [$4fca: sub  $00]
+*l_4fcc:
+*	jne	l_4fcc                             	| [$4fcc: jp   nz,$4FCC]
 	jra	l_066e                             	| [$4fcf: jp   $066E]
 
 l_52c3:
@@ -8293,33 +8318,34 @@ l_52c3:
                        	| [$52c6: ld   (watchdog_C000),a]
 	jra	l_20be                             	| [$52c9: jp   $20BE]
 
-l_57dc:
+clear_ram_57dc:
 	lea	l_9000(a6),a0                      	| [$57dc: ld   hl,$9000]
 	lea	l_9001(a6),a1                      	| [$57df: ld   de,$9001]
-	LEA_ROM	0x07FF,a4                          	| [$57e2: ld   bc,$07FF]
+	move.w	#0x07FF,d1                          	| [$57e2: ld   bc,$07FF]
 	clr.b	(a0)                             	| [$57e5: ld   (hl),$00]
 	jbsr	ldir                              	| [$57e7: ldir]
-	.error	"review special instruction inputs"
                        	| [$57e9: ld   (watchdog_C000),a]
 	jra	l_3010                             	| [$57ec: jp   $3010]
 
 * clear screen #2
 l_5854:
-	lea	l_8400,a0                          	| [$5854: ld   hl,$8400]
-	LEA_ROM	0x0400,a4                          	| [$5857: ld   bc,$0400]
+	* fill with 0x83
+	lea	0x8400,a0                          	| [$5854: ld   hl,$8400]
+	move.w	#0x0400,d1                          	| [$5857: ld   bc,$0400]
 	move.b	#0x83,d3                        	| [$585a: ld   d,$83]
+	move.b	d3,d0                         	| [$585c: ld   (hl),d]
 l_585c:
-	move.b	d3,(a0)                         	| [$585c: ld   (hl),d]
-	addq.w	#1,a0                           	| [$585d: inc  hl]
-	subq.w	#1,a4                           	| [$585e: dec  bc]
-	move.b	d2,d0                           	| [$585f: ld   a,c]
-	or.b	d1,d0                             	| [$5860: or   b]
+	jbsr	osd_w_videoram
+	addq	#1,a0                           	| [$585d: inc  hl]
+	subq.w	#1,d1                           	| [$585e: dec  bc]
+										| [$585f: ld   a,c]
+											| [$5860: or   b]
 	jne	l_585c                             	| [$5861: jr   nz,$585C]
 	lea	l_9500(a6),a0                      	| [$5863: ld   hl,$9500]
 	move.b	#0x40,d1                        	| [$5866: ld   b,$40]
 l_5868:
-	move.b	#0xFF,(a0)                      	| [$5868: ld   (hl),$FF]
-	addq.w	#1,a0                           	| [$586a: inc  hl]
+	move.b	#0xFF,(a0)+                      	| [$5868: ld   (hl),$FF]
+	                           	| [$586a: inc  hl]
 	subq.b	#1,d1                           	| [...]
 	jne	l_5868                             	| [$586b: djnz $5868]
 	jra	l_0980                             	| [$586d: jp   $0980]
@@ -8343,7 +8369,6 @@ l_5921:
 	move.b	#0x09,d4                        	| [$5929: ld   e,$09]
 	move.w	#0x0004,d1                      	| [$592b: ld   bc,$0004]
 	jbsr	exx                               	| [$592e: exx]
-	.error	"review special instruction inputs"
 	move.w	#0x0010,d3                      	| [$592f: ld   de,$0010]
 	move.b	#0x08,d1                        	| [$5932: ld   b,$08]
 	lea	l_9330(a6),a0                      	| [$5934: ld   hl,$9330]
@@ -8370,11 +8395,8 @@ l_5943:
 	move.b	#0x09,d1                        	| [$5958: ld   b,$09]
 l_595a:
 	jbsr	exx                               	| [$595a: exx]
-	.error	"review special instruction inputs"
 	move.w	#0x0008,d3                      	| [$595b: ld   de,$0008]
 	move.w	#0x0010,d1                      	| [$595e: ld   bc,$0010]
-	jbsr	exx                               	| [$5961: exx]
-	.error	"review special instruction inputs"
 	move.b	#0x24,d5                        	| [$5962: ld   h,$24]
 	move.b	#0x0D,d6                        	| [$5964: ld   l,$0D]
 	move.b	l_9001(a6),d0                   	| [$5966: ld   a,($9001)]
@@ -8403,13 +8425,9 @@ l_596c:
 
 l_5994:
 	jbsr	exx                               	| [$5994: exx]
-	.error	"review special instruction inputs"
 	add.w	d1,a2                            	| [$5995: add  ix,bc]
-	.error	"review d1 computation above"
 	add.w	d3,a3                            	| [$5997: add  iy,de]
-	.error	"review d3 computation above"
 	jbsr	exx                               	| [$5999: exx]
-	.error	"review special instruction inputs"
 	subq.b	#1,d1                           	| [...]
 	jne	l_596c                             	| [$599a: djnz $596C]
 	rts                                    	| [$599c: ret]
@@ -8676,7 +8694,6 @@ l_5b2d:
 l_5b40:
 	move.w	#0x0004,d1                      	| [$5b40: ld   bc,$0004]
 	jbsr	exx                               	| [$5b43: exx]
-	.error	"review special instruction inputs"
 	lea	l_9230(a6),a0                      	| [$5b44: ld   hl,$9230]
 	move.w	#0x0010,d3                      	| [$5b47: ld   de,$0010]
 	move.b	#0x0C,d1                        	| [$5b4a: ld   b,$0C]
@@ -8686,7 +8703,6 @@ l_5b40:
 l_5b53:
 	move.w	#0x0008,d1                      	| [$5b53: ld   bc,$0008]
 	jbsr	exx                               	| [$5b56: exx]
-	.error	"review special instruction inputs"
 	move.w	#0x0010,d3                      	| [$5b57: ld   de,$0010]
 	move.b	#0x0A,d1                        	| [$5b5a: ld   b,$0A]
 	lea	l_9010(a6),a0                      	| [$5b5c: ld   hl,$9010]
@@ -8696,7 +8712,6 @@ l_5b53:
 l_5b66:
 	move.w	#0x0008,d1                      	| [$5b66: ld   bc,$0008]
 	jbsr	exx                               	| [$5b69: exx]
-	.error	"review special instruction inputs"
 	move.w	#0x0010,d3                      	| [$5b6a: ld   de,$0010]
 	move.b	#0x0A,d1                        	| [$5b6d: ld   b,$0A]
 	lea	l_9010(a6),a0                      	| [$5b6f: ld   hl,$9010]
@@ -8708,7 +8723,6 @@ l_5b79:
 	addq.b	#1,d0                           	| [$5b7a: inc  a]
 	jne	l_5b95                             	| [$5b7b: jp   nz,$5B95]
 	jbsr	exx                               	| [$5b7e: exx]
-	.error	"review special instruction inputs"
 	move.b	(0x03,a3),d0                    	| [$5b7f: ld   a,(iy+$03)]
 	sub.b	d5,d0                            	| [$5b82: sub  h]
 	add.b	d3,d0                            	| [$5b83: add  a,d]
@@ -8720,7 +8734,6 @@ l_5b79:
 	cmp.b	d4,d0                            	| [$5b8c: cp   e]
 	jcc	l_5b96                             	| [$5b8d: jr   nc,$5B96]
 	jbsr	exx                               	| [$5b8f: exx]
-	.error	"review special instruction inputs"
 	move.b	#0xF0,d0                        	| [$5b90: ld   a,$F0]
 	move.b	d0,(a0)                         	| [$5b92: ld   (hl),a]
 	tst.b	d0                               	| [$5b93: and  a]
@@ -8728,14 +8741,10 @@ l_5b79:
 
 l_5b95:
 	jbsr	exx                               	| [$5b95: exx]
-	.error	"review special instruction inputs"
 l_5b96:
 	add.w	d1,a3                            	| [$5b96: add  iy,bc]
-	.error	"review d1 computation above"
 	jbsr	exx                               	| [$5b98: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a0                            	| [$5b99: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_5b79                             	| [$5b9a: djnz $5B79]
 	CLEAR_XC_FLAGS                         	| [$5b9c: xor  a]
@@ -8747,7 +8756,6 @@ l_5b9e:
 	addq.b	#1,d0                           	| [$5b9f: inc  a]
 	jne	l_5bb9                             	| [$5ba0: jp   nz,$5BB9]
 	jbsr	exx                               	| [$5ba3: exx]
-	.error	"review special instruction inputs"
 	move.b	(0x03,a3),d0                    	| [$5ba4: ld   a,(iy+$03)]
 	sub.b	d5,d0                            	| [$5ba7: sub  h]
 	add.b	d3,d0                            	| [$5ba8: add  a,d]
@@ -8800,14 +8808,10 @@ l_5bc3:
 
 l_5be1:
 	jbsr	exx                               	| [$5be1: exx]
-	.error	"review special instruction inputs"
 l_5be2:
 	add.w	d1,a3                            	| [$5be2: add  iy,bc]
-	.error	"review d1 computation above"
 	jbsr	exx                               	| [$5be4: exx]
-	.error	"review special instruction inputs"
 	add.w	d3,a0                            	| [$5be5: add  hl,de]
-	.error	"review d3 computation above"
 	subq.b	#1,d1                           	| [...]
 	jne	l_5bc3                             	| [$5be6: djnz $5BC3]
 	CLEAR_XC_FLAGS                         	| [$5be8: xor  a]
@@ -8822,13 +8826,14 @@ l_5c1f:
 	rts                                    	| [$5c24: ret  z] [...]
 0:
 	subq.b	#1,(a0)                         	| [$5c25: dec  (hl)]
-	move.w	d0,-(sp)                        	| [$5c26: push af]
+	sne		d7
+	movem.w	d0/d7,-(sp)                        	| [$5c26: push af]
 	addq.w	#1,a0                           	| [$5c27: inc  hl]
 	move.b	(a0),d0                         	| [$5c28: ld   a,(hl)]
 	jbsr	l_5c38                            	| [$5c29: call $5C38]
-	move.w	(sp)+,d0                        	| [$5c2c: pop  af]
+	movem.w	(sp)+,d0/d7                        	| [$5c2c: pop  af]
+	tst.b	d7
 	bne.b	0f                               	| [...]
-	.error	"review cpu flags (move.w,bne.b)"
 	rts                                    	| [$5c2d: ret  z] [...]
 0:
 	subq.b	#1,d0                           	| [$5c2e: dec  a]
@@ -8837,8 +8842,8 @@ l_5c1f:
 	move.b	d6,d4                           	| [$5c32: ld   e,l]
 	move.b	d5,d3                           	| [$5c33: ld   d,h]
 	addq.w	#1,a0                           	| [$5c34: inc  hl]
+	BREAKPOINT	"check registers 8840"
 	jbsr	ldir                              	| [$5c35: ldir]
-	.error	"review special instruction inputs"
 	rts                                    	| [$5c37: ret]
 
 l_5c38:
@@ -8879,7 +8884,7 @@ l_5c5d:
 	lea	l_9543(a6),a0                      	| [$5c5d: ld   hl,$9543]
 	addq.b	#1,(a0)                         	| [$5c60: inc  (hl)]
 	move.b	(a0),d0                         	| [$5c61: ld   a,(hl)]
-	jbsr	rst_08                            	| [$5c62: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$5c62: rst  $08]
 	move.w	(sp)+,d0                        	| [$5c63: pop  af]
 	move.b	d0,(a0)                         	| [$5c64: ld   (hl),a]
 	move.l	(sp)+,a0                        	| [$5c65: pop  hl]
@@ -9117,15 +9122,13 @@ l_5f4d:
 	lea	l_9010(a6),a0                      	| [$5f53: ld   hl,$9010]
 	lea	l_9011(a6),a1                      	| [$5f56: ld   de,$9011]
 	clr.b	(a0)                             	| [$5f59: ld   (hl),$00]
-	LEA_ROM	0x039F,a4                          	| [$5f5b: ld   bc,$039F]
+	move.w	#0x039F,a4                          	| [$5f5b: ld   bc,$039F]
 	jbsr	ldir                              	| [$5f5e: ldir]
-	.error	"review special instruction inputs"
 	lea	l_9620(a6),a0                      	| [$5f60: ld   hl,$9620]
 	lea	l_9621(a6),a1                      	| [$5f63: ld   de,$9621]
 	clr.b	(a0)                             	| [$5f66: ld   (hl),$00]
 	move.w	#0x003F,d1                      	| [$5f68: ld   bc,$003F]
 	jbsr	ldir                              	| [$5f6b: ldir]
-	.error	"review special instruction inputs"
 	CLEAR_XC_FLAGS                         	| [$5f6d: xor  a]
 	clr.b	d0                               	| [$5f6d: xor  a]
 	move.b	d0,l_9662(a6)                   	| [$5f6e: ld   ($9662),a]
@@ -9134,13 +9137,9 @@ l_5f4d:
 	move.b	d0,l_9663(a6)                   	| [$5f73: ld   ($9663),a]
 	move.b	d0,l_9666(a6)                   	| [$5f76: ld   ($9666),a]
 	STORE_RAM_POINTER	a0,l_9664(a6)        	| [$5f79: ld   ($9664),hl]
-	.error	"review check if source is in RAM"
 	STORE_RAM_POINTER	a0,l_9667(a6)        	| [$5f7c: ld   ($9667),hl]
-	.error	"review check if source is in RAM"
 	STORE_RAM_POINTER	a0,l_9627(a6)        	| [$5f7f: ld   ($9627),hl]
-	.error	"review check if source is in RAM"
 	STORE_RAM_POINTER	a0,l_9647(a6)        	| [$5f82: ld   ($9647),hl]
-	.error	"review check if source is in RAM"
 	move.b	l_9441(a6),d0                   	| [$5f85: ld   a,($9441)]
 	move.b	d0,l_9620(a6)                   	| [$5f88: ld   ($9620),a]
 	move.b	d0,d1                           	| [$5f8b: ld   b,a]
@@ -9217,7 +9216,7 @@ ldir:
     rts
 
 * < A0: source (HL)
-* < D1: length to search
+* < D1.W: length to search
 * > D0.B value searched for (A)
 * > Z flag if found
 cpir:

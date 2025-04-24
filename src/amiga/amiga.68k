@@ -30,8 +30,7 @@ Y_MAX = 256
 
 
 BASE_BPLCON2_VALUE = 0x0064		| sprites above all playfields
-SCREEN_TILE_ADDRESS = 0x8400
-SCREEN_COLOR_ADDRESS = 0x8000
+
 
 
 
@@ -1712,7 +1711,7 @@ osd_w_videoram:
 	jmi		2f
 	.endif
 
-	sub.w	#SCREEN_TILE_ADDRESS,d7
+	sub.w	#0x8000,d7
 	.ifndef	RELEASE
 	bmi.b	2f
 	cmp.w	#0x800,d7
@@ -1720,7 +1719,7 @@ osd_w_videoram:
 
 2:
 	* should not happen
-	add.w	#SCREEN_TILE_ADDRESS,d7
+	add.w	#0x8000,d7
 	BREAKPOINT	"write videoram out of range (D7)"
 	bra.b	osd_w_videoram_out
 	.endif

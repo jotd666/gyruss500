@@ -906,6 +906,11 @@ update_sprites_0244:
 075B: 0E 10       ld   c,$10
 075D: 18 12       jr   $0771
 
+075F: 11 01 85    ld   de,$8501
+0762: 21 68 96    ld   hl,$9668
+0765: 0E 10       ld   c,$10
+0767: 18 08       jr   $0771
+
 0769: 11 41 86    ld   de,$8641
 076C: 21 0D 94    ld   hl,$940D
 076F: 0E 11       ld   c,$11
@@ -2215,6 +2220,10 @@ update_sprites_0244:
 1305: AF          xor  a
 1306: 32 83 C1    ld   ($C183),a
 1309: C9          ret
+
+130A: 21 02 94    ld   hl,$9402
+130D: 35          dec  (hl)
+130E: C9          ret
 
 130F: 3A 31 94    ld   a,($9431)
 1312: E6 0F       and  $0F
@@ -5516,6 +5525,9 @@ update_sprites_0244:
 32CD: 06 0A       ld   b,$0A
 32CF: C3 E2 32    jp   $32E2
 
+32D2: 06 06       ld   b,$06
+32D4: C3 E2 32    jp   $32E2
+
 32D7: 4F          ld   c,a
 32D8: 3A E7 09    ld   a,($09E7)
 32DB: 91          sub  c
@@ -5837,39 +5849,7 @@ update_sprites_0244:
 36B7: D9          exx
 36B8: 3D          dec  a
 36B9: C9          ret
-36BA: 5A          ld   e,d
-36BB: 51          ld   d,c
-36BC: 01 6A 51    ld   bc,$516A
-36BF: 03          inc  bc
-36C0: 8A          adc  a,d
-36C1: 51          ld   d,c
-36C2: 07          rlca
-36C3: 5A          ld   e,d
-36C4: 51          ld   d,c
-36C5: 01 6A 51    ld   bc,$516A
-36C8: 03          inc  bc
-36C9: B2          or   d
-36CA: 51          ld   d,c
-36CB: 0C          inc  c
-36CC: CA 51 0F    jp   z,$0F51
-36CF: 5A          ld   e,d
-36D0: 51          ld   d,c
-36D1: 01 15 87    ld   bc,$8715
-36D4: 06 FA       ld   b,$FA
-36D6: 8B          adc  a,e
-36D7: 0F          rrca
-36D8: EE 37       xor  $37
-36DA: 0F          rrca
-36DB: 83          add  a,e
-36DC: 01 0F FA    ld   bc,$FA0F
-36DF: B1          or   c
-36E0: 37          scf
-36E1: 48          ld   c,b
-36E2: 39          add  hl,sp
-36E3: 83          add  a,e
-36E4: DC B1 48    call c,$48B1
-36E7: 47          ld   b,a
-36E8: 9E          sbc  a,(hl)
+
 36E9: AF          xor  a
 36EA: 32 76 94    ld   ($9476),a
 36ED: 32 3E 92    ld   ($923E),a
@@ -6063,6 +6043,10 @@ update_sprites_0244:
 38E6: 16 01       ld   d,$01
 38E8: FF          rst  $38
 38E9: C9          ret
+
+38EA: 11 26 01    ld   de,$0126
+38ED: FF          rst  $38
+38EE: C9          ret
 
 38EF: 3A 00 94    ld   a,($9400)
 38F2: E6 01       and  $01
@@ -7048,6 +7032,23 @@ update_starfield_3A37:
 49E3: 3D          dec  a
 49E4: 28 02       jr   z,$49E8
 49E6: 18 31       jr   $4A19
+
+49E8: EB          ex   de,hl
+49E9: 7E          ld   a,(hl)
+49EA: FD 96 00    sub  (iy+$00)
+49ED: FE 0C       cp   $0C
+49EF: 30 44       jr   nc,$4A35
+49F1: 2C          inc  l
+49F2: 2C          inc  l
+49F3: 2C          inc  l
+49F4: 7E          ld   a,(hl)
+49F5: FD 96 03    sub  (iy+$03)
+49F8: C6 04       add  a,$04
+49FA: FE 09       cp   $09
+49FC: 30 37       jr   nc,$4A35
+49FE: EB          ex   de,hl
+49FF: 36 F0       ld   (hl),$F0
+4A01: C3 A4 49    jp   $49A4
 
 ; clear screen
 4A04: 21 00 80    ld   hl,$8000

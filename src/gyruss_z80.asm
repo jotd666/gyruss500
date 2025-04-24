@@ -859,6 +859,9 @@ update_sprites_0244:
 06D5: CD 55 07    call $0755
 06D8: 18 03       jr   $06DD
 
+06DA: CD 5F 07    call $075F
+06DD: C9          ret
+
 06DD: C9          ret
 
 06DE: CD 07 02    call $0207
@@ -890,6 +893,13 @@ update_sprites_0244:
 0715: E7          rst  $20
 0716: 10 F9       djnz $0711
 0718: C9          ret
+0719: 3A D4 06    ld   a,($06D4)
+071C: CD E4 07    call $07E4
+071F: CD 55 07    call $0755
+0722: 3A 00 12    ld   a,($1200)
+0725: CD E4 07    call $07E4
+0728: CD 5F 07    call $075F
+072B: C9          ret
 
 0755: 11 81 87    ld   de,$8781
 0758: 21 65 96    ld   hl,$9665
@@ -1204,6 +1214,12 @@ update_sprites_0244:
 09E6: 06 24       ld   b,$24
 09E8: C3 FA 09    jp   $09FA
 
+09EB: 21 B0 90    ld   hl,$90B0
+09EE: 11 10 00    ld   de,$0010
+09F1: D9          exx
+09F2: 21 B6 90    ld   hl,$90B6
+09F5: 11 10 00    ld   de,$0010
+09F8: 06 24       ld   b,$24
 09FA: D9          exx
 09FB: 7E          ld   a,(hl)
 09FC: 3C          inc  a
@@ -1332,6 +1348,10 @@ update_sprites_0244:
 0AD9: 32 65 94    ld   ($9465),a
 0ADC: CD AA 5D    call $5DAA
 0ADF: C3 0B 08    jp   $080B
+
+0AE2: 36 00       ld   (hl),$00
+0AE4: AF          xor  a
+0AE5: C9          ret
 
 0AED: 21 1C 94    ld   hl,$941C
 0AF0: 34          inc  (hl)

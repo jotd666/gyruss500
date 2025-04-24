@@ -948,6 +948,15 @@ l_0711:
 	jne	l_0711                             	| [$0716: djnz $0711]
 	rts                                    	| [$0718: ret]
 
+l_0719:
+	READ_ROM_BYTE	0x06D4,d0                       	| [$0719: ld   a,($06D4)]
+	jbsr	l_07e4                            	| [$071c: call $07E4]
+	jbsr	l_0755                            	| [$071f: call $0755]
+	READ_ROM_BYTE	0x1200,d0                       	| [$0722: ld   a,($1200)]
+	jbsr	l_07e4                            	| [$0725: call $07E4]
+	jbsr	l_075f                            	| [$0728: call $075F]
+	rts                                    	| [$072b: ret]
+
 l_0755:
 	lea	0x8781,a1                          	| [$0755: ld   de,$8781]
 	lea	l_9665(a6),a0                      	| [$0758: ld   hl,$9665]
@@ -5730,7 +5739,7 @@ l_2f06:
 	and.b	#0x0E,d0                         	| [$2f1e: and  $0E]
 	add.b	d1,d0                            	| [$2f20: add  a,b]
 	LEA_ROM	0x2F54,a0                          	| [$2f21: ld   hl,$2F54]
-	jbsr	rst_08                            	| [$2f24: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008                            	| [$2f24: rst  $08]
 
 
 l_2f25:
@@ -7551,9 +7560,12 @@ l_48ba:
 	and.b	#0x07,d0                         	| [$48f5: and  $07]
 	jne	l_4900                             	| [$48f7: jr   nz,$4900]
 	move.b	l_9000(a6),d0                   	| [$48f9: ld   a,($9000)]
+	jra		0f
 * game jumps here in the middle of the prev instruction ???
-*48FA: ??????????? nop
-*48FB: ??????????? sub  b
+l_48fa:
+	BREAKPOINT	"d1???"
+	sub.b	d1,d0
+0:
 	addq.b	#1,d0                           	| [$48fc: inc  a]
 	bne.b	0f                               	| [...]
 	jbsr	l_5d04                            	| [$48fd: call z,$5D04]
@@ -7939,6 +7951,10 @@ l_4c00:
 	move.w	#0x0107,d3                          	| [$4c38: ld   de,$0107]
 	jra	rst_38                             	| [$4c3b: jp   $0038]
 
+l_4c3e:
+	LEA_ROM	0x010D,a1                          	| [$4c3e: ld   de,$010D]
+	jra	l_0038                             	| [$4c41: jp   $0038]
+
 l_4c54:
 	jbsr	l_3831                            	| [$4c54: call $3831]
 	jbsr	l_0e43                            	| [$4c57: call $0E43]
@@ -7988,13 +8004,13 @@ l_4c84:
 
 l_4c9f:
 	lea	0x85CE,a0                      	| [$4c9f: ld   hl,$85CE]
-	move.b	l_2F0A,d0                       	| [$4ca2: ld   a,($2F0A)]
+	READ_ROM_BYTE	0x2F0A,d0                       	| [$4ca2: ld   a,($2F0A)]
 	move.b	d0,d1                           	| [$4ca5: ld   b,a]
 	move.b	d0,d2                           	| [$4ca6: ld   c,a]
-	lea	l_4E4F,a1                          	| [$4ca7: ld   de,$4E4F]
-	jbsr	l_4e77                            	| [$4caa: call write_to_screen_4e77]
-	lea	l_493C,a0                          	| [$4cad: ld   hl,$493C]
-	move.b	l_4133,d0                       	| [$4cb0: ld   a,($4133)]
+	LEA_ROM	0x4E4F,a1                          	| [$4ca7: ld   de,$4E4F]
+	jbsr	write_to_screen_4e77           	| [$4caa: call write_to_screen_4e77]
+	LEA_ROM	0x493C,a0                          	| [$4cad: ld   hl,$493C]
+	READ_ROM_BYTE	0x4133,d0                       	| [$4cb0: ld   a,($4133)]
 	move.b	d0,d1                           	| [$4cb3: ld   b,a]
 	lea	l_9818(a6),a1                      	| [$4cb4: ld   de,$9818]
 	jra	l_4d04                             	| [$4cb7: jp   $4D04]
@@ -8005,11 +8021,11 @@ l_4cba:
 	move.b	d0,d1                           	| [$4cc0: ld   b,a]
 	move.b	#0x04,d0                        	| [$4cc1: ld   a,$04]
 	move.b	d0,d2                           	| [$4cc3: ld   c,a]
-	lea	l_4DBC,a1                          	| [$4cc4: ld   de,$4DBC]
+	LEA_ROM	0x4DBC,a1                          	| [$4cc4: ld   de,$4DBC]
 	jra	write_to_screen_4e77                  	| [$4cc7: jp   write_to_screen_4e77]
 
 l_4cca:
-	lea	l_06E0,a0                          	| [$4cca: ld   hl,$06E0] [uncovered]
+	LEA_ROM	0x06E0,a0                          	| [$4cca: ld   hl,$06E0] [uncovered]
 	clr.b	d1                               	| [$4ccd: ld   b,$00]
 	move.b	#0xC0,d0                        	| [$4ccf: ld   a,$C0]
 l_4cd1:
@@ -8025,8 +8041,8 @@ l_4cd1:
 	move.b	#0x02,d0                        	| [$4ce0: ld   a,$02]
 	move.b	d0,d1                           	| [$4ce2: ld   b,a]
 	move.b	d0,d2                           	| [$4ce3: ld   c,a]
-	lea	l_4E6F,a1                          	| [$4ce4: ld   de,$4E6F]
-	jra	l_4e77                             	| [$4ce7: jp   write_to_screen_4e77]
+	LEA_ROM	0x4E6F,a1                          	| [$4ce4: ld   de,$4E6F]
+	jra	write_to_screen_4e77                   	| [$4ce7: jp   write_to_screen_4e77]
 
 l_4cea:
 	lea	0x85AD,a0                          	| [$4cea: ld   hl,$85AD]
@@ -8067,6 +8083,48 @@ l_4d0f:
 	jne	l_4d0f                             	| [$4d1f: djnz $4D0F]
 	rts                                    	| [$4d21: ret]
 
+l_4d22:
+	move.b	d1,d0                           	| [$4d22: ld   a,b]
+	ror.b	#1,d0                            	| [$4d23: rrca]
+	and.b	#0x7F,d0                         	| [$4d24: and  $7F]
+	move.b	d0,d1                           	| [$4d26: ld   b,a]
+	move.b	l_960B(a6),d0                   	| [$4d27: ld   a,($960B)]
+	move.b	#0x88,d2                        	| [$4d2c: ld   c,$88]
+	cmp.b	#0x16,d0                         	| [$4d2a: cp   $16]
+	jne	l_4d32                             	| [$4d2e: jr   nz,$4D32]
+	move.b	#0xA8,d2                        	| [$4d30: ld   c,$A8]
+l_4d32:
+
+	move.l	a0,a3                        	| [$4d32: push hl]
+	                        	| [$4d33: pop  iy]
+	movem.w	d3/d4,-(sp)                    	| [$4d35: push de]
+	move.l	a1,a2                        	| [$4d35: push de]
+											| [$4d36: pop  ix]
+	move.b	(0x00,a3),d0                    	| [$4d38: ld   a,(iy+$00)]
+	add.b	#0x0F,d0                         	| [$4d3b: add  a,$0F]
+	not.b	d0                               	| [$4d3d: cpl]
+	move.b	d0,(0x00,a2)                    	| [$4d3e: ld   (ix+$00),a]
+	move.b	(0x03,a3),d0                    	| [$4d41: ld   a,(iy+$03)]
+	add.b	#0x0D,d0                         	| [$4d44: add  a,$0D]
+	not.b	d0                               	| [$4d46: cpl]
+	move.b	d0,(0x03,a2)                    	| [$4d47: ld   (ix+$03),a]
+	move.b	d2,(0x02,a2)                    	| [$4d4a: ld   (ix+$02),c]
+	move.b	d2,(0x06,a2)                    	| [$4d4d: ld   (ix+$06),c]
+	move.b	(0x01,a3),d0                    	| [$4d50: ld   a,(iy+$01)]
+	move.b	d0,(0x05,a2)                    	| [$4d53: ld   (ix+$05),a]
+	move.b	(0x05,a3),d0                    	| [$4d56: ld   a,(iy+$05)]
+	move.b	d0,(0x01,a2)                    	| [$4d59: ld   (ix+$01),a]
+	exg	a1,a0                              	| [$4d5c: ex   de,hl]
+	READ_ROM_BYTE	0x1DE0,d0                       	| [$4d5d: ld   a,($1DE0)]
+	jbsr	add_d0_to_a0_0018                            	| [$4d60: rst  $18]
+	exg	a1,a0                              	| [$4d61: ex   de,hl]
+	READ_ROM_BYTE	0x2E5C,d0                       	| [$4d62: ld   a,($2E5C)]
+	jbsr	add_d0_to_a0_0018                            	| [$4d65: rst  $18]
+	subq.b	#1,d1                           	| [...]
+	jne	l_4d32                             	| [$4d66: djnz $4D32]
+	rts                                    	| [$4d68: ret]
+
+	* unreached???
 	READ_ROM_BYTE	0x0DD4,d0                       	| [$4e27: ld   a,($0DD4)]
 	jbsr	write_1up_07eA                            	| [$4e2a: call $07E4]
 	move.b	starting_stage_9609(a6),d0      	| [$4e2d: ld   a,(starting_stage_9609)]
@@ -8086,7 +8144,7 @@ l_4e35:
 	rts                                    	| [$4e44: ret]
 
 l_4e45:
-	move.b	l_C0E0,d0                       	| [$4e45: ld   a,($C0E0)]
+	jbsr	osd_read_dsw_1                       	| [$4e45: ld   a,($C0E0)]
 	not.b	d0                               	| [$4e48: cpl]
 	move.b	d0,l_9431(a6)                   	| [$4e49: ld   ($9431),a]
 	jra	l_1019                             	| [$4e4c: jp   $1019]

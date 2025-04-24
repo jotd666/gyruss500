@@ -1,12 +1,12 @@
 *
-*	Amiga-specific portions of Pooyan
+*	Amiga-specific portions of Gyruss
 *
-* (c) JOTD 2024
+* (c) JOTD 2025
 *
 
 
 
-.include "../src/pooyan.inc"
+.include "../src/gyruss.inc"
 .include "custom.i"
 .include "exec_lvos.i"
 .include "dos_lvos.i"
@@ -684,7 +684,7 @@ demo_game:
 	move.l	a6,ram_start_8000
 	.endif
 
-	jmp			pooyan_reset					| pass control to the mpatrol core
+	jmp			gyruss_reset					| pass control to the mpatrol core
 		
 	
 * just in case some hardware calls nmi
@@ -757,7 +757,7 @@ _vblank:
 	addq.b	#1,d0
 	cmp.b	#5,d0
 	bne.b	1f
-	jbsr		pooyan_irq
+	jbsr		gyruss_irq
 	clr.b	interrupt_mode	
 	clr.b	d0
 1:
@@ -769,7 +769,7 @@ _vblank:
 	
 	subq.w	#1,delay_timer
 		
-	jbsr		pooyan_irq
+	jbsr		gyruss_irq
 
 	tst.b	frameskip
 	jeq		0f

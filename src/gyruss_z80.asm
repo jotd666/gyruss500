@@ -720,6 +720,7 @@ update_sprites_0244:
 057B: C2 45 18    jp   nz,$1845
 057E: C9          ret
 
+* ROM checksum
 057F: 21 A0 40    ld   hl,$40A0
 0582: 06 00       ld   b,$00
 0584: 3E 00       ld   a,$00
@@ -727,7 +728,7 @@ update_sprites_0244:
 0587: 23          inc  hl
 0588: 10 FC       djnz $0586
 058A: C6 E5       add  a,$E5
-058C: C2 76 48    jp   nz,$4876
+058C: C2 76 48    jp   nz,$4876		; bogus
 058F: 11 98 33    ld   de,$3398
 0592: 21 44 84    ld   hl,$8444
 0595: 0E 1C       ld   c,$1C
@@ -984,6 +985,13 @@ update_sprites_0244:
 07FA: 23          inc  hl
 07FB: E7          rst  $20
 07FC: C3 EF 07    jp   $07EF
+
+07FF: 21 2B 94    ld   hl,$942B
+0802: 34          inc  (hl)
+0803: AF          xor  a
+0804: 32 2C 94    ld   ($942C),a
+0807: CD 00 14    call $1400
+080A: C9          ret
 
 080B: 21 2C 94    ld   hl,$942C
 080E: 34          inc  (hl)
@@ -1360,6 +1368,11 @@ update_sprites_0244:
 0B2D: C0          ret  nz
 0B2E: C3 A0 10    jp   $10A0    ; [uncovered] 
 
+0B31: 3A 2E 94    ld   a,($942E)	; [uncovered] 
+0B34: E6 18       and  $18			; [uncovered] 
+0B36: C8          ret  z			; [uncovered] 
+0B37: C3 7B 0F    jp   $0F7B		; [uncovered] 
+
 0B42: C3 A0 10    call $3B2D
 0B45: CD 43 0E    call $0E43
 0B48: AF          xor  a
@@ -1505,6 +1518,19 @@ update_sprites_0244:
 0C74: CD D4 5D    call $5DD4
 0C77: C3 0B 08    jp   $080B
 
+0C7A: 3A 72 00    ld   a,($0072)
+0C7D: 11 B2 85    ld   de,$85B2
+0C80: 0E 01       ld   c,$01
+0C82: CD EA 05    call $05EA
+0C85: 11 1B 01    ld   de,$011B
+0C88: FF          rst  $38
+0C89: 21 D2 85    ld   hl,$85D2
+0C8C: 36 17       ld   (hl),$17
+0C8E: CB 94       res  2,h
+0C90: 36 01       ld   (hl),$01
+0C92: CD 88 5C    call $5C88
+0C95: C3 0B 08    jp   $080B
+
 0C98: 3E FC       ld   a,$FC
 0C9A: 32 3B 94    ld   ($943B),a
 0C9D: CD 31 38    call $3831
@@ -1540,6 +1566,10 @@ update_sprites_0244:
 0CD6: 0D          dec  c
 0CD7: 20 F6       jr   nz,$0CCF
 0CD9: C9          ret
+
+0D6E: 36 00       ld   (hl),$00
+0D70: 11 02 04    ld   de,$0402
+0D73: 18 C4       jr   $0D39
 
 0CF7: 3E FC       ld   a,$FC
 0CF9: 32 3B 94    ld   ($943B),a
@@ -1658,6 +1688,9 @@ update_sprites_0244:
 0DE8: 1E 00       ld   e,$00    ; [uncovered] 
 0DEA: 18 EC       jr   $0DD8    ; [uncovered] 
 
+0DEC: 36 00       ld   (hl),$00	; [uncovered] 
+0DEE: 7B          ld   a,e
+0DEF: 32 0A 96    ld   ($960A),a
 0DF2: 78          ld   a,b
 0DF3: 3C          inc  a
 0DF4: E6 03       and  $03
@@ -1859,6 +1892,21 @@ update_sprites_0244:
 0F84: 20 14       jr   nz,$0F9A    ; [uncovered] 
 0F86: C9          ret    ; [uncovered] 
 
+0F87: 3E FF       ld   a,$FF		; [uncovered] 
+0F89: 32 69 96    ld   ($9669),a
+0F8C: 32 58 94    ld   ($9458),a
+0F8F: 3A 41 94    ld   a,($9441)
+0F92: 32 20 96    ld   ($9620),a
+0F95: 32 40 96    ld   ($9640),a
+0F98: 18 11       jr   $0FAB
+
+0F9A: AF          xor  a
+0F9B: 32 58 94    ld   ($9458),a
+0F9E: 32 40 96    ld   ($9640),a
+0FA1: 3D          dec  a
+0FA2: 32 69 96    ld   ($9669),a
+0FA5: 3A 41 94    ld   a,($9441)
+0FA8: 32 20 96    ld   ($9620),a
 0FAB: 3A D9 06    ld   a,($06D9)
 0FAE: 32 2B 94    ld   ($942B),a
 0FB1: 3A 81 09    ld   a,($0981)
@@ -1889,11 +1937,7 @@ update_sprites_0244:
 	.word	$15E0
 	.word	$0ED0
 	.word	$07F0
-	.word	$0420
-	.word	$0440
-	.word	$0460
-	.word	$0480
-	.word	$0ED0
+
 
 1043: CD B6 0C    call $0CB6
 1046: 3A 2E 94    ld   a,($942E)
@@ -1916,6 +1960,17 @@ update_sprites_0244:
 106D: D6 48       sub  $48
 106F: C2 FF 07    jp   nz,$07FF
 1072: C9          ret
+
+108A: 21 06 94    ld   hl,$9406	; [uncovered]
+108D: 7E          ld   a,(hl)
+108E: D6 02       sub  $02
+1090: 27          daa
+1091: 77          ld   (hl),a
+1092: 3E FF       ld   a,$FF
+1094: 32 69 96    ld   ($9669),a
+1097: 32 58 94    ld   ($9458),a
+109A: CD 5A 13    call $135A
+109D: C3 AB 0F    jp   $0FAB
 
 10A0: 21 06 94    ld   hl,nb_credits_9406
 10A3: 7E          ld   a,(hl)
@@ -2132,6 +2187,15 @@ update_sprites_0244:
 12FA: 32 83 C1    ld   ($C183),a    ; [uncovered] 
 12FD: C9          ret    ; [uncovered] 
 
+12FE: 35          dec  (hl)
+12FF: 28 09       jr   z,$130A
+1301: 7E          ld   a,(hl)
+1302: FE 18       cp   $18
+1304: C0          ret  nz
+1305: AF          xor  a
+1306: 32 83 C1    ld   ($C183),a
+1309: C9          ret
+
 130F: 3A 31 94    ld   a,($9431)
 1312: E6 0F       and  $0F
 1314: FE 0F       cp   $0F
@@ -2210,6 +2274,18 @@ update_sprites_0244:
 13DE: A7          and  a
 13DF: C2 E5 13    jp   nz,$13E5
 13E2: C3 0B 08    jp   $080B
+
+13E5: CD D6 01    call $01D6    ; [uncovered] 
+13E8: CD 43 0E    call $0E43
+13EB: 3A 62 96    ld   a,($9662)
+13EE: 3C          inc  a
+13EF: E6 01       and  $01
+13F1: 32 62 96    ld   ($9662),a
+13F4: 3E 5A       ld   a,$5A
+13F6: 32 65 94    ld   ($9465),a
+13F9: 3A F4 24    ld   a,($24F4)
+13FC: 32 2C 94    ld   ($942C),a
+13FF: C9          ret
 
 1400: 21 0C 14    ld   hl,$140C
 1403: 11 B0 94    ld   de,$94B0
@@ -3895,6 +3971,9 @@ update_sprites_0244:
 2615: DD 36 07 00 ld   (ix+$07),$00
 2619: C9          ret
 
+261A: DD 36 07 01 ld   (ix+$07),$01		; [uncovered]
+261E: C9          ret
+
 261F: CD CB 4E    call $4ECB
 2622: CD B3 2B    call $2BB3
 2625: CD 81 2D    call $2D81
@@ -4300,6 +4379,11 @@ update_sprites_0244:
 296A: DD 36 0A 02 ld   (ix+$0a),$02
 296E: C9          ret
 
+296F: DD 36 01 C0 ld   (ix+$01),$C0                                   
+2973: DD 36 0A 04 ld   (ix+$0a),$04                                   
+2977: C9 ret                                                 
+               
+
 2978: CD 16 4F    call $4F16
 297B: CD B3 2B    call $2BB3
 297E: CD 96 29    call $2996
@@ -4489,6 +4573,9 @@ update_sprites_0244:
 2B35: 20 05       jr   nz,$2B3C
 2B37: FD 36 02 48 ld   (iy+$02),$48
 2B3B: C9          ret
+
+2B3C: FD 36 02 88 ld   (iy+$02),$88
+2B40: C9          ret
 
 2B41: 3A 00 94    ld   a,($9400)
 2B44: E6 01       and  $01
@@ -4972,6 +5059,25 @@ update_sprites_0244:
 2F02: 32 2B 94    ld   ($942B),a
 2F05: C9          ret
 
+
+2F06: FD 7E 00    ld   a,(iy+$00)
+2F09: D6 04       sub  $04
+2F0B: FE F8       cp   $F8
+2F0D: D2 FF 2F    jp   nc,$2FFF
+2F10: 0F          rrca
+2F11: 0F          rrca
+2F12: E6 30       and  $30
+2F14: 47          ld   b,a
+2F15: FD 7E 03    ld   a,(iy+$03)
+2F18: C6 08       add  a,$08
+2F1A: 4F          ld   c,a
+2F1B: 0F          rrca
+2F1C: 0F          rrca
+2F1D: 0F          rrca
+2F1E: E6 0E       and  $0E
+2F20: 80          add  a,b
+2F21: 21 54 2F    ld   hl,$2F54
+2F24: CF          rst  $08
 2F25: CB 79       bit  7,c
 2F27: 20 10       jr   nz,$2F39
 2F29: FD 77 01    ld   (iy+$01),a
@@ -5629,6 +5735,181 @@ update_sprites_0244:
 361F: 32 01 96    ld   ($9601),a
 3622: C9          ret
 
+3623: 3E 01       ld   a,$01
+3625: 32 01 96    ld   ($9601),a
+3628: 21 B0 90    ld   hl,$90B0
+362B: 22 79 94    ld   ($9479),hl
+362E: 00          nop
+362F: 3E 00       ld   a,$00
+3631: 32 7B 94    ld   ($947B),a
+3634: CD 81 13    call $1381
+3637: 47          ld   b,a
+3638: E6 07       and  $07
+363A: 4F          ld   c,a
+363B: 87          add  a,a
+363C: 81          add  a,c
+363D: 21 BA 36    ld   hl,$36BA
+3640: 85          add  a,l
+3641: 6F          ld   l,a
+3642: 30 01       jr   nc,$3645
+3644: 24          inc  h
+3645: 5E          ld   e,(hl)
+3646: 23          inc  hl
+3647: 56          ld   d,(hl)
+3648: 23          inc  hl
+3649: 7E          ld   a,(hl)
+364A: 32 77 94    ld   ($9477),a
+364D: 32 78 94    ld   ($9478),a
+3650: EB          ex   de,hl
+3651: 78          ld   a,b
+3652: 0F          rrca
+3653: 0F          rrca
+3654: E6 03       and  $03
+3656: D7          rst  $10
+3657: EB          ex   de,hl
+3658: DD 21 10 90 ld   ix,$9010
+365C: FD 21 10 98 ld   iy,$9810
+3660: 46          ld   b,(hl)
+3661: 78          ld   a,b
+3662: 32 FE 91    ld   ($91FE),a
+3665: 32 3E 90    ld   ($903E),a
+3668: 3A 05 96    ld   a,($9605)
+366B: 80          add  a,b
+366C: 32 05 96    ld   ($9605),a
+366F: 23          inc  hl
+3670: 11 08 00    ld   de,$0008
+3673: C5          push bc
+3674: CD 89 36    call $3689
+3677: DD 77 09    ld   (ix+$09),a
+367A: CD 81 35    call $3581
+367D: DD 19       add  ix,de
+367F: DD 19       add  ix,de
+3681: FD 19       add  iy,de
+3683: C1          pop  bc
+3684: 10 ED       djnz $3673
+3686: C3 A6 5C    jp   $5CA6
+
+3689: D9          exx
+368A: 3A 7B 94    ld   a,($947B)
+368D: 47          ld   b,a
+368E: 2A 79 94    ld   hl,($9479)
+3691: 11 10 00    ld   de,$0010
+3694: 7E          ld   a,(hl)
+3695: A7          and  a
+3696: 28 04       jr   z,$369C
+3698: 04          inc  b
+3699: 19          add  hl,de
+369A: 18 F8       jr   $3694
+369C: 3A 11 96    ld   a,($9611)
+369F: 95          sub  l
+36A0: 28 F6       jr   z,$3698
+36A2: 3A 15 96    ld   a,($9615)
+36A5: 95          sub  l
+36A6: 28 F0       jr   z,$3698
+36A8: 3A 19 96    ld   a,($9619)
+36AB: 95          sub  l
+36AC: 28 EA       jr   z,$3698
+36AE: 19          add  hl,de
+36AF: 22 79 94    ld   ($9479),hl
+36B2: 04          inc  b
+36B3: 78          ld   a,b
+36B4: 32 7B 94    ld   ($947B),a
+36B7: D9          exx
+36B8: 3D          dec  a
+36B9: C9          ret
+36BA: 5A          ld   e,d
+36BB: 51          ld   d,c
+36BC: 01 6A 51    ld   bc,$516A
+36BF: 03          inc  bc
+36C0: 8A          adc  a,d
+36C1: 51          ld   d,c
+36C2: 07          rlca
+36C3: 5A          ld   e,d
+36C4: 51          ld   d,c
+36C5: 01 6A 51    ld   bc,$516A
+36C8: 03          inc  bc
+36C9: B2          or   d
+36CA: 51          ld   d,c
+36CB: 0C          inc  c
+36CC: CA 51 0F    jp   z,$0F51
+36CF: 5A          ld   e,d
+36D0: 51          ld   d,c
+36D1: 01 15 87    ld   bc,$8715
+36D4: 06 FA       ld   b,$FA
+36D6: 8B          adc  a,e
+36D7: 0F          rrca
+36D8: EE 37       xor  $37
+36DA: 0F          rrca
+36DB: 83          add  a,e
+36DC: 01 0F FA    ld   bc,$FA0F
+36DF: B1          or   c
+36E0: 37          scf
+36E1: 48          ld   c,b
+36E2: 39          add  hl,sp
+36E3: 83          add  a,e
+36E4: DC B1 48    call c,$48B1
+36E7: 47          ld   b,a
+36E8: 9E          sbc  a,(hl)
+36E9: AF          xor  a
+36EA: 32 76 94    ld   ($9476),a
+36ED: 32 3E 92    ld   ($923E),a
+36F0: FD 21 60 98 ld   iy,$9860
+36F4: DD 21 B0 90 ld   ix,$90B0
+36F8: 11 04 00    ld   de,$0004
+36FB: 01 10 00    ld   bc,$0010
+36FE: D9          exx
+36FF: 21 60 37    ld   hl,$3760
+3702: 00          nop
+3703: 3E 24       ld   a,$24
+3705: 47          ld   b,a
+3706: 3A 62 96    ld   a,($9662)
+3709: E6 01       and  $01
+370B: 20 29       jr   nz,$3736
+370D: DD 7E 05    ld   a,(ix+$05)
+3710: 3C          inc  a
+3711: 20 18       jr   nz,$372B
+3713: DD 36 00 FF ld   (ix+$00),$FF
+3717: 7E          ld   a,(hl)
+3718: FD 77 03    ld   (iy+$03),a
+371B: 23          inc  hl
+371C: 7E          ld   a,(hl)
+371D: FD 77 00    ld   (iy+$00),a
+3720: FD 36 01 00 ld   (iy+$01),$00
+3724: FD 36 02 00 ld   (iy+$02),$00
+3728: 23          inc  hl
+3729: 18 02       jr   $372D
+
+372B: 23          inc  hl
+372C: 23          inc  hl
+372D: D9          exx
+372E: FD 19       add  iy,de
+3730: DD 09       add  ix,bc
+3732: D9          exx
+3733: 10 D8       djnz $370D
+3735: C9          ret
+3736: DD 7E 06    ld   a,(ix+$06)
+3739: 3C          inc  a
+373A: 20 19       jr   nz,$3755
+373C: DD 36 00 FF ld   (ix+$00),$FF
+3740: 79          ld   a,c
+3741: 86          add  a,(hl)
+3742: FD 77 03    ld   (iy+$03),a
+3745: 23          inc  hl
+3746: 7E          ld   a,(hl)
+3747: FD 77 00    ld   (iy+$00),a
+374A: 23          inc  hl
+374B: FD 36 01 00 ld   (iy+$01),$00
+374F: FD 36 02 00 ld   (iy+$02),$00
+3753: 18 02       jr   $3757
+3755: 23          inc  hl
+3756: 23          inc  hl
+3757: D9          exx
+3758: FD 19       add  iy,de
+375A: DD 09       add  ix,bc
+375C: D9          exx
+375D: 10 D7       djnz $3736
+375F: C9          ret
+
 37E9: CD 31 38    call $3831
 37EC: CD 07 02    call $0207
 37EF: C0          ret  nz
@@ -6061,11 +6342,12 @@ update_starfield_3A37:
 4108: CB 47       bit  0,a
 410A: C4 C2 5D    call nz,$5DC2
 410D: 06 00       ld   b,$00
+; ROM checksum
 410F: 21 70 01    ld   hl,$0170
 4112: AF          xor  a
 4113: 86          add  a,(hl)
 4114: 2B          dec  hl
-4115: 10 FC       djnz $4113
+4115: 10 FC       djnz $4113		; bogus
 4117: C6 F7       add  a,$F7
 4119: C2 2B 15    jp   nz,$152B
 411C: CD D6 01    call $01D6
@@ -6553,6 +6835,10 @@ update_starfield_3A37:
 47D4: CA C4 30    jp   z,$30C4
 47D7: C3 4B 30    jp   $304B    ; [uncovered] 
 
+47DA: FD 36 00 00 ld   (iy+$00),$00
+47DE: DD 36 00 00 ld   (ix+$00),$00
+47E2: C9          ret
+
 47E3: DD 36 01 C0 ld   (ix+$01),$C0
 47E7: DD 36 0A 04 ld   (ix+$0a),$04
 47EB: 18 D9       jr   $47C6
@@ -6914,6 +7200,19 @@ update_starfield_3A37:
 4BC4: 11 40 98    ld   de,$9840
 4BC7: C3 04 4D    jp   $4D04
 
+4BD6: 21 CD 85    ld   hl,$85CD
+4BD9: 3A 75 10    ld   a,($1075)
+4BDC: 47          ld   b,a
+4BDD: 3E 04       ld   a,$04
+4BDF: 4F          ld   c,a
+4BE0: 11 F7 4D    ld   de,$4DF7
+4BE3: CD 77 4E    call $4E77
+4BE6: 21 44 4C    ld   hl,$4C44
+4BE9: 3A 27 1C    ld   a,($1C27)
+4BEC: 47          ld   b,a
+4BED: 11 30 98    ld   de,$9830
+4BF0: C3 04 4D    jp   $4D04
+
 4C00: CD 07 02    call $0207
 4C03: C0          ret  nz
 4C04: 3E 01       ld   a,$01
@@ -6943,6 +7242,9 @@ update_starfield_3A37:
 4C36: 20 06       jr   nz,$4C3E
 4C38: 11 07 01    ld   de,$0107
 4C3B: C3 38 00    jp   $0038
+
+4C3E: 11 0D 01    ld   de,$010D
+4C41: C3 38 00    jp   $0038
 
 4C54: CD 31 38    call $3831
 4C57: CD 43 0E    call $0E43
@@ -6983,7 +7285,44 @@ update_starfield_3A37:
 4C99: 32 10 94    ld   ($9410),a
 4C9C: C3 0B 08    jp   $080B
 
-4CEA: 21 AD 85    ld   hl,$85AD
+4C9F: 21 CE 85    ld   hl,$85CE
+4CA2: 3A 0A 2F    ld   a,($2F0A)
+4CA5: 47          ld   b,a
+4CA6: 4F          ld   c,a
+4CA7: 11 4F 4E    ld   de,$4E4F
+4CAA: CD 77 4E    call $4E77
+4CAD: 21 3C 49    ld   hl,$493C
+4CB0: 3A 33 41    ld   a,($4133)
+4CB3: 47          ld   b,a
+4CB4: 11 18 98    ld   de,$9818
+4CB7: C3 04 4D    jp   $4D04
+
+4CBA: 21 CE 85    ld   hl,$85CE	; [uncovered]
+4CBD: 3A 56 19    ld   a,($1956)
+4CC0: 47          ld   b,a
+4CC1: 3E 04       ld   a,$04
+4CC3: 4F          ld   c,a
+4CC4: 11 BC 4D    ld   de,$4DBC
+4CC7: C3 77 4E    jp   $4E77
+
+4CCA: 21 E0 06    ld   hl,$06E0	; [uncovered]
+4CCD: 06 00       ld   b,$00
+4CCF: 3E C0       ld   a,$C0
+4CD1: 86          add  a,(hl)
+4CD2: 23          inc  hl
+4CD3: 10 FC       djnz $4CD1
+4CD5: 47          ld   b,a
+4CD6: 3A 00 96    ld   a,($9600)
+4CD9: 80          add  a,b
+4CDA: 32 00 96    ld   ($9600),a
+4CDD: 21 EF 85    ld   hl,$85EF
+4CE0: 3E 02       ld   a,$02
+4CE2: 47          ld   b,a
+4CE3: 4F          ld   c,a
+4CE4: 11 6F 4E    ld   de,$4E6F
+4CE7: C3 77 4E    jp   $4E77
+
+4CEA: 21 AD 85    ld   hl,$85AD	; [uncovered]
 4CED: 11 9D 43    ld   de,$439D
 4CF0: 3A 0F 07    ld   a,($070F)
 4CF3: 47          ld   b,a
@@ -7017,6 +7356,42 @@ update_starfield_3A37:
 4D1E: 13          inc  de
 4D1F: 10 EE       djnz $4D0F
 4D21: C9          ret
+
+4D22: 78          ld   a,b
+4D23: 0F          rrca
+4D24: E6 7F       and  $7F
+4D26: 47          ld   b,a
+4D27: 3A 0B 96    ld   a,($960B)
+4D2A: FE 16       cp   $16
+4D2C: 0E 88       ld   c,$88
+4D2E: 20 02       jr   nz,$4D32
+4D30: 0E A8       ld   c,$A8
+4D32: E5          push hl
+4D33: FD E1       pop  iy
+4D35: D5          push de
+4D36: DD E1       pop  ix
+4D38: FD 7E 00    ld   a,(iy+$00)
+4D3B: C6 0F       add  a,$0F
+4D3D: 2F          cpl
+4D3E: DD 77 00    ld   (ix+$00),a
+4D41: FD 7E 03    ld   a,(iy+$03)
+4D44: C6 0D       add  a,$0D
+4D46: 2F          cpl
+4D47: DD 77 03    ld   (ix+$03),a
+4D4A: DD 71 02    ld   (ix+$02),c
+4D4D: DD 71 06    ld   (ix+$06),c
+4D50: FD 7E 01    ld   a,(iy+$01)
+4D53: DD 77 05    ld   (ix+$05),a
+4D56: FD 7E 05    ld   a,(iy+$05)
+4D59: DD 77 01    ld   (ix+$01),a
+4D5C: EB          ex   de,hl
+4D5D: 3A E0 1D    ld   a,($1DE0)
+4D60: DF          rst  $18
+4D61: EB          ex   de,hl
+4D62: 3A 5C 2E    ld   a,($2E5C)
+4D65: DF          rst  $18
+4D66: 10 CA       djnz $4D32
+4D68: C9          ret
 
 4E27: 3A D4 0D    ld   a,($0DD4)
 4E2A: CD E4 07    call $07E4
@@ -7144,6 +7519,7 @@ update_starfield_3A37:
 4F22: 3A 0B 96    ld   a,($960B)
 4F25: 18 03       jr   $4F2A
 
+4F27: 3A 77 94    ld   a,($9477)	; [uncovered]
 4F2A: 87          add  a,a
 4F2B: 21 B9 37    ld   hl,$37B9
 4F2E: 85          add  a,l
@@ -7691,6 +8067,12 @@ update_starfield_3A37:
 5C65: E1          pop  hl
 5C66: C9          ret
 
+5C67: 3A 2C 94    ld   a,($942C)	 ; [uncovered] 
+5C6A: D6 08       sub  $08
+5C6C: FE 03       cp   $03
+5C6E: D0          ret  nc
+5C6F: C3 78 5C    jp   $5C78
+
 5C72: 3A 69 96    ld   a,($9669)
 5C75: A7          and  a
 5C76: 20 EF       jr   nz,$5C67
@@ -7827,6 +8209,12 @@ update_starfield_3A37:
 
 5D8C: 3A 8C 4C    ld   a,($4C8C)
 5D8F: C3 3F 5C    jp   $5C3F
+
+5D92: 3A 12 35    ld   a,($3512)
+5D95: CD 3F 5C    call $5C3F
+
+5D98: 3A 66 13    ld   a,($1366)
+5D9B: C3 5B 5C    jp   $5C5B
 
 5D9E: 3A BB 11    ld   a,($11BB)
 5DA1: C3 3F 5C    jp   $5C3F

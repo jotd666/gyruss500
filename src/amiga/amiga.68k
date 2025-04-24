@@ -170,12 +170,14 @@ start:
 		.global osd_break		| for debug	
 		.global osd_blitz		| for debug
 		.global osd_w_videoram
-		.global osd_w_colorram
 		.global osd_update_sprites
-		.global osd_read_dsw1
-		.global osd_read_dsw0
+		.global osd_read_dsw_1
+		.global osd_read_dsw_2
+		.global osd_read_dsw_3
+		.global osd_get_frame_type
 		.global osd_read_inputs_1
-		.global osd_read_inputs_0
+		.global osd_read_inputs_2
+		.global osd_read_system_inputs
 
 
 		.global	is_game_playing
@@ -874,14 +876,14 @@ osd_update_sprites:
 is_game_playing:
 	move.l	a6,-(a7)
 	GET_RAM_START_IN_A6
-	tst.b	game_in_play_8806(a6)
+	*tst.b	game_in_play_8806(a6)
 	move.l	(a7)+,a6
 	rts
 	
 lose_all_lives:
 	move.l	a6,-(a7)
 	GET_RAM_START_IN_A6
-	clr.b	nb_lives_8908(a6)
+	*clr.b	nb_lives_8908(a6)
 	move.l	(a7)+,a6
 	rts
 
@@ -889,10 +891,10 @@ add_10000_points:
 	move.l	a6,-(a7)
 	GET_RAM_START_IN_A6
 	movem.w	d0/d7,-(a7)
-	move.b	player_1_score_88A4(a6),d0
+	*move.b	player_1_score_88A4(a6),d0
 	MOVEQ	#1,d7
 	abcd	d7,d0
-	move.b	d0,player_1_score_88A4(a6)
+	*move.b	d0,player_1_score_88A4(a6)
 	movem.w	(a7)+,d0/d7
 	move.l	(a7)+,a6
 	rts
@@ -1051,7 +1053,8 @@ update_bobs_and_hw_sprites:
 	* draw current BOBs *
 	*********************
 
-  	lea		sprite_ram_9000+0x10,a0	
+	GET_RAM_START_IN_A6
+  	lea		(sprite_ram_a000,a6),a0	
     lea _custom,A5
 	move.l	bob_previous_drawed_sprites(pc),a6
 	lea		bob_table,a4
@@ -1698,97 +1701,60 @@ osd_interrupt_control:
 	move.w	#0x0030,_custom+intena
 	rts
 
-
-osd_w_colorram:
- 	movem.l	d0/d1/d7/a0/a1,-(a7)
-	move.l	a0,d7		| save address
-	sub.l	a6,d7
-	.ifndef	RELEASE
-	jmi		2f
-	.endif
-	* no need as screen color address is 0x8000
-	*sub.w	#SCREEN_COLOR_ADDRESS-0x8000,d7
-	.ifndef	RELEASE
-	*bmi.b	2f
-	cmp.w	#0x400,d7
-	bcs.b	1f
-
-2:
-	* should not happen
-	add.w	#SCREEN_COLOR_ADDRESS-0x8000,d7
-	lea		write_colorram_out_of_range_error(pc),a0
-	jbsr	osd_break
-	nop	
-	bra.b	0f
-	.endif
-1:	
-	move.b	(a0),d1
-	cmp.b	d1,d0
-	beq.b	0f		| already the proper value
-3:
-	move.b	d0,(a0)	| update logical grid
-	sub.l	a6,a0
-mark_dirty:
-	move.w	a0,d0
-	lea		tiles_refresh_table(pc),a0
-	add.w	d0,a0
-	lsr.w	#5,d0	| divide by 32
-	lea		tiles_row_flags(pc),a1
-	add.w	d0,a1
-	* now a0 points on the tiles refresh table, mark it dirty
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
-	move.b	#2,(a0)
-	move.b	#2,(a1)
-	.else
-	move.b	#1,(a0)
-	move.b	#1,(a1)
-	.endif
-
-
-0:
-	movem.l	(a7)+,d0/d1/d7/a0/a1
-	rts	
-	
-* a0=screen address (preserved), d0=tile (preserved)
+* a0=screen virtual address (preserved), d0=tile (preserved)
 * a6=ram base
 * should preserve all registers
 
 osd_w_videoram:
 	movem.l	d0/d1/d7/a0/a1,-(a7)
 	move.l	a0,d7		| save address
-	sub.l	a6,d7
 	.ifndef	RELEASE
 	jmi		2f
 	.endif
-	sub.w	#SCREEN_TILE_ADDRESS-0x8000,d7
+
+	sub.w	#SCREEN_TILE_ADDRESS,d7
 	.ifndef	RELEASE
 	bmi.b	2f
-	cmp.w	#0x400,d7
+	cmp.w	#0x800,d7
 	bcs.b	1f
 
 2:
 	* should not happen
 	add.w	#SCREEN_TILE_ADDRESS,d7
-	lea		write_videoram_out_of_range_error(pc),a0
-	jbsr	osd_break
-	nop	
-	bra.b	0b
+	BREAKPOINT	"write videoram out of range (D7)"
+	bra.b	osd_w_videoram_out
 	.endif
 1:	
+	add.l	a6,a0				| add RAM base
 	move.b	(a0),d1
 	cmp.b	d1,d0
-	beq.b	0b		| already the proper value
+	beq.b	osd_w_videoram_out		| already the proper value
 3:
-
-
 	move.b	d0,(a0)	| update logical grid
+	
 	* now set the flag for tile refresh in copper interrupt (so it doesn't
 	* interfere with blits. This game uses a lot of tile animation in the background
 	* as opposed to most games, so updating in real tile isn't an option and kills
 	* the smoothness even in double buffering mode)
-	sub.l	a6,a0
-	sub.w	#0x400,a0
-	jra		mark_dirty
+	and.w	#0x3FF,d7
+
+	lea		tiles_refresh_table(pc),a0
+	add.w	d7,a0
+	lsr.w	#5,d7	| divide by 32
+	lea		tiles_row_flags(pc),a1
+	add.w	d7,a1
+	* now a0 points on the tiles refresh table, mark it dirty
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	moveq	#2,d7
+	.else
+	moveq	#1,d7
+	.endif
+	move.b	d7,(a0)
+	move.b	d7,(a1)
+
+osd_w_videoram_out:
+	movem.l	(a7)+,d0/d1/d7/a0/a1
+	rts	
 
 
 * < D7: 0-0x400
@@ -2118,9 +2084,12 @@ osd_get_random:
 seed:
 	dc.l	0x12345678
 
-
+osd_get_frame_type:
+	moveq	#0,d0
+	rts
 	
-osd_read_inputs_0:
+	
+osd_read_inputs_2:
 	moveq	#-1,d0
 	movem.l	a0/d1,-(a7)
 	lea		keyboard_table(pc),a0
@@ -2160,6 +2129,10 @@ osd_read_inputs_0:
 0:	
 1:	
 	movem.l	(a7)+,a0/d1
+	rts
+	
+osd_read_system_inputs:
+	moveq	#-1,d0
 	rts
 	
 osd_read_inputs_1:
@@ -2227,15 +2200,22 @@ osd_read_inputs_1:
 
 
 	
-osd_read_dsw1:
+osd_read_dsw_1:
 	* actual dipswitches
 	move.b	dip_switches_1(pc),d0
 	not.b	d0		| active low
 	rts
-osd_read_dsw0:
+osd_read_dsw_2:
 	* actual dipswitches
-	move.b	dip_switches_0(pc),d0
-	not.b	d0		| active low
+	moveq	#-1,d0
+*	move.b	dip_switches_0(pc),d0
+*	not.b	d0		| active low
+	rts
+osd_read_dsw_3:
+	* actual dipswitches
+	moveq	#-1,d0
+*	move.b	dip_switches_0(pc),d0
+*	not.b	d0		| active low
 	rts
 
 	
@@ -2277,7 +2257,7 @@ handle_keyboard:
 	cmp.b	#0x50,d0	| F1 key: only 1 wolf
 	bne.b	0f
 	move.w	#0x0FF,_custom+color
-	move.b	#1,nb_wolves_8901(a6)
+
 	st.b	cheat_used
 	
 0:

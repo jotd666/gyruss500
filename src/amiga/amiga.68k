@@ -1712,6 +1712,7 @@ osd_w_videoram:
 	jmi		2f
 	.endif
 
+	* remove 0x8000 offset (ram starts at 0x8000)
 	sub.w	#0x8000,d7
 	.ifndef	RELEASE
 	bmi.b	2f
@@ -1725,6 +1726,7 @@ osd_w_videoram:
 	bra.b	osd_w_videoram_out
 	.endif
 1:	
+	move.l	d7,a0
 	add.l	a6,a0				| add RAM base
 	move.b	(a0),d1
 	cmp.b	d1,d0

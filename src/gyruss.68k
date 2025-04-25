@@ -570,7 +570,7 @@ l_0149:
 	abcd	d7,d0                           	| [$017a: inc  a] + daa
 	move.b	d0,(a0)                         	| [$017c: ld   (hl),a]
 	jbsr	l_10bc                            	| [$017d: call $10BC]
-	LEA_ROM	0x0192,a0                          	| [$0180: ld   hl,$0192]
+	pea		l_0192(pc)                          	| [$0180: ld   hl,$0192]
 
 	move.l	a0,-(sp)                        	| [$0183: push hl]
 	move.b	l_942B(a6),d0                   	| [$0184: ld   a,($942B)]
@@ -582,29 +582,28 @@ l_0149:
 	.long	l_101f
 	.long	l_0828
 
-* unreached, protection jumps there to crash the game
-*l_0192:
-*	jbsr	l_5c1f                            	| [$0192: call $5C1F]
-*	move.l	(sp)+,a3                        	| [$0195: pop  iy]
-*	move.l	(sp)+,a2                        	| [$0197: pop  ix]
-*	move.l	(sp)+,a0                        	| [$0199: pop  hl]
-*	move.l	(sp)+,a1                        	| [$019a: pop  de]
-*	movem.w	(sp)+,d3/d4                    	| [$019a: pop  de]
-*	move.l	(sp)+,a4                        	| [$019b: pop  bc]
-*	movem.w	(sp)+,d1/d2                    	| [$019b: pop  bc]
-*	move.w	(sp)+,d0                        	| [$019c: pop  af]
-*	jbsr	exx                               	| [$019d: exx]
-*	                              	| [$019e: ex   af,af']
-*	move.l	(sp)+,a0                        	| [$019f: pop  hl]
-*	move.l	(sp)+,a1                        	| [$01a0: pop  de]
-*	movem.w	(sp)+,d3/d4                    	| [$01a0: pop  de]
-*	move.l	(sp)+,a4                        	| [$01a1: pop  bc]
-*	movem.w	(sp)+,d1/d2                    	| [$01a1: pop  bc]
-*	 
-*	move.b	#0x01,d0                        	| [$01a2: ld   a,$01]
-*	jbsr	osd_interrupt_control               | [$01a4: ld   ($C180),a]
-*	move.w	(sp)+,d0                        	| [$01a7: pop  af]
-*	rts                                    	| [$01a8: ret]
+l_0192:
+	jbsr	l_5c1f                            	| [$0192: call $5C1F]
+	move.l	(sp)+,a3                        	| [$0195: pop  iy]
+	move.l	(sp)+,a2                        	| [$0197: pop  ix]
+	move.l	(sp)+,a0                        	| [$0199: pop  hl]
+	move.l	(sp)+,a1                        	| [$019a: pop  de]
+	movem.w	(sp)+,d3/d4                    	| [$019a: pop  de]
+	move.l	(sp)+,a4                        	| [$019b: pop  bc]
+	movem.w	(sp)+,d1/d2                    	| [$019b: pop  bc]
+	move.w	(sp)+,d0                        	| [$019c: pop  af]
+	jbsr	exx                               	| [$019d: exx]
+	                              	| [$019e: ex   af,af']
+	move.l	(sp)+,a0                        	| [$019f: pop  hl]
+	move.l	(sp)+,a1                        	| [$01a0: pop  de]
+	movem.w	(sp)+,d3/d4                    	| [$01a0: pop  de]
+	move.l	(sp)+,a4                        	| [$01a1: pop  bc]
+	movem.w	(sp)+,d1/d2                    	| [$01a1: pop  bc]
+	 
+	move.b	#0x01,d0                        	| [$01a2: ld   a,$01]
+	jbsr	osd_interrupt_control               | [$01a4: ld   ($C180),a]
+	move.w	(sp)+,d0                        	| [$01a7: pop  af]
+	rts                                    	| [$01a8: ret]
 
 l_01bb:
 	move.w	#0x8400,d5                          	| [$01bb: ld   hl,$8400]
@@ -2150,6 +2149,7 @@ l_0efe:
 	.long	-1
 
 l_0f11:
+	BREAKPOINT	"0F11"
 	jbsr	l_01bb                            	| [$0f11: call $01BB]
 * ROM checksum
 *	READ_ROM_BYTE	0x37A9,d0                       	| [$0f14: ld   a,($37A9)]

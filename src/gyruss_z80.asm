@@ -785,13 +785,31 @@ update_sprites_0244:
 060F: 32 33 94    ld   ($9433),a
 0612: 79          ld   a,c
 0613: E6 0F       and  $0F
-0615: 21 20 06    ld   hl,$0620
+0615: 21 20 06    ld   hl,jump_table_0620
 0618: D7          rst  $10
 0619: 78          ld   a,b
 061A: 21 F4 05    ld   hl,$05F4
 061D: E5          push hl
 061E: EB          ex   de,hl
 061F: E9          jp   (hl)
+
+jump_table_0620:
+	.word	$1FAF 
+	.word	$07E4
+	.word	$247B
+	.word	$381C 
+	.word	$0685 
+	.word	$4E27
+	.word	$42DC
+	.word	$057F
+	.word	$05AF
+	.word	$20D0 
+	.word	$0CE0
+	.word	$04F0
+	.word	$0E00
+	.word	$0210
+	.word	$0220
+	.word	$0230
 
 066E: 21 65 94    ld   hl,$9465
 0671: 36 06       ld   (hl),$06

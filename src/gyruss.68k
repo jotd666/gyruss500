@@ -138,11 +138,26 @@
 	lsr.w	#8,d3
 	.endm
 
+	.macro	LOAD_A0_FROM_D5D6_RAM
+	LOAD_D5_16_FROM_D5D6
+	* this is a RAM address
+	sub.w	#0x8000,d5
+	lea		(a6,d5.w),a0
+	.endm
+
+	.macro	LOAD_D5D6_FROM_A0_RAM
+	move.l	a0,d5		| read pointer in data reg
+	sub.l	a6,d5		| subtract ram base
+	bset	#15,d5		| add 8000
+	LOAD_D5D6_FROM_D5_16 | dispatch in D5/D6
+	.endm
+	
 	.macro	READ_ROM_BYTE		offset,dest
 	move.b	(a5,\offset),\dest
 	.endm
 	
 	.macro	READ_ROM_WORD		offset,dest
+	moveq	#0,\dest
 	READ_ROM_BYTE	\offset,\dest
 	rol.w	#8,\dest
 	READ_ROM_BYTE	\offset+1,\dest
@@ -473,6 +488,7 @@ l_0100:
 * ********************************
 
 gyruss_irq:
+	lea		rom_base,a5
 l_0103:
 	move.w	d0,-(sp)                        	| [$0103: push af]
 	movem.w	d1/d2,-(sp)                    	| [$0104: push bc]
@@ -698,6 +714,7 @@ l_0253:
 
 gyruss_reset:
 	*lea		stack_top,a7
+	lea		rom_base,a5
 l_04f0:
 								| [$04f0: ld   hl,$C180]
 								| [$04f3: ld   b,$08]
@@ -799,35 +816,60 @@ l_05ea:
 	jra	l_1708                             	| [$05f1: jp   $1708]
 
 l_05f4:
-	jra	l_05f7                             	| [$05f4: jp   $05F7]
+	                             	| [$05f4: jp   $05F7]
 
 l_05f7:
-	READ_ROM_BYTE	0x5865,d0                       	| [$05f7: ld   a,($5865)]
-	move.b	d0,d5                           	| [$05fa: ld   h,a]
-	move.b	l_9433(a6),d0                   	| [$05fb: ld   a,($9433)]
-	move.b	d0,d6                           	| [$05fe: ld   l,a]
+	BREAKPOINT	"infinite loop"
+	READ_ROM_BYTE	0x5865,d5                       	| [$05f7: ld   a,($5865)]
+	                           	| [$05fa: ld   h,a]
+	move.b	l_9433(a6),d6                   	| [$05fb: ld   a,($9433)]
+	                           	| [$05fe: ld   l,a]
+	LOAD_A0_FROM_D5D6_RAM
+	
 	move.b	(a0),d0                         	| [$05ff: ld   a,(hl)]
 	rol.b	#1,d0                            	| [$0600: rlca]
 	jcs	l_05f4                             	| [$0601: jp   c,$05F4]
 	move.b	(a0),d2                         	| [$0604: ld   c,(hl)]
-	move.b	#0xFF,(a0)                      	| [$0605: ld   (hl),$FF]
-	addq.w	#1,a0                           	| [$0607: inc  hl]
+	move.b	#0xFF,(a0)+                      	| [$0605: ld   (hl),$FF]
+	                           	| [$0607: inc  hl]
 	move.b	(a0),d1                         	| [$0608: ld   b,(hl)]
-	move.b	#0xFF,(a0)                      	| [$0609: ld   (hl),$FF]
-	addq.w	#1,a0                           	| [$060b: inc  hl]
+	move.b	#0xFF,(a0)+                      	| [$0609: ld   (hl),$FF]
+	                           	| [$060b: inc  hl]
+	LOAD_D5D6_FROM_A0_RAM
 	move.b	d6,d0                           	| [$060c: ld   a,l]
 	and.b	#0x3F,d0                         	| [$060d: and  $3F]
 	move.b	d0,l_9433(a6)                   	| [$060f: ld   ($9433),a]
 	move.b	d2,d0                           	| [$0612: ld   a,c]
-	and.b	#0x0F,d0                         	| [$0613: and  $0F]
-	LEA_ROM	0x0620,a0                          	| [$0615: ld   hl,$0620]
-	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$0618: rst  $10]
+	and.w	#0x0F,d0                         	| [$0613: and  $0F]
+	add.w	d0,d0
+	jbsr	osd_break
+	lea		jump_table_0620(pc),a0                          	| [$0615: ld   hl,$0620]
+	move.l	(a0,d0.w),a1                            	| [$0618: rst  $10]
 	move.b	d1,d0                           	| [$0619: ld   a,b]
 	LEA_ROM	0x05F4,a0                          	| [$061a: ld   hl,$05F4]
 
 	move.l	a0,-(sp)                        	| [$061d: push hl]
 	exg	a1,a0                              	| [$061e: ex   de,hl]
+	* another jump table, different from rst_30
 	jra	(a0)                               	| [$061f: jp   (hl)]
+
+jump_table_0620:
+	.word	0x1FAF 
+	.word	0x07E4
+	.word	0x247B
+	.word	0x381C 
+	.word	0x0685 
+	.word	0x4E27
+	.word	0x42DC
+	.word	0x057F
+	.word	0x05AF
+	.word	0x20D0 
+	.word	0x0CE0
+	.word	0x04F0
+	.word	0x0E00
+	.word	0x0210
+	.word	0x0220
+	.word	0x0230
 
 l_066e:
 	lea	l_9465(a6),a0                      	| [$066e: ld   hl,$9465]
@@ -8670,10 +8712,11 @@ l_52c3:
 
 clear_ram_57dc:
 	lea	l_9000(a6),a0                      	| [$57dc: ld   hl,$9000]
-	lea	l_9001(a6),a1                      	| [$57df: ld   de,$9001]
-	move.w	#0x07FF,d1                          	| [$57e2: ld   bc,$07FF]
-	clr.b	(a0)                             	| [$57e5: ld   (hl),$00]
-	jbsr	ldir                              	| [$57e7: ldir]
+	                    	| [$57df: ld   de,$9001]
+	move.w	#0x0200-1,d1                          	| [$57e2: ld   bc,$07FF]
+0:	                            	| [$57e5: ld   (hl),$00]
+	clr.l	(a0)+                             	| [$57e7: ldir]
+	dbf 	d1,0b								
                        	| [$57e9: ld   (watchdog_C000),a]
 	jra	clear_sprite_mem_blocks_3010                             	| [$57ec: jp   $3010]
 
@@ -9489,24 +9532,23 @@ l_5f4d:
 	lea	l_9010(a6),a0                      	| [$5f53: ld   hl,$9010]
 	lea	l_9011(a6),a1                      	| [$5f56: ld   de,$9011]
 	clr.b	(a0)                             	| [$5f59: ld   (hl),$00]
-	move.w	#0x039F,a4                          	| [$5f5b: ld   bc,$039F]
+	move.w	#0x039F,d1                          	| [$5f5b: ld   bc,$039F]
 	jbsr	ldir                              	| [$5f5e: ldir]
 	lea	l_9620(a6),a0                      	| [$5f60: ld   hl,$9620]
 	lea	l_9621(a6),a1                      	| [$5f63: ld   de,$9621]
 	clr.b	(a0)                             	| [$5f66: ld   (hl),$00]
 	move.w	#0x003F,d1                      	| [$5f68: ld   bc,$003F]
 	jbsr	ldir                              	| [$5f6b: ldir]
-	CLEAR_XC_FLAGS                         	| [$5f6d: xor  a]
-	clr.b	d0                               	| [$5f6d: xor  a]
+	clr.w	d0                               	| [$5f6d: xor  a]
 	move.b	d0,l_9662(a6)                   	| [$5f6e: ld   ($9662),a]
 	move.b	d0,d5                           	| [$5f71: ld   h,a]
 	move.b	d0,d6                           	| [$5f72: ld   l,a]
 	move.b	d0,l_9663(a6)                   	| [$5f73: ld   ($9663),a]
 	move.b	d0,l_9666(a6)                   	| [$5f76: ld   ($9666),a]
-	STORE_RAM_POINTER	a0,l_9664(a6)        	| [$5f79: ld   ($9664),hl]
-	STORE_RAM_POINTER	a0,l_9667(a6)        	| [$5f7c: ld   ($9667),hl]
-	STORE_RAM_POINTER	a0,l_9627(a6)        	| [$5f7f: ld   ($9627),hl]
-	STORE_RAM_POINTER	a0,l_9647(a6)        	| [$5f82: ld   ($9647),hl]
+	STORE_WORD	d0,l_9664(a6)        	| [$5f79: ld   ($9664),hl]
+	STORE_WORD	d0,l_9667(a6)        	| [$5f7c: ld   ($9667),hl]
+	STORE_WORD	d0,l_9627(a6)        	| [$5f7f: ld   ($9627),hl]
+	STORE_WORD	d0,l_9647(a6)        	| [$5f82: ld   ($9647),hl]
 	move.b	l_9441(a6),d0                   	| [$5f85: ld   a,($9441)]
 	move.b	d0,l_9620(a6)                   	| [$5f88: ld   ($9620),a]
 	move.b	d0,d1                           	| [$5f8b: ld   b,a]

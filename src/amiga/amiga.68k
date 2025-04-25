@@ -684,7 +684,6 @@ demo_game:
 	move.l	d0,a6
 	move.l	a6,ram_start_8000
 	.endif
-
 	jmp			gyruss_reset					| pass control to the mpatrol core
 		
 	
@@ -746,6 +745,8 @@ _vblank:
 
 	* set base for RAM
 	GET_RAM_START_IN_A6
+	lea		rom_base,a5
+
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
 	st.b	interrupt_mode
 	* is level 1 interrupt set? that would mean that mid-screen interrupt

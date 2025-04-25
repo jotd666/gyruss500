@@ -749,6 +749,30 @@ update_sprites_0244:
 05AC: 20 E9       jr   nz,$0597
 05AE: C9          ret
 
+05AF: 21 44 84    ld   hl,$8444
+05B2: 11 19 00    ld   de,$0019
+05B5: 0E 1C       ld   c,$1C
+05B7: 06 07       ld   b,$07
+05B9: 36 83       ld   (hl),$83
+05BB: CB 94       res  2,h
+05BD: 36 20       ld   (hl),$20
+05BF: CB D4       set  2,h
+05C1: 2C          inc  l
+05C2: 10 F5       djnz $05B9
+05C4: 19          add  hl,de
+05C5: 20 F0       jr   nz,$05B7
+05C7: 06 00       ld   b,$00
+05C9: 21 60 00    ld   hl,$0060
+05CC: AF          xor  a
+05CD: AE          xor  (hl)
+05CE: 23          inc  hl
+05CF: 10 FC       djnz $05CD
+05D1: D6 00       sub  $00
+05D3: 00          nop
+05D4: 00          nop
+05D5: 00          nop
+05D6: C9          ret
+
 05D7: 21 00 A0    ld   hl,$A000
 05DA: 11 01 A0    ld   de,$A001
 05DD: 01 FF 07    ld   bc,$07FF
@@ -3396,6 +3420,22 @@ jump_table_0620:
 1FAA: 10 D6       djnz $1F82
 1FAC: C3 4A 20    jp   $204A
 
+1FAF: 21 A6 40    ld   hl,$40A6
+1FB2: D7          rst  $10
+1FB3: EB          ex   de,hl
+1FB4: 5E          ld   e,(hl)
+1FB5: 23          inc  hl
+1FB6: 56          ld   d,(hl)
+1FB7: 23          inc  hl
+1FB8: 23          inc  hl
+1FB9: 7E          ld   a,(hl)
+1FBA: FE 9E       cp   $9E
+1FBC: C8          ret  z
+1FBD: 12          ld   (de),a
+1FBE: 23          inc  hl
+1FBF: E7          rst  $20
+1FC0: 18 F7       jr   $1FB9
+
 1FC2: 21 9E 92    ld   hl,$929E
 1FC5: 35          dec  (hl)
 1FC6: C2 4A 20    jp   nz,$204A
@@ -3823,6 +3863,19 @@ jump_table_0620:
 2472: CA 8E 24    jp   z,$248E
 2475: DD 35 00    dec  (ix+$00)
 2478: C3 1B 31    jp   $311B
+
+247B: 21 A6 40    ld   hl,$40A6
+247E: D7          rst  $10
+247F: EB          ex   de,hl
+2480: 5E          ld   e,(hl)
+2481: 23          inc  hl
+2482: 56          ld   d,(hl)
+2483: 23          inc  hl
+2484: 23          inc  hl
+2485: 3A 61 96    ld   a,($9661)
+2488: E6 0F       and  $0F
+248A: 4F          ld   c,a
+248B: C3 EF 07    jp   $07EF
 
 248E: DD 36 00 00 ld   (ix+$00),$00
 2492: FD 36 00 00 ld   (iy+$00),$00

@@ -138,6 +138,17 @@
 	lsr.w	#8,d3
 	.endm
 
+	.macro	LOAD_D3D4_FROM_A1_ROM
+	move.l	a1,d3
+	sub.l	a5,d3
+	.ifndef	RELEASE
+	jpl		1111f
+	BREAKPOINT	"invalid ROM pointer in A1"
+1111:
+	.endif
+	LOAD_D3D4_FROM_D3_16
+	.endm
+	
 	.macro	LOAD_A0_FROM_D5D6_RAM
 	LOAD_D5_16_FROM_D5D6
 	* this is a RAM address
@@ -374,10 +385,10 @@ jump_table_jump_0030:
 	move.l	(a0),a0
 	jra	(a0)                               	| [$0033: jp   (hl)]
 
-* rst_38
-l_0038:
+* start_task_d3_0038
+start_task_d3d4_0038:
 	LOAD_D3_16_FROM_D3D4
-rst_38:
+start_task_d3_0038:
 	move.w	d3,-(sp)
 	move.l	a0,-(sp)                        	| [$0038: push hl]
 	move.b	#0x95,d5                        	| [$0039: ld   h,$95]
@@ -445,7 +456,7 @@ l_008b:
 	READ_ROM_BYTE	0x0991,d0                       	| [$008e: ld   a,($0991)]
 	jbsr	osd_interrupt_control                       	| [$0091: ld   ($C180),a]
                        	| [$0094: ld   (watchdog_C000),a]
-	jra	l_05f7                             	| [$0097: jp   $05F7]
+	jra	execute_commands_loop_05f4                             	| [$0097: jp   $05F7]
 
 l_009a:
 	lea	0x8420,a0                          	| [$009a: ld   hl,$8420]
@@ -650,10 +661,10 @@ clear_screen_row_0207:
 l_020f:
 	move.b	#0x83,d0                      	| [$020f: ld   (hl),$83]
 	jbsr	osd_w_videoram
-	BCLR_A0	2                           	| [$0211: res  2,h]
+	BCLR_A0	10                           	| [$0211: res  2,h]
 	moveq	#0,d0                             	| [$0213: ld   (hl),$00]
 	jbsr	osd_w_videoram
-	bset.b	#2,d5                           	| [$0215: set  2,h]
+	bset	#10,d5                           	| [$0215: set  2,h]
 	add.w	d3,d5                            	| [$0217: add  hl,de]
 	move.l	d5,a0
 	subq.b	#1,d1                           	| [...]
@@ -773,7 +784,7 @@ l_0575:
 	jne	l_1845                             	| [$057b: jp   nz,$1845]
 	rts                                    	| [$057e: ret]
 
-l_057F:
+display_gyruss_title_057f:
 * ROM checksum
 *	LEA_ROM	0x40A0,a0                          	| [$057f: ld   hl,$40A0]
 *	clr.b	d1                               	| [$0582: ld   b,$00]
@@ -793,10 +804,9 @@ l_0597:
 l_0599:
 	move.b	(a1)+,d0                         	| [$0599: ld   a,(de)]
 	jbsr	osd_w_videoram                         	| [$059a: ld   (hl),a]
-	BCLR_A0	2                           	| [$059b: res  2,h]
-	move.b	#0x25,d0
-	jbsr	osd_w_videoram                      	| [$059d: ld   (hl),$25]
-	BSET_A0	2                           	| [$059f: set  2,h]
+	BCLR_A0	10                           	| [$059b: res  2,h]
+	WRITE_VIDEORAM	0x25                      	| [$059d: ld   (hl),$25]
+	BSET_A0	10                           	| [$059f: set  2,h]
 	addq.w	#1,a0                           	| [$05a1: inc  l]
 	                           	| [$05a2: inc  de]
 	subq.b	#1,d1                           	| [...]
@@ -818,9 +828,9 @@ l_05b7:
 	move.b	#0x07,d1                        	| [$05b7: ld   b,$07]
 l_05b9:
 	WRITE_D0_VIDEORAM	0x83                      	| [$05b9: ld   (hl),$83]
-	BCLR_A0	2                           	| [$05bb: res  2,h]
+	BCLR_A0	10                           	| [$05bb: res  2,h]
 	WRITE_D0_VIDEORAM	0x20                      	| [$05bd: ld   (hl),$20]
-	BSET_A0	2                           	| [$05bf: set  2,h]
+	BSET_A0	10                           	| [$05bf: set  2,h]
 	addq.w	#1,a0                           	| [$05c1: inc  l]
 	subq.b	#1,d1                           	| [...]
 	jne	l_05b9                             	| [$05c2: djnz $05B9]
@@ -862,28 +872,30 @@ l_05ea:
 	jra	l_1708                             	| [$05f1: jp   $1708]
 
 * loop wait for $9500 to clear
-l_05f4:
+execute_commands_loop_05f4:
 	                             	| [$05f4: jp   $05F7]
 
-l_05f7:
-	READ_ROM_BYTE	0x5865,d5                       	| [$05f7: ld   a,($5865)]
+
+	* in ROM there's this RAM MSB address, let's hardcode it
+	move.b	#0x95,d5                       	| [$05f7: ld   a,($5865)]
 	                           	| [$05fa: ld   h,a]
-	move.b	l_9433(a6),d6                   	| [$05fb: ld   a,($9433)]
+	move.b	task_index_counter_9433(a6),d6                   	| [$05fb: ld   a,($9433)]
 	                           	| [$05fe: ld   l,a]
 	LOAD_A0_FROM_D5D6_RAM
 	move.b	(a0),d0                         	| [$05ff: ld   a,(hl)]
 	rol.b	#1,d0                            	| [$0600: rlca]
-	jcs	l_05f4                             	| [$0601: jp   c,$05F4]
+	jcs	execute_commands_loop_05f4                             	| [$0601: jp   c,$05F4]
+	* there's a task to execute, get params & ack it
 	move.b	(a0),d2                         	| [$0604: ld   c,(hl)]
-	move.b	#0xFF,(a0)+                      	| [$0605: ld   (hl),$FF]
+	st.b	(a0)+                      	| [$0605: ld   (hl),$FF]
 	                           	| [$0607: inc  hl]
 	move.b	(a0),d1                         	| [$0608: ld   b,(hl)]
-	move.b	#0xFF,(a0)+                      	| [$0609: ld   (hl),$FF]
+	st.b	(a0)+                      	| [$0609: ld   (hl),$FF]
 	                           	| [$060b: inc  hl]
 	LOAD_D5D6_FROM_A0_RAM
 	move.b	d6,d0                           	| [$060c: ld   a,l]
 	and.b	#0x3F,d0                         	| [$060d: and  $3F]
-	move.b	d0,l_9433(a6)                   	| [$060f: ld   ($9433),a]
+	move.b	d0,task_index_counter_9433(a6)                   	| [$060f: ld   ($9433),a]
 	move.b	d2,d0                           	| [$0612: ld   a,c]
 	and.w	#0x0F,d0                         	| [$0613: and  $0F]
 	add.w	d0,d0
@@ -891,7 +903,7 @@ l_05f7:
 	lea		jump_table_0620(pc),a0                          	| [$0615: ld   hl,$0620]
 	move.l	(a0,d0.w),a1                            	| [$0618: rst  $10]
 	move.b	d1,d0                           	| [$0619: ld   a,b]
-	pea		l_05f4(pc)                          	| [$061a: ld   hl,$05F4]
+	pea		execute_commands_loop_05f4(pc)                          	| [$061a: ld   hl,$05F4]
 
 	                        	| [$061d: push hl]
 	                              	| [$061e: ex   de,hl]
@@ -906,7 +918,7 @@ jump_table_0620:
 	.long	l_0685 
 	.long	l_4E27
 	.long	l_42DC
-	.long	l_057F
+	.long	display_gyruss_title_057f
 	.long	l_05af
 	.long	-1			| bogus 
 	.long	-2			| bogus 
@@ -1018,7 +1030,7 @@ l_06e8:
 	jne	l_42fe                             	| [$06ee: jp   nz,$42FE]
 	move.b	#0x07,d3                        	| [$06f1: ld   d,$07]
 	LOAD_D3_16_FROM_D3D4
-	jbsr	rst_38                            	| [$06f3: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$06f3: rst  $38]
 	jra	l_080b                             	| [$06f4: jp   $080B]
 
 l_06f7:
@@ -1094,10 +1106,10 @@ write_video_078e:
 	move.l	(sp)+,a0                        	| [$0795: pop  hl]
 * set credit character on screen
 	jbsr	write_videoram_a1                         	| [$0796: ld   (de),a]
-	BCLR_A1	2                           	| [$0797: res  2,d]
+	BCLR_A1	10                           	| [$0797: res  2,d]
 	move.b	d2,d0                           	| [$0799: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$079a: ld   (de),a]
-	BSET_A1	2                           	| [$079b: set  2,d]
+	BSET_A1	10                           	| [$079b: set  2,d]
 	rts                                    	| [$079d: ret]
 
 l_079e:
@@ -1129,10 +1141,10 @@ l_07bb:
 	jbsr	fetch_a0_plus_d0_0008                            	| [$07bf: rst  $08]
 	move.l	(sp)+,a0                        	| [$07c0: pop  hl]
 	jbsr	write_videoram_a1                         	| [$07c1: ld   (de),a]
-	BCLR_A1	2                           	| [$07c2: res  2,d]
+	BCLR_A1	10                           	| [$07c2: res  2,d]
 	move.b	d2,d0                           	| [$07c4: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$07c5: ld   (de),a]
-	BSET_A1	2                           	| [$07c6: set  2,d]
+	BSET_A1	10                           	| [$07c6: set  2,d]
 	rts                                    	| [$07c8: ret]
 
 write_1up_07e4:
@@ -1155,10 +1167,10 @@ l_07f0:
 	rts                                    	| [$07f2: ret  z] [...]
 0:
 	jbsr	write_videoram_a1                         	| [$07f3: ld   (de),a]
-	BCLR_A1	2                           	| [$07f4: res  2,d]
+	BCLR_A1	10                           	| [$07f4: res  2,d]
 	move.b	d2,d0                           	| [$07f6: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$07f7: ld   (de),a]
-	BSET_A1	2                           	| [$07f8: set  2,d]
+	BSET_A1	10                           	| [$07f8: set  2,d]
 	addq.w	#1,a0                           	| [$07fa: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$07fb: rst  $20]
 	jra	l_07ef                             	| [$07fc: jp   $07EF]
@@ -1271,12 +1283,12 @@ l_08eb:
 	jbsr	l_0e43                            	| [$0901: call $0E43] [uncovered]
 l_0904:
 	move.w	#0x0105,d3                          	| [$0904: ld   de,$0105]
-	jbsr	rst_38                            	| [$0907: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0907: rst  $38]
 	move.b	l_9458(a6),d0                   	| [$0908: ld   a,($9458)]
 	                               	| [$090b: and  a]
 	jeq	l_0910                             	| [$090c: jr   z,$0910]
 	addq.b	#1,d3                           	| [$090e: inc  e] [uncovered]
-	jbsr	rst_38                            	| [$090f: rst  $38] [uncovered]
+	jbsr	start_task_d3_0038                            	| [$090f: rst  $38] [uncovered]
 l_0910:
 	clr.b	d0                               	| [$0910: xor  a]
 	move.b	d0,double_fire_930E(a6)         	| [$0911: ld   (double_fire_930E),a]
@@ -1332,9 +1344,9 @@ l_0989:
 	jeq	l_0993                             	| [$0990: jr   z,$0993]
 	addq.b	#1,d3                           	| [$0992: inc  e] [uncovered]
 l_0993:
-	jbsr	rst_38                            	| [$0993: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0993: rst  $38]
 	move.w	#0x010B,d3                          	| [$0994: ld   de,$010B]
-	jbsr	rst_38                            	| [$0997: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0997: rst  $38]
 	move.b	#0xB4,d0                        	| [$0998: ld   a,$B4]
 	move.b	d0,l_9465(a6)                   	| [$099a: ld   ($9465),a]
 	jbsr	l_3af2                            	| [$099d: call $3AF2]
@@ -1505,9 +1517,9 @@ l_0a82:
 	jbsr	write_videoram_a1                         	| [$0a90: ld   (de),a]
 	move.b	d0,(a0)                         	| [$0a91: ld   (hl),a]
 	move.b	saved_character_9410(a6),d0                   	| [$0a92: ld   a,($9410)]
-	BCLR_A1	2                           	| [$0a95: res  2,d]
+	BCLR_A1	10                           	| [$0a95: res  2,d]
 	jbsr	write_videoram_a1                         	| [$0a97: ld   (de),a]
-	BSET_A1	2                           	| [$0a98: set  2,d]
+	BSET_A1	10                           	| [$0a98: set  2,d]
 	jbsr	sub_20_to_a1_0020                            	| [$0a9a: rst  $20]
 	addq.w	#1,a0                           	| [$0a9b: inc  hl]
 	STORE_RAM_POINTER	a0,ram_pointer_9411(a6)        	| [$0a9c: ld   ($9411),hl]
@@ -1524,7 +1536,7 @@ l_0ab0:
 	LEA_ROM	0x4DDC,a0                          	| [$0ab7: ld   hl,$4DDC]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$0aba: rst  $08]
 	jbsr	write_videoram_a1                         	| [$0abb: ld   (de),a]
-	BCLR_A1	2                           	    | [$0abc: res  2,d]
+	BCLR_A1	10                           	    | [$0abc: res  2,d]
 	move.b	#0x0E,d0                        	| [$0abe: ld   a,$0E]
 	jbsr	write_videoram_a1                         	| [$0ac0: ld   (de),a]
 	clr.b	d0                               	| [$0ac1: xor  a]
@@ -1553,7 +1565,7 @@ l_0aed:
 	lea	l_941C(a6),a0                      	| [$0aed: ld   hl,$941C]
 	addq.b	#1,(a0)                         	| [$0af0: inc  (hl)]
 	LOAD_VIDEO_POINTER	video_address_9413(a6),a0         	| [$0af1: ld   hl,($9413)]
-	BCLR_A0	2                           	| [$0af4: res  2,h]
+	BCLR_A0	10                           	| [$0af4: res  2,h]
 	move.b	l_941C(a6),d0                   	| [$0af6: ld   a,($941C)]
 	btst.b	#4,d0                           	| [$0af9: bit  4,a]
 	jeq	l_0b01                             	| [$0afb: jr   z,$0B01]
@@ -1642,7 +1654,7 @@ l_0b71:
 	move.b	d0,d4                           	| [$0b83: ld   e,a]
 	move.b	#0x01,d3                        	| [$0b84: ld   d,$01]
 	LOAD_D3_16_FROM_D3D4
-	jbsr	rst_38                            	| [$0b86: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0b86: rst  $38]
 	move.b	#0x96,d0                        	| [$0b87: ld   a,$96]
 	move.b	d0,l_9465(a6)                   	| [$0b89: ld   ($9465),a]
 	jbsr	l_5dce                            	| [$0b8c: call $5DCE]
@@ -1667,7 +1679,7 @@ l_0b9a:
 	rts                                    	| [$0bab: ret  nz] [...]
 0:
 	move.w	#0x0320,d3                          	| [$0bac: ld   de,$0320]
-	jbsr	rst_38                            	| [$0baf: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0baf: rst  $38]
 	rts                                    	| [$0bb0: ret]
 
 l_0bb1:
@@ -1687,7 +1699,7 @@ l_0bb9:
 	move.b	#0xF0,(a0)                      	| [$0bc6: ld   (hl),$F0]
 	jbsr	l_4e92                            	| [$0bc8: call $4E92]
 	move.w	#0x0114,d3                          	| [$0bcb: ld   de,$0114]
-	jbsr	rst_38                            	| [$0bce: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0bce: rst  $38]
 	jbsr	l_5c9a                            	| [$0bcf: call $5C9A]
 	READ_ROM_BYTE	0x10FE,d0                       	| [$0bd2: ld   a,($10FE)]
 	move.b	d0,l_9000(a6)                   	| [$0bd5: ld   ($9000),a]
@@ -1711,7 +1723,7 @@ l_0be7:
 	rts                                    	| [$0bf9: ret  nz] [...]
 0:
 	move.w	#0x0314,d3                          	| [$0bfa: ld   de,$0314]
-	jbsr	rst_38                            	| [$0bfd: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0bfd: rst  $38]
 	jbsr	l_5c82                            	| [$0bfe: call $5C82]
 	jra	l_080b                             	| [$0c01: jp   $080B]
 
@@ -1746,9 +1758,9 @@ l_0c2a:
 	cmp.b	#0x40,d0                         	| [$0c36: cp   $40]
 	jcs	l_0c53                             	| [$0c38: jr   c,$0C53]
 	move.w	#0x0119,d3                          	| [$0c3a: ld   de,$0119] [uncovered]
-	jbsr	rst_38                            	| [$0c3d: rst  $38] [uncovered]
+	jbsr	start_task_d3_0038                            	| [$0c3d: rst  $38] [uncovered]
 	move.b	#0x1E,d3                        	| [$0c3e: ld   e,$1E] [uncovered]
-	jbsr	rst_38                            	| [$0c40: rst  $38] [uncovered]
+	jbsr	start_task_d3_0038                            	| [$0c40: rst  $38] [uncovered]
 	READ_ROM_BYTE	0x1208,d0                       	| [$0c41: ld   a,($1208)] [uncovered]
 	move.b	d0,l_917E(a6)                   	| [$0c44: ld   ($917E),a] [uncovered]
 	READ_ROM_BYTE	0x24EA,d0                       	| [$0c47: ld   a,($24EA)] [uncovered]
@@ -1758,11 +1770,11 @@ l_0c2a:
 
 l_0c53:
 	move.w	#0x0118,d3                          	| [$0c53: ld   de,$0118]
-	jbsr	rst_38                            	| [$0c56: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0c56: rst  $38]
 	move.w	#0x011A,d3                          	| [$0c57: ld   de,$011A]
-	jbsr	rst_38                            	| [$0c5a: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0c5a: rst  $38]
 	addq.w	#1,d3                           	| [$0c5b: inc  e]
-	jbsr	rst_38                            	| [$0c5c: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0c5c: rst  $38]
 	lea		0x8652,a1                          	| [$0c5d: ld   de,$8652]
 	move.b	l_917E(a6),d0                   	| [$0c60: ld   a,($917E)]
 	move.b	#0x01,d2                        	| [$0c63: ld   c,$01]
@@ -1781,7 +1793,7 @@ l_0c7a:
 	move.b	#0x01,d2                        	| [$0c80: ld   c,$01]
 	jbsr	l_05ea                            	| [$0c82: call $05EA]
 	LEA_ROM	0x011B,a1                          	| [$0c85: ld   de,$011B]
-	jbsr	rst_38                            	| [$0c88: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0c88: rst  $38]
 	lea	0x85D2,a0                      	| [$0c89: ld   hl,$85D2]
 	WRITE_VIDEORAM	0x17                      	| [$0c8c: ld   (hl),$17]
 	BCLR_A0  2                         	| [$0c8e: res  2,h]
@@ -1870,7 +1882,7 @@ l_0cf7:
 	sbcd	d7,d0                        	| [$0d35: sub  $01]+daa
 	move.b	d0,(a0)                         	| [$0d38: ld   (hl),a]
 l_0d39:
-	jbsr	rst_38                            	| [$0d39: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0d39: rst  $38]
 	jbsr	l_5d8c                            	| [$0d3a: call $5D8C]
 l_0d3d:
 	lea	l_9465(a6),a0                      	| [$0d3d: ld   hl,$9465]
@@ -1882,13 +1894,13 @@ l_0d3d:
 	READ_ROM_BYTE	0x3526,d0                       	| [$0d45: ld   a,($3526)]
 	move.b	d0,l_942C(a6)                   	| [$0d48: ld   ($942C),a]
 	move.w	#0x0319,d3                          	| [$0d4b: ld   de,$0319]
-	jbsr	rst_38                            	| [$0d4e: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0d4e: rst  $38]
 	addq.b	#1,d3                           	| [$0d4f: inc  e]
-	jbsr	rst_38                            	| [$0d50: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0d50: rst  $38]
 	addq.b	#1,d3                           	| [$0d51: inc  e]
-	jbsr	rst_38                            	| [$0d52: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0d52: rst  $38]
 	move.b	#0x1E,d3                        	| [$0d53: ld   e,$1E]
-	jbsr	rst_38                            	| [$0d55: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0d55: rst  $38]
 	READ_ROM_BYTE	0x4134,d0                       	| [$0d56: ld   a,($4134)]
 	WRITE_D0_VIDEORAM	0x8652                       	| [$0d59: ld   ($8652),a]
 	WRITE_D0_VIDEORAM   0x8632                       	| [$0d5c: ld   ($8632),a]
@@ -2004,7 +2016,7 @@ l_0e08:
 	move.b	d0,l_9610(a6)                   	| [$0e2c: ld   ($9610),a]
 	move.b	#0x05,d3                        	| [$0e2f: ld   d,$05]
 	LOAD_D3_16_FROM_D3D4
-	jbsr	rst_38                            	| [$0e31: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0e31: rst  $38]
 	lea	l_9465(a6),a0                      	| [$0e32: ld   hl,$9465]
 	move.b	#0x78,(a0)                      	| [$0e35: ld   (hl),$78]
 	lea	l_942C(a6),a0                      	| [$0e37: ld   hl,$942C]
@@ -2056,7 +2068,7 @@ l_0e69:
 	move.b	d0,l_915E(a6)                   	| [$0e8a: ld   ($915E),a]
 	move.b	#0x05,d3                        	| [$0e8d: ld   d,$05]
 	LOAD_D3_16_FROM_D3D4
-	jbsr	rst_38                            	| [$0e8f: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$0e8f: rst  $38]
 	lea	l_9465(a6),a0                      	| [$0e90: ld   hl,$9465]
 	move.b	#0x78,(a0)                      	| [$0e93: ld   (hl),$78]
 	move.b	#0x0F,d0                        	| [$0e95: ld   a,$0F]
@@ -2284,7 +2296,7 @@ l_1043:
 	rts                                    	| [$1052: ret  z] [...]
 0:
 	move.w	#0x0117,d3                          	| [$1053: ld   de,$0117] [uncovered]
-	jbsr	rst_38                            	| [$1056: rst  $38] [uncovered]
+	jbsr	start_task_d3_0038                            	| [$1056: rst  $38] [uncovered]
 	jra	l_080b                             	| [$1057: jp   $080B] [uncovered]
 
 l_105a:
@@ -2753,26 +2765,26 @@ l_1476:
 	LEA_ROM	0x14CC,a0                          	| [$147a: ld   hl,$14CC]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$147d: rst  $08]
 	jbsr	write_videoram_a1                         	| [$147e: ld   (de),a]
-	BCLR_A1	2                           	| [$147f: res  2,d]
+	BCLR_A1	10                           	| [$147f: res  2,d]
 	move.b	d2,d0                           	| [$1481: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$1482: ld   (de),a]
-	BSET_A1	2                           	| [$1483: set  2,d]
+	BSET_A1	10                           	| [$1483: set  2,d]
 	addq.w	#1,a0                           	| [$1485: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$1486: rst  $20]
 	move.b	(a0),d0                         	| [$1487: ld   a,(hl)]
 	jbsr	write_videoram_a1                         	| [$1488: ld   (de),a]
-	BCLR_A1	2                           	| [$1489: res  2,d]
+	BCLR_A1	10                           	| [$1489: res  2,d]
 	move.b	d2,d0                           	| [$148b: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$148c: ld   (de),a]
-	BSET_A1	2                           	| [$148d: set  2,d]
+	BSET_A1	10                           	| [$148d: set  2,d]
 	addq.w	#1,a0                           	| [$148f: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$1490: rst  $20]
 	move.b	(a0),d0                         	| [$1491: ld   a,(hl)]
 	jbsr	write_videoram_a1                         	| [$1492: ld   (de),a]
-	BCLR_A1	2                           	| [$1493: res  2,d]
+	BCLR_A1	10                           	| [$1493: res  2,d]
 	move.b	d2,d0                           	| [$1495: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$1496: ld   (de),a]
-	BSET_A1	2                           	| [$1497: set  2,d]
+	BSET_A1	10                           	| [$1497: set  2,d]
 	sub.w	#0x80,a1						| [$1499: ld   hl,$FF80]
 											| [$149c: add  hl,de]
 											| [$149d: ex   de,hl]
@@ -2787,33 +2799,33 @@ l_1476:
 	addq.w	#3,a0                           	| [$14ac: inc  hl] * 3
 	move.b	(a0),d0                         	| [$14af: ld   a,(hl)]
 	jbsr	write_videoram_a1                         	| [$14b0: ld   (de),a]
-	BCLR_A1	2                           	| [$14b1: res  2,d]
+	BCLR_A1	10                           	| [$14b1: res  2,d]
 	move.b	d2,d0                           	| [$14b3: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$14b4: ld   (de),a]
-	BSET_A1	2                           	| [$14b5: set  2,d]
+	BSET_A1	10                           	| [$14b5: set  2,d]
 	addq.w	#1,a0                           	| [$14b7: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$14b8: rst  $20]
 	move.b	(a0),d0                         	| [$14b9: ld   a,(hl)]
 	jbsr	write_videoram_a1                         	| [$14ba: ld   (de),a]
-	BCLR_A1	2                           	| [$14bb: res  2,d]
+	BCLR_A1	10                           	| [$14bb: res  2,d]
 	move.b	d2,d0                           	| [$14bd: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$14be: ld   (de),a]
-	BSET_A1	2                           	| [$14bf: set  2,d]
+	BSET_A1	10                           	| [$14bf: set  2,d]
 	addq.w	#1,a0                           	| [$14c1: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$14c2: rst  $20]
 	move.b	(a0),d0                         	| [$14c3: ld   a,(hl)]
 	jbsr	write_videoram_a1                         	| [$14c4: ld   (de),a]
-	BCLR_A1	2                           	| [$14c5: res  2,d]
+	BCLR_A1	10                           	| [$14c5: res  2,d]
 	move.b	d2,d0                           	| [$14c7: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$14c8: ld   (de),a]
-	BSET_A1	2                           	| [$14c9: set  2,d]
+	BSET_A1	10                           	| [$14c9: set  2,d]
 	rts                                    	| [$14cb: ret]
 
 l_155f:
 	move.w	#0x0100,d3                          	| [$155f: ld   de,$0100]
-	jbsr	rst_38                            	| [$1562: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$1562: rst  $38]
 	addq.b	#1,d3                           	| [$1563: inc  e]
-	jbsr	rst_38                            	| [$1564: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$1564: rst  $38]
 	move.b	#0x01,d3                        	| [$1565: ld   d,$01]
 	move.b	#0x0F,d4                        	| [$1567: ld   e,$0F]
 	move.b	l_9443(a6),d0                   	| [$1569: ld   a,($9443)]
@@ -2822,17 +2834,17 @@ l_155f:
 	addq.b	#2,d4                           	| [$156f: inc  e] [uncovered]
 l_1571:
 	LOAD_D3_16_FROM_D3D4
-	jbsr	rst_38                            	| [$1571: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$1571: rst  $38]
 	addq.b	#1,d3                           	| [$1572: inc  e]
-	jbsr	rst_38                            	| [$1573: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$1573: rst  $38]
 	move.b	#0x15,d3                        	| [$1574: ld   e,$15]
-	jbsr	rst_38                            	| [$1576: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$1576: rst  $38]
 	move.b	nb_credits_9406(a6),d0          	| [$1577: ld   a,(nb_credits_9406)]
 	cmp.b	#0x02,d0                         	| [$157a: cp   $02]
 	jcc	l_1596                             	| [$157c: jr   nc,$1596]
 	move.b	#0x16,d3                        	| [$157e: ld   e,$16]
 l_1580:
-	jbsr	rst_38                            	| [$1580: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$1580: rst  $38]
 	LEA_ROM	0x24C1,a0                          	| [$1581: ld   hl,$24C1]
 	clr.b	d2                               	| [$1584: ld   c,$00]
 	move.b	l_942C(a6),d0                   	| [$1586: ld   a,($942C)]
@@ -2848,7 +2860,7 @@ l_1589:
 
 l_1596:
 	move.b	#0x17,d3                        	| [$1596: ld   e,$17]
-	jbsr	rst_38                            	| [$1598: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$1598: rst  $38]
 	READ_ROM_BYTE	0x05E8,d0                       	| [$1599: ld   a,($05E8)]
 	move.b	d0,l_942C(a6)                   	| [$159c: ld   ($942C),a]
 	rts                                    	| [$159f: ret]
@@ -2984,7 +2996,7 @@ l_1639:
 	addq.b	#1,(a0)                         	| [$1649: inc  (hl)]
 	move.b	#0x06,d3                        	| [$164a: ld   d,$06]
 	LOAD_D3_16_FROM_D3D4
-	jbsr	rst_38                            	| [$164c: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$164c: rst  $38]
 	jra	l_5da4                             	| [$164d: jp   $5DA4]
 
 l_1650:
@@ -3095,11 +3107,11 @@ l_1714:
 	LEA_ROM	0x3362,a0                          	| [$1714: ld   hl,$3362]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$1717: rst  $08]
 	jbsr	write_videoram_a1                         	| [$1718: ld   (de),a]
-	BCLR_A1	2                           	| [$1719: res  2,d]
+	BCLR_A1	10                           	| [$1719: res  2,d]
 	move.b	d2,d0                           	| [$171b: ld   a,c]
 	jbsr	write_videoram_a1                         	| [$171c: ld   (de),a]
 l_171d:
-	BSET_A1	2                           	| [$171d: set  2,d]
+	BSET_A1	10                           	| [$171d: set  2,d]
 	rts                                    	| [$171f: ret]
 
 l_1720:
@@ -3149,16 +3161,14 @@ l_1756:
 	and.b	#0x03,d0                         	| [$177a: and  $03]
 	LEA_ROM	0x17B7,a0                          	| [$177c: ld   hl,$17B7]
 	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$177f: rst  $10]
-	BREAKPOINT	"value of A1??? 2921"
 	move.b	(a1),d0                         	| [$1780: ld   a,(de)]
 	addq.b	#1,d0                           	| [$1781: inc  a]
 	move.b	d0,l_9438(a6)                   	| [$1782: ld   ($9438),a]
 	lea	l_9439(a6),a0                      	| [$1785: ld   hl,$9439]
-	* convert A1 => D3.D4
+	LOAD_D3D4_FROM_A1_ROM
 	move.b	d4,(a0)+                         	| [$1788: ld   (hl),e]
 											| [$1789: inc  l]
 	move.b	d3,(a0)                         	| [$178a: ld   (hl),d]
-	CLEAR_XC_FLAGS                         	| [$178b: xor  a]
 	clr.b	d0                               	| [$178b: xor  a]
 	move.b	d0,l_924E(a6)                   	| [$178c: ld   ($924E),a]
 	rts                                    	| [$178f: ret]
@@ -3301,8 +3311,8 @@ l_18a1:
 l_18a9:
 	move.b	d0,l_943C(a6)                   	| [$18a9: ld   ($943C),a]
 	and.b	#0x0F,d0                         	| [$18ac: and  $0F]
-	LEA_ROM	0x19C7,a0                          	| [$18ae: ld   hl,$19C7]
-	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$18b1: rst  $10]
+												| [$18ae: ld   hl,$19C7]
+	READ_ROM_WORD	0x19C7,d3                   | [$18b1: rst  $10]
 	move.b	(0x01,a2),d5                    	| [$18b2: ld   h,(ix+$01)]
 	move.b	(0x05,a2),d6                    	| [$18b5: ld   l,(ix+$05)]
 	LOAD_D5_16_FROM_D5D6
@@ -3330,8 +3340,8 @@ l_18d6:
 l_18de:
 	move.b	d0,l_943C(a6)                   	| [$18de: ld   ($943C),a]
 	and.b	#0x0F,d0                         	| [$18e1: and  $0F]
-	LEA_ROM	0x19F5,a0                          	| [$18e3: ld   hl,$19F5]
-	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$18e6: rst  $10]
+	READ_ROM_WORD	0x19F5,d3                          	| [$18e3: ld   hl,$19F5]
+	                            	| [$18e6: rst  $10]
 	move.b	(0x01,a2),d5                    	| [$18e7: ld   h,(ix+$01)]
 	move.b	(0x05,a2),d6                    	| [$18ea: ld   l,(ix+$05)]
 	LOAD_D5_16_FROM_D5D6
@@ -3928,6 +3938,7 @@ l_1fb9:
 	rts                                    	| [$1fbc: ret  z] [...]
 0:
 	LOAD_A1_FROM_D3D4_RAM
+	BREAKPOINT	"check A1 is videoram 1FBD ?"
 	move.b	d0,(a1)                         	| [$1fbd: ld   (de),a]
 	addq.w	#1,a0                           	| [$1fbe: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$1fbf: rst  $20]
@@ -4446,8 +4457,8 @@ l_247b:
 	LEA_ROM	0x40A6,a0                          	| [$247b: ld   hl,$40A6]
 	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$247e: rst  $10]
 	exg	a1,a0                              	| [$247f: ex   de,hl]
-	move.b	(a0),d4                         	| [$2480: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$2481: inc  hl]
+	move.b	(a0)+,d4                         	| [$2480: ld   e,(hl)]
+											| [$2481: inc  hl]
 	move.b	(a0),d3                         	| [$2482: ld   d,(hl)]
 	addq.w	#2,a0                           	| [$2483: inc  hl] * 2
 	move.b	l_9661(a6),d0                   	| [$2485: ld   a,($9661)]
@@ -4536,9 +4547,9 @@ l_24ec:
 	move.b	d0,l_A7FF(a6)                       	| [$24ed: ld   ($A7FF),a]
 	jbsr	l_4e92                            	| [$24f0: call $4E92]
 	move.w	#0x0302,d3                          	| [$24f3: ld   de,$0302]
-	jbsr	rst_38                            	| [$24f6: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$24f6: rst  $38]
 	addq.b	#1,d3                           	| [$24f7: inc  e]
-	jbsr	rst_38                            	| [$24f8: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$24f8: rst  $38]
 	jra	l_080b                             	| [$24f9: jp   $080B]
 
 l_24fc:
@@ -4628,13 +4639,13 @@ l_256d:
 	rts                                    	| [$257d: ret  nz] [...]
 0:
 	move.w	#0x0309,d3                          	| [$257e: ld   de,$0309]
-	jbsr	rst_38                            	| [$2581: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$2581: rst  $38]
 	move.w	#0x032C,d3                          	| [$2582: ld   de,$032C]
-	jbsr	rst_38                            	| [$2585: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$2585: rst  $38]
 	move.w	#0x0326,d3                          	| [$2586: ld   de,$0326]
-	jbsr	rst_38                            	| [$2589: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$2589: rst  $38]
 	move.w	#0x031C,d3                          	| [$258a: ld   de,$031C]
-	jbsr	rst_38                            	| [$258d: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$258d: rst  $38]
 *  ROM checksum
 *	clr.b	d1                               	| [$258e: ld   b,$00]
 *	move.w	#0x0BC0,a0                          	| [$2590: ld   hl,$0BC0]
@@ -5394,7 +5405,7 @@ l_2b12:
 	LOAD_D3_16_FROM_D3D4
 l_2b2c:
 	move.b	#0x20,(0x00,a2)                 	| [$2b2c: ld   (ix+$00),$20]
-	jbsr	rst_38                            	| [$2b30: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$2b30: rst  $38]
 	move.b	l_9407(a6),d0                   	| [$2b31: ld   a,($9407)]
 	                               	| [$2b34: and  a]
 	jne	l_2b3c                             	| [$2b35: jr   nz,$2B3C]
@@ -6436,9 +6447,9 @@ l_3481:
 
 l_3509:
 	move.w	#0x0113,d3                          	| [$3509: ld   de,$0113]
-	jbsr	rst_38                            	| [$350c: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$350c: rst  $38]
 	move.b	#0x07,d3                        	| [$350d: ld   d,$07]
-	jbsr	rst_38                            	| [$350f: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$350f: rst  $38]
 	jbsr	l_143e                            	| [$3510: call $143E]
 *  ROM checksum
 *	LEA_ROM	0x1C58,a0                          	| [$3513: ld   hl,$1C58]
@@ -6854,11 +6865,11 @@ l_3865:
 	jbsr	l_3831                            	| [$386a: call $3831]
 	jbsr	l_22f3                            	| [$386d: call $22F3]
 	move.w	#0x0400,d3                          	| [$3870: ld   de,$0400]
-	jbsr	rst_38                            	| [$3873: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$3873: rst  $38]
 	move.b	#0x05,d3                        	| [$3874: ld   d,$05]
-	jbsr	rst_38                            	| [$3876: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$3876: rst  $38]
 	move.b	#0x06,d3                        	| [$3877: ld   d,$06]
-	jbsr	rst_38                            	| [$3879: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$3879: rst  $38]
 	move.b	l_9458(a6),d0                   	| [$387a: ld   a,($9458)]
 	                               	| [$387d: and  a]
 	jeq	l_388b                             	| [$387e: jr   z,$388B]
@@ -6868,7 +6879,7 @@ l_3865:
 	jeq	l_388a                             	| [$3887: jr   z,$388A] [uncovered]
 	addq.b	#1,d3                           	| [$3889: inc  e] [uncovered]
 l_388a:
-	jbsr	rst_38                            	| [$388a: rst  $38] [uncovered]
+	jbsr	start_task_d3_0038                            	| [$388a: rst  $38] [uncovered]
 l_388b:
 	lea	0x8040,a0                          	| [$388b: ld   hl,$8040]
 	move.w	#0x0020,d3                      	| [$388e: ld   de,$0020]
@@ -6900,7 +6911,7 @@ change_attribute_line_38b4:
 
 l_38ba:
 	move.w	#0x011C,d3                          	| [$38ba: ld   de,$011C]
-	jbsr	rst_38                            	| [$38bd: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$38bd: rst  $38]
 	jbsr	l_08ad                            	| [$38be: call $08AD]
 	move.b	l_9458(a6),d0                   	| [$38c1: ld   a,($9458)]
 	                               	| [$38c4: and  a]
@@ -6917,7 +6928,7 @@ l_38c9:
 	move.b	d0,d4                           	| [$38d2: ld   e,a]
 	move.b	#0x01,d3                        	| [$38d3: ld   d,$01]
 	LOAD_D3_16_FROM_D3D4
-	jbsr	rst_38                            	| [$38d5: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$38d5: rst  $38]
 	move.b	l_960B(a6),d0                   	| [$38d6: ld   a,($960B)]
 	cmp.b	#0x17,d0                         	| [$38d9: cp   $17]
 	jeq	l_38ea                             	| [$38db: jr   z,$38EA]
@@ -6928,13 +6939,13 @@ l_38c9:
 	move.b	d0,d4                           	| [$38e5: ld   e,a]
 	move.b	#0x01,d3                        	| [$38e6: ld   d,$01]
 	LOAD_D3_16_FROM_D3D4
-	jbsr	rst_38                            	| [$38e8: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$38e8: rst  $38]
 	rts                                    	| [$38e9: ret]
 
 
 l_38ea:
 	LEA_ROM	0x0126,a1                          	| [$38ea: ld   de,$0126]
-	jbsr	rst_38                            	| [$38ed: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$38ed: rst  $38]
 	rts                                    	| [$38ee: ret]
 
 
@@ -7332,48 +7343,48 @@ l_4191:
 	addq.b	#1,(a0)                         	| [$4191: inc  (hl)]
 	exg	a1,a0                              	| [$4192: ex   de,hl]
 	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$4193: rst  $10]
-	move.b	(a1),d0                         	| [$4194: ld   a,(de)]
+	move.b	(a1)+,d0                         	| [$4194: ld   a,(de)]
 	move.b	d0,l_905E(a6)                   	| [$4195: ld   ($905E),a]
-	addq.w	#1,a1                           	| [$4198: inc  de]
-	move.b	(a1),d0                         	| [$4199: ld   a,(de)]
+	                           	| [$4198: inc  de]
+	move.b	(a1)+,d0                         	| [$4199: ld   a,(de)]
 	move.b	d0,l_90AE(a6)                   	| [$419a: ld   ($90AE),a]
-	addq.w	#1,a1                           	| [$419d: inc  de]
-	move.b	(a1),d0                         	| [$419e: ld   a,(de)]
+	                           	| [$419d: inc  de]
+	move.b	(a1)+,d0                         	| [$419e: ld   a,(de)]
 	move.b	d0,l_90DE(a6)                   	| [$419f: ld   ($90DE),a]
-	addq.w	#1,a1                           	| [$41a2: inc  de]
-	move.b	(a1),d0                         	| [$41a3: ld   a,(de)]
+	                           	| [$41a2: inc  de]
+	move.b	(a1)+,d0                         	| [$41a3: ld   a,(de)]
 	move.b	d0,l_92AE(a6)                   	| [$41a4: ld   ($92AE),a]
-	addq.w	#1,a1                           	| [$41a7: inc  de]
-	move.b	(a1),d0                         	| [$41a8: ld   a,(de)]
+	                          	| [$41a7: inc  de]
+	move.b	(a1)+,d0                         	| [$41a8: ld   a,(de)]
 	move.b	d0,l_911E(a6)                   	| [$41a9: ld   ($911E),a]
-	addq.w	#1,a1                           	| [$41ac: inc  de]
-	move.b	(a1),d0                         	| [$41ad: ld   a,(de)]
+	                           	| [$41ac: inc  de]
+	move.b	(a1)+,d0                         	| [$41ad: ld   a,(de)]
 	move.b	d0,l_909E(a6)                   	| [$41ae: ld   ($909E),a]
-	addq.w	#1,a1                           	| [$41b1: inc  de]
-	move.b	(a1),d0                         	| [$41b2: ld   a,(de)]
+	                           	| [$41b1: inc  de]
+	move.b	(a1)+,d0                         	| [$41b2: ld   a,(de)]
 	move.b	d0,l_908E(a6)                   	| [$41b3: ld   ($908E),a]
-	addq.w	#1,a1                           	| [$41b6: inc  de]
-	move.b	(a1),d0                         	| [$41b7: ld   a,(de)]
+	                           	| [$41b6: inc  de]
+	move.b	(a1)+,d0                         	| [$41b7: ld   a,(de)]
 	move.b	d0,l_907E(a6)                   	| [$41b8: ld   ($907E),a]
-	addq.w	#1,a1                           	| [$41bb: inc  de]
-	move.b	(a1),d0                         	| [$41bc: ld   a,(de)]
+	                           	| [$41bb: inc  de]
+	move.b	(a1)+,d0                         	| [$41bc: ld   a,(de)]
 	move.b	d0,l_912E(a6)                   	| [$41bd: ld   ($912E),a]
-	addq.w	#1,a1                           	| [$41c0: inc  de]
-	move.b	(a1),d0                         	| [$41c1: ld   a,(de)]
+	                          	| [$41c0: inc  de]
+	move.b	(a1)+,d0                         	| [$41c1: ld   a,(de)]
 	move.b	d0,l_91DE(a6)                   	| [$41c2: ld   ($91DE),a]
-	addq.w	#1,a1                           	| [$41c5: inc  de]
-	move.b	(a1),d0                         	| [$41c6: ld   a,(de)]
+	                           	| [$41c5: inc  de]
+	move.b	(a1)+,d0                         	| [$41c6: ld   a,(de)]
 	move.b	d0,l_901E(a6)                   	| [$41c7: ld   ($901E),a]
-	addq.w	#1,a1                           	| [$41ca: inc  de]
-	move.b	(a1),d0                         	| [$41cb: ld   a,(de)]
+	                           	| [$41ca: inc  de]
+	move.b	(a1)+,d0                         	| [$41cb: ld   a,(de)]
 	move.b	d0,l_914E(a6)                   	| [$41cc: ld   ($914E),a]
-	addq.w	#1,a1                           	| [$41cf: inc  de]
-	move.b	(a1),d0                         	| [$41d0: ld   a,(de)]
+	                           	| [$41cf: inc  de]
+	move.b	(a1)+,d0                         	| [$41d0: ld   a,(de)]
 	move.b	d0,l_920E(a6)                   	| [$41d1: ld   ($920E),a]
-	addq.w	#1,a1                           	| [$41d4: inc  de]
-	move.b	(a1),d0                         	| [$41d5: ld   a,(de)]
+	                           	| [$41d4: inc  de]
+	move.b	(a1)+,d0                         	| [$41d5: ld   a,(de)]
 	move.b	d0,l_92DE(a6)                   	| [$41d6: ld   ($92DE),a]
-	addq.w	#1,a1                           	| [$41d9: inc  de]
+	                           	| [$41d9: inc  de]
 	move.b	(a1),d0                         	| [$41da: ld   a,(de)]
 	move.b	d0,l_92EE(a6)                   	| [$41db: ld   ($92EE),a]
 	rts                                    	| [$41de: ret]
@@ -7404,8 +7415,8 @@ l_4269:
 	LEA_ROM	0x4683,a0                          	| [$427c: ld   hl,$4683]
 	move.b	l_942B(a6),d0                   	| [$427f: ld   a,($942B)]
 l_4282:
-	sub.b	(a0),d0                          	| [$4282: sub  (hl)]
-	addq.w	#1,a0                           	| [$4283: inc  hl]
+	sub.b	(a0)+,d0                          	| [$4282: sub  (hl)]
+	                           	| [$4283: inc  hl]
 	subq.b	#1,d2                           	| [$4284: dec  c]
 	jne	l_4282                             	| [$4285: jr   nz,$4282]
 	sub.b	#0x0E,d0                         	| [$4287: sub  $0E]
@@ -7413,9 +7424,9 @@ l_4282:
 	jbsr	l_15a0                            	| [$428c: call $15A0]
 	jcc	l_42a3                             	| [$428f: jp   nc,$42A3]
 	move.w	#0x0309,d3                          	| [$4292: ld   de,$0309] [uncovered]
-	jbsr	rst_38                            	| [$4295: rst  $38] [uncovered]
+	jbsr	start_task_d3_0038                            	| [$4295: rst  $38] [uncovered]
 	move.w	#0x030B,d3                          	| [$4296: ld   de,$030B] [uncovered]
-	jbsr	rst_38                            	| [$4299: rst  $38] [uncovered]
+	jbsr	start_task_d3_0038                            	| [$4299: rst  $38] [uncovered]
 	READ_ROM_BYTE	0x5E25,d0                       	| [$429a: ld   a,($5E25)] [uncovered]
 	move.b	d0,l_942C(a6)                   	| [$429d: ld   ($942C),a] [uncovered]
 	jra	l_13d1                             	| [$42a0: jp   $13D1] [uncovered]
@@ -7451,24 +7462,24 @@ l_42fe:
 	move.w	#0x001F,d3                      	| [$42fe: ld   de,$001F]
 l_4301:
 	WRITE_VIDEORAM	0x68                      	| [$4301: ld   (hl),$68]
-	BCLR_A0	2                           	| [$4303: res  2,h]
+	BCLR_A0	10                           	| [$4303: res  2,h]
 	WRITE_VIDEORAM	0x02                      	| [$4305: ld   (hl),$02]
-	BSET_A0	2                           	| [$4307: set  2,h]
+	BSET_A0	10                           	| [$4307: set  2,h]
 	addq.w	#1,a0                           	| [$4309: inc  l]
 	WRITE_VIDEORAM	0x1F                      	| [$430a: ld   (hl),$1F]
-	BCLR_A0	2                          	| [$430c: res  2,h]
+	BCLR_A0	10                          	| [$430c: res  2,h]
 	WRITE_VIDEORAM	0x02                      	| [$430e: ld   (hl),$02]
-	BSET_A0	2                           	| [$4310: set  2,h]
+	BSET_A0	10                           	| [$4310: set  2,h]
 	add.w	d3,a0                            	| [$4312: add  hl,de]
 	WRITE_VIDEORAM	0xF2                      	| [$4313: ld   (hl),$F2]
-	BCLR_A0	2                           	| [$4315: res  2,h]
+	BCLR_A0	10                           	| [$4315: res  2,h]
 	WRITE_VIDEORAM	0x02                      	| [$4317: ld   (hl),$02]
-	BSET_A0	2                          	| [$4319: set  2,h]
+	BSET_A0	10                          	| [$4319: set  2,h]
 	addq.w	#1,a0                           	| [$431b: inc  l]
 	WRITE_VIDEORAM	0x61                      	| [$431c: ld   (hl),$61]
-	BCLR_A0	2                           	| [$431e: res  2,h]
+	BCLR_A0	10                           	| [$431e: res  2,h]
 	WRITE_VIDEORAM	0x02                      	| [$4320: ld   (hl),$02]
-	BSET_A0	2                          	| [$4322: set  2,h]
+	BSET_A0	10                          	| [$4322: set  2,h]
 	add.w	d3,a0                            	| [$4324: add  hl,de]
 	subq.b	#0x03,d0                        	| [$4325: sub  $03]
 	subq.b	#1,d1                           	| [...]
@@ -7486,8 +7497,8 @@ l_43f4:
 	LEA_ROM	0x4C09,a0                          	| [$4406: ld   hl,$4C09]
 	move.b	l_942C(a6),d0                   	| [$4409: ld   a,($942C)]
 l_440c:
-	sub.b	(a0),d0                          	| [$440c: sub  (hl)]
-	addq.w	#1,a0                           	| [$440d: inc  hl]
+	sub.b	(a0)+,d0                          	| [$440c: sub  (hl)]
+	                           	| [$440d: inc  hl]
 	subq.b	#1,d2                           	| [$440e: dec  c]
 	jne	l_440c                             	| [$440f: jr   nz,$440C]
 	eor.b	#0x02,d0                         	| [$4411: xor  $02]
@@ -7633,7 +7644,6 @@ l_45e0:
 l_45ee:
 	clr.b	(0x00,a2)                        	| [$45ee: ld   (ix+$00),$00]
 	clr.b	(0x00,a3)                        	| [$45f2: ld   (iy+$00),$00]
-	CLEAR_XC_FLAGS                         	| [$45f6: xor  a]
 	clr.b	d0                               	| [$45f6: xor  a]
 	move.b	d0,l_915E(a6)                   	| [$45f7: ld   ($915E),a]
 	move.b	l_901E(a6),d0                   	| [$45fa: ld   a,($901E)]
@@ -7725,17 +7735,17 @@ l_46b6:
 	move.b	d0,l_960B(a6)                   	| [$46be: ld   ($960B),a]
 	jbsr	l_4cea                            	| [$46c1: call $4CEA]
 	move.w	#0x0100,d3                          	| [$46c4: ld   de,$0100]
-	jbsr	rst_38                            	| [$46c7: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$46c7: rst  $38]
 	addq.b	#1,d3                           	| [$46c8: inc  e]
-	jbsr	rst_38                            	| [$46c9: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$46c9: rst  $38]
 	addq.b	#1,d3                           	| [$46ca: inc  e]
-	jbsr	rst_38                            	| [$46cb: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$46cb: rst  $38]
 	addq.b	#1,d3                           	| [$46cc: inc  e]
-	jbsr	rst_38                            	| [$46cd: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$46cd: rst  $38]
 	move.w	#0x0104,d3                          	| [$46ce: ld   de,$0104]
-	jbsr	rst_38                            	| [$46d1: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$46d1: rst  $38]
 	addq.b	#1,d3                           	| [$46d2: inc  e]
-	jbsr	rst_38                            	| [$46d3: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$46d3: rst  $38]
 	clr.b	d1                               	| [$46d4: ld   b,$00]
 * ROM checksum
 *	LEA_ROM	0x34A3,a0                          	| [$46d6: ld   hl,$34A3]
@@ -7751,11 +7761,13 @@ l_46b6:
 	move.b	l_9440(a6),d0                   	| [$46e3: ld   a,($9440)]
 	                               	| [$46e6: and  a]
 	jne	l_46ed                             	| [$46e7: jr   nz,$46ED]
-	LEA_ROM	0x0107,a1                          	| [$46e9: ld   de,$0107]
-	jbsr	rst_38                            	| [$46ec: rst  $38]
+	move.w	#0x0107,d3                          	| [$46e9: ld   de,$0107]
+	jbsr	start_task_d3_0038                            	| [$46ec: rst  $38]
 l_46ed:
+	rol.w	#8,d3
 	move.b	#0x07,d3                        	| [$46ed: ld   d,$07]
-	jbsr	rst_38                            	| [$46ef: rst  $38]
+	rol.w	#8,d3
+	jbsr	start_task_d3_0038                            	| [$46ef: rst  $38]
 	move.b	#0xB4,d0                        	| [$46f0: ld   a,$B4]
 	move.b	d0,l_9465(a6)                   	| [$46f2: ld   ($9465),a]
 	jra	l_080b                             	| [$46f5: jp   $080B]
@@ -7863,8 +7875,8 @@ l_47d0:
 	jra	l_304b                             	| [$47d7: jp   $304B] [uncovered]
 
 l_47da:
-	clr.b	(0x00,a3)                        	| [$47da: ld   (iy+$00),$00]
-	clr.b	(0x00,a2)                        	| [$47de: ld   (ix+$00),$00]
+	clr.b	(a3)                        	| [$47da: ld   (iy+$00),$00]
+	clr.b	(a2)                        	| [$47de: ld   (ix+$00),$00]
 	rts                                    	| [$47e2: ret]
 
 l_47e3:
@@ -7900,8 +7912,8 @@ l_4816:
 	BREAKPOINT	"7405 review check if pointed value is in RAM"
 	LOAD_RAM_POINTER	l_9613(a6),a3         	| [$4836: ld   iy,($9613)]
 	BREAKPOINT	"7407 review check if pointed value is in RAM"
-	move.b	#0xFF,(0x00,a3)                 	| [$483a: ld   (iy+$00),$FF]
-	move.b	#0xFF,(0x01,a2)                 	| [$483e: ld   (ix+$01),$FF]
+	st.b	(0x00,a3)                 	| [$483a: ld   (iy+$00),$FF]
+	st.b	(0x01,a2)                 	| [$483e: ld   (ix+$01),$FF]
 	clr.b	(0x04,a2)                        	| [$4842: ld   (ix+$04),$00]
 	clr.b	(0x0b,a2)                        	| [$4846: ld   (ix+$0b),$00]
 	move.b	#0x1E,(0x0c,a2)                 	| [$484a: ld   (ix+$0c),$1E]
@@ -7936,8 +7948,8 @@ l_4816:
 	BREAKPOINT	"7441 review check if pointed value is in RAM"
 	LOAD_RAM_POINTER	l_961B(a6),a3         	| [$489b: ld   iy,($961B)]
 	BREAKPOINT	"7443 review check if pointed value is in RAM"
-	move.b	#0xFF,(0x00,a3)                 	| [$489f: ld   (iy+$00),$FF]
-	move.b	#0xFF,(0x01,a2)                 	| [$48a3: ld   (ix+$01),$FF]
+	st.b	(0x00,a3)                 	| [$489f: ld   (iy+$00),$FF]
+	st.b	(0x01,a2)                 	| [$48a3: ld   (ix+$01),$FF]
 	move.b	#0x02,(0x04,a2)                 	| [$48a7: ld   (ix+$04),$02]
 	st.b	d0                                	| [$48ab: ld   a,$FF]
 	move.b	d0,l_92BE(a6)                   	| [$48ad: ld   ($92BE),a]
@@ -8218,7 +8230,7 @@ l_4a7e:
 	lea	l_92FE(a6),a0                      	| [$4a7e: ld   hl,$92FE]
 	subq.b	#1,(a0)                         	| [$4a81: dec  (hl)]
 	move.w	#0x0403,d3                          	| [$4a82: ld   de,$0403]
-	jbsr	rst_38                            	| [$4a85: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$4a85: rst  $38]
 l_4a86:
 	jbsr	l_5d16                            	| [$4a86: call $5D16]
 	clr.b	(0x00,a2)                        	| [$4a89: ld   (ix+$00),$00]
@@ -8309,18 +8321,18 @@ l_4b9b:
 	btst.b	#5,d1                           	| [$4ba4: bit  5,b] [uncovered]
 	jeq	l_4bb8                             	| [$4ba6: jr   z,$4BB8] [uncovered]
 	move.b	#0x01,d3                        	| [$4ba8: ld   d,$01] [uncovered]
-	jra	l_0038                             	| [$4baa: jp   $0038] [uncovered]
+	jra	start_task_d3d4_0038                             	| [$4baa: jp   $0038] [uncovered]
 
 l_4bad:
 	move.b	#0x05,d4                        	| [$4bad: ld   e,$05]
 	btst.b	#5,d1                           	| [$4baf: bit  5,b]
 	jeq	l_4bb8                             	| [$4bb1: jr   z,$4BB8]
 	move.b	#0x01,d3                        	| [$4bb3: ld   d,$01]
-	jra	l_0038                             	| [$4bb5: jp   $0038]
+	jra	start_task_d3d4_0038                             	| [$4bb5: jp   $0038]
 
 l_4bb8:
 	move.b	#0x03,d3                        	| [$4bb8: ld   d,$03]
-	jra	l_0038                             	| [$4bba: jp   $0038]
+	jra	start_task_d3d4_0038                             	| [$4bba: jp   $0038]
 
 l_4bbd:
 	LEA_ROM	0x1168,a0                          	| [$4bbd: ld   hl,$1168]
@@ -8354,9 +8366,9 @@ l_4c00:
 	jbsr	l_1400                            	| [$4c09: call $1400]
 	jbsr	l_3ab8                            	| [$4c0c: call $3AB8]
 	move.w	#0x0104,d3                          	| [$4c0f: ld   de,$0104]
-	jbsr	rst_38                            	| [$4c12: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$4c12: rst  $38]
 	addq.b	#1,d3                           	| [$4c13: inc  e]
-	jbsr	rst_38                            	| [$4c14: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$4c14: rst  $38]
 *	ROM checksum
 *	LEA_ROM	0x0100,a0                          	| [$4c15: ld   hl,$0100]
 *	clr.b	d1                               	| [$4c18: ld   b,$00]
@@ -8380,11 +8392,11 @@ l_4c00:
 	                               	| [$4c35: and  a]
 	jne	l_4c3e                             	| [$4c36: jr   nz,$4C3E]
 	move.w	#0x0107,d3                          	| [$4c38: ld   de,$0107]
-	jra	rst_38                             	| [$4c3b: jp   $0038]
+	jra	start_task_d3_0038                             	| [$4c3b: jp   $0038]
 
 l_4c3e:
-	LEA_ROM	0x010D,a1                          	| [$4c3e: ld   de,$010D]
-	jra	l_0038                             	| [$4c41: jp   $0038]
+	move.w	#0x010D,d3                          	| [$4c3e: ld   de,$010D]
+	jra	start_task_d3_0038                             	| [$4c41: jp   $0038]
 
 l_4c54:
 	jbsr	l_3831                            	| [$4c54: call $3831]
@@ -8395,13 +8407,13 @@ l_4c54:
 0:
 	jbsr	l_5c88                            	| [$4c5e: call $5C88]
 	move.w	#0x0100,d3                          	| [$4c61: ld   de,$0100]
-	jbsr	rst_38                            	| [$4c64: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$4c64: rst  $38]
 	addq.b	#1,d3                           	| [$4c65: inc  e]
-	jbsr	rst_38                            	| [$4c66: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$4c66: rst  $38]
 	move.b	#0x0C,d3                        	| [$4c67: ld   e,$0C]
-	jbsr	rst_38                            	| [$4c69: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$4c69: rst  $38]
 	move.w	#0x070C,d3                        	| [$4c6a: ld   d,$07]
-	jbsr	rst_38                            	| [$4c6c: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$4c6c: rst  $38]
 	* ROM checksum
 *	LEA_ROM	0x0D50,a0                          	| [$4c6d: ld   hl,$0D50]
 *	move.b	d6,d0                           	| [$4c70: ld   a,l]
@@ -8428,7 +8440,7 @@ l_4c84:
 	LEA_ROM	0x4DDC,a0                          	| [$4c91: ld   hl,$4DDC]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$4c94: rst  $08]
 	jbsr	write_videoram_a1                  	| [$4c95: ld   (de),a]
-	BCLR_A1	2                           	| [$4c96: res  2,d]
+	BCLR_A1	10                           	| [$4c96: res  2,d]
 	move.b	(a1),d0                         	| [$4c98: ld   a,(de)]
 	move.b	d0,saved_character_9410(a6)                   	| [$4c99: ld   ($9410),a]
 	jra	l_080b                             	| [$4c9c: jp   $080B]
@@ -8589,9 +8601,9 @@ l_4e79:
 	jbsr	osd_w_videoram                         	| [$4e7b: ld   (hl),a]
 	move.b	(a1)+,d0                         	| [$4e7c: ld   a,(de)]
 	                           	| [$4e7d: inc  de]
-	BCLR_A0	2                           	| [$4e7e: res  2,h]
+	BCLR_A0	10                           	| [$4e7e: res  2,h]
 	jbsr	osd_w_videoram                         	| [$4e80: ld   (hl),a]
-	BSET_A0	2                           	| [$4e81: set  2,h]
+	BSET_A0	10                           	| [$4e81: set  2,h]
 	addq.w	#1,a0                           	| [$4e83: inc  hl]
 	subq.b	#1,d1                           	| [...]
 	jne	l_4e79                             	| [$4e84: djnz $4E79]
@@ -8618,9 +8630,9 @@ l_4e9e:
 	move.b	d0,d1                           	| [$4ea0: ld   b,a]
 l_4ea1:
 	move.b	#0x83,(a0)                      	| [$4ea1: ld   (hl),$83]
-	BSET_A0	2                           	| [$4ea3: res  2,h]
+	BSET_A0	10                           	| [$4ea3: res  2,h]
 	WRITE_VIDEORAM	0                             	| [$4ea5: ld   (hl),$00]
-	BCLR_A0	2                           	| [$4ea7: set  2,h]
+	BCLR_A0	10                           	| [$4ea7: set  2,h]
 	addq.w	#1,a0                           	| [$4ea9: inc  l]
 	subq.b	#1,d1                           	| [...]
 	jne	l_4ea1                             	| [$4eaa: djnz $4EA1]
@@ -8900,7 +8912,7 @@ l_596c:
 	move.b	d0,(0x00,a2)                    	| [$5988: ld   (ix+$00),a]
 	move.b	d0,l_9000(a6)                   	| [$598b: ld   ($9000),a]
 	move.w	#0x0402,d3                          	| [$598e: ld   de,$0402]
-	jra	rst_38                             	| [$5991: jp   $0038]
+	jra	start_task_d3_0038                             	| [$5991: jp   $0038]
 
 l_5994:
 	jbsr	exx                               	| [$5994: exx]
@@ -8988,7 +9000,7 @@ l_5a04:
 0:
 	movem.w	d3/d4,-(sp)                    	| [$5a1c: push de]
 	move.w	#0x0402,d3                          	| [$5a1d: ld   de,$0402]
-	jbsr	rst_38                            	| [$5a20: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$5a20: rst  $38]
 	movem.w	(sp)+,d3/d4                    	| [$5a21: pop  de]
 l_5a22:
 	move.b	d0,l_9300(a6)                   	| [$5a22: ld   ($9300),a]
@@ -9012,7 +9024,7 @@ l_5a2a:
 0:
 	movem.w	d3/d4,-(sp)                    	| [$5a42: push de]
 	move.w	#0x0402,d3                          	| [$5a43: ld   de,$0402]
-	jbsr	rst_38                            	| [$5a46: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$5a46: rst  $38]
 	movem.w	(sp)+,d3/d4                    	| [$5a47: pop  de]
 l_5a48:
 	move.b	d0,l_9310(a6)                   	| [$5a48: ld   ($9310),a]
@@ -9037,7 +9049,7 @@ l_5a50:
 0:
 	movem.w	d3/d4,-(sp)                    	| [$5a69: push de]
 	move.w	#0x0402,d3                          	| [$5a6a: ld   de,$0402]
-	jbsr	rst_38                            	| [$5a6d: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$5a6d: rst  $38]
 	movem.w	(sp)+,d3/d4                    	| [$5a6e: pop  de]
 l_5a6f:
 	move.b	d0,l_9320(a6)                   	| [$5a6f: ld   ($9320),a]
@@ -9059,7 +9071,7 @@ l_5a77:
 0:
 	movem.w	d3/d4,-(sp)                    	| [$5a8b: push de]
 	move.w	#0x0402,d3                          	| [$5a8c: ld   de,$0402]
-	jbsr	rst_38                            	| [$5a8f: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$5a8f: rst  $38]
 	movem.w	(sp)+,d3/d4                    	| [$5a90: pop  de]
 l_5a91:
 	move.b	d0,l_9300(a6)                   	| [$5a91: ld   ($9300),a]
@@ -9071,7 +9083,7 @@ l_5a91:
 l_5a9c:
 	move.b	#0x05,d3                        	| [$5a9c: ld   d,$05]
 	move.b	#0x10,d4                        	| [$5a9e: ld   e,$10]
-	illegal
+	BREAKPOINT	"??? 5aa0"
 	move.b	l_990B(a6),d0                   	| [$5aa0: ld   a,($990B)]
 	move.b	d0,d5                           	| [$5aa3: ld   h,a]
 	move.b	l_9908(a6),d0                   	| [$5aa4: ld   a,($9908)]
@@ -9083,7 +9095,7 @@ l_5a9c:
 0:
 	movem.w	d3/d4,-(sp)                    	| [$5ab0: push de]
 	move.w	#0x0402,d3                          	| [$5ab1: ld   de,$0402]
-	jbsr	rst_38                            	| [$5ab4: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$5ab4: rst  $38]
 	movem.w	(sp)+,d3/d4                    	| [$5ab5: pop  de]
 l_5ab6:
 	move.b	d0,l_9310(a6)                   	| [$5ab6: ld   ($9310),a]
@@ -9107,7 +9119,7 @@ l_5ac1:
 0:
 	movem.w	d3/d4,-(sp)                    	| [$5ad5: push de]
 	move.w	#0x0402,d3                          	| [$5ad6: ld   de,$0402]
-	jbsr	rst_38                            	| [$5ad9: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$5ad9: rst  $38]
 	movem.w	(sp)+,d3/d4                    	| [$5ada: pop  de]
 l_5adb:
 	move.b	d0,l_9320(a6)                   	| [$5adb: ld   ($9320),a]
@@ -9246,7 +9258,7 @@ l_5b9e:
 	jbsr	exx                               	| [$5bb0: exx]
 	movem.w	d3/d4,-(sp)                    	| [$5bb1: push de]
 	move.w	#0x0401,d3                          	| [$5bb2: ld   de,$0401]
-	jbsr	rst_38                            	| [$5bb5: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$5bb5: rst  $38]
 	movem.w	(sp)+,d3/d4                    	| [$5bb6: pop  de]
 	tst.b	d0                               	| [$5bb7: and  a]
 	rts                                    	| [$5bb8: ret]
@@ -9644,7 +9656,7 @@ l_5f4d:
 	move.b	d0,l_9640(a6)                   	| [$5f93: ld   ($9640),a] [uncovered]
 l_5f96:
 	move.w	#0x0400,d3                          	| [$5f96: ld   de,$0400]
-	jbsr	rst_38                            	| [$5f99: rst  $38]
+	jbsr	start_task_d3_0038                            	| [$5f99: rst  $38]
 	addq.b	#1,d0                           	| [$5f9a: inc  a]
 	move.b	d0,l_962C(a6)                   	| [$5f9b: ld   ($962C),a]
 	move.b	d0,l_964C(a6)                   	| [$5f9e: ld   ($964C),a]

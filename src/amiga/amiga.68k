@@ -1799,9 +1799,9 @@ compute_tile_xy:
 
 update_bg_tile:
 	moveq	#0,d2	| mask up to 255
-	move.b	d0,d2
+	move.b	d0,d2			| tile code
 	moveq	#0,d3
-	move.b	d1,d3			| CLUT
+	move.b	d1,d3			| CLUT & tile code & flags
 	
 
 	bsr		compute_tile_xy
@@ -1823,6 +1823,11 @@ update_bg_tile:
 	add.w	d0,a1
 	add.w	d0,a3
 
+	btst	#5,d3
+	jeq		13f
+	* add 0x100 to code
+	bset	#8,d2
+13:
 
 	
 	add.w	d2,d2
@@ -1847,7 +1852,7 @@ update_bg_tile:
 	jeq		11f						| not necessarily a problem
 
 	move.l	d0,a2					| pointer on bitplanes
-	rol.b	#2,d1			        | modifiers on first bits
+	ror.b	#6,d1			        | modifiers on first bits
 	and.w	#3,d1
 	jeq		standard_tile
 	

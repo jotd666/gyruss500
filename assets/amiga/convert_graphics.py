@@ -85,20 +85,6 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
 
 
 
-def paint_black(img,coords):
-    for x,y in coords:
-        img.putpixel((x,y),(0,0,0))
-
-def change_color(img,color1,color2):
-    rval = Image.new("RGB",img.size)
-    for x in range(img.size[0]):
-        for y in range(img.size[1]):
-            p = img.getpixel((x,y))
-            if p==color1:
-                p = color2
-            rval.putpixel((x,y),p)
-    return rval
-
 def add_sprite(index,name,cluts=[0]):
     if isinstance(index,range):
         pass
@@ -215,7 +201,7 @@ hw_sprite_set_list = []
 ##    hw_sprite_set_list.append(hw_sprite_set)
 
 
-full_palette = sorted(sprite_palette | tile_palette)[1:]
+full_palette = sorted(sprite_palette | tile_palette)
 
 
 #full_palette_rgb4 = {(x>>4,y>>4,z>>4) for x,y,z in full_palette}

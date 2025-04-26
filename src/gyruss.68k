@@ -3258,13 +3258,13 @@ l_183b:
 	move.b	d3,(a0)                         	| [$1840: ld   (hl),d]
 	                           	| [$1841: dec  hl]
 	move.b	d4,-(a0)                         	| [$1842: ld   (hl),e]
-	BREAKPOINT	"3009 a1/d3/D4"
+	LOAD_A1_FROM_D3D4_ROM
 	exg	a1,a0                              	| [$1843: ex   de,hl]
 	move.b	(a0),d0                         	| [$1844: ld   a,(hl)]
 l_1845:
-	subq.w	#1,a1                           	| [$1845: dec  de]
+	                           	| [$1845: dec  de]
 	addq.b	#1,d0                           	| [$1846: inc  a]
-	move.b	d0,(a1)                         	| [$1847: ld   (de),a]
+	move.b	d0,-(a1)                         	| [$1847: ld   (de),a]
 	jra	l_182b                             	| [$1848: jr   $182B]
 
 l_184a:
@@ -4452,9 +4452,8 @@ l_2411:
 	rts                                    	| [$241a: ret]
 
 l_2464:
-	LEA_ROM	0x2411,a0                          	| [$2464: ld   hl,$2411]
-
-	move.l	a0,-(sp)                        	| [$2467: push hl]
+	pea		l_2411(pc)                          	| [$2464: ld   hl,$2411]
+	                        	| [$2467: push hl]
 	move.b	(0x00,a2),d0                    	| [$2468: ld   a,(ix+$00)]
 	cmp.b	#0xF0,d0                         	| [$246b: cp   $F0]
 	jeq	l_249b                             	| [$246d: jp   z,$249B]
@@ -5664,7 +5663,6 @@ l_2cb1:
 l_2ccc:
 	move.b	d1,(0x04,a2)                    	| [$2ccc: ld   (ix+$04),b]
 	move.b	d0,d3                           	| [$2ccf: ld   d,a]
-	CLEAR_XC_FLAGS                         	| [$2cd0: xor  a]
 	clr.b	d0                               	| [$2cd0: xor  a]
 	LOAD_D3_16_FROM_D3D4                               	| [$2c9d: and  a]
 l_2cd1:
@@ -5776,7 +5774,6 @@ l_2d8e:
 	and.b	#0x0F,d0                         	| [$2d95: and  $0F]
 	LEA_ROM	0x3B51,a0                          	| [$2d97: ld   hl,$3B51]
 	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$2d9a: rst  $10]
-	movem.w	d3/d4,-(sp)                    	| [$2d9b: push de]
 	move.l	a1,-(sp)                        	| [$2d9b: push de]
 	moveq	#0,d0
 	move.b	(0x01,a2),d0                    	| [$2d9c: ld   a,(ix+$01)]
@@ -7593,8 +7590,7 @@ l_4579:
 	move.b	#0xFF,(0x00,a2)                 	| [$4584: ld   (ix+$00),$FF]
 	move.b	l_960A(a6),d0                   	| [$4588: ld   a,($960A)]
 	and.b	#0x1F,d0                         	| [$458b: and  $1F]
-	LEA_ROM	0x44C6,a0                          	| [$458d: ld   hl,$44C6]
-	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$4590: rst  $10]
+	READ_ROM_WORD	0x44C6,d3                          	| [$458d: ld   hl,$44C6]
 	move.b	(0x00,a3),d5                    	| [$4591: ld   h,(iy+$00)]
 	move.b	(0x03,a2),d6                    	| [$4594: ld   l,(ix+$03)]
 	LOAD_D5_16_FROM_D5D6
@@ -9050,7 +9046,6 @@ l_5a50:
 	move.b	#0x03,d3                        	| [$5a50: ld   d,$03]
 	move.b	#0x07,d4                        	| [$5a52: ld   e,$07]
 	move.b	l_9913(a6),d0                   	| [$5a54: ld   a,($9913)]
-	illegal    | D5/A0...
 	move.b	d0,d5                           	| [$5a57: ld   h,a]
 	move.b	l_9910(a6),d0                   	| [$5a58: ld   a,($9910)]
 	jbsr	l_5b00                            	| [$5a5b: call $5B00]

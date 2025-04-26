@@ -2,6 +2,8 @@
 - implement sprites (earth!)
 - 32 colors?
 - restore buffer?
+- 4ed9: reaches there when game starts
+- 1 inserts coin too!
 
 converter: .error: specify address
 converter: jra/jmp (a0/a1/...) => .error

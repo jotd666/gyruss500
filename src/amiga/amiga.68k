@@ -95,8 +95,9 @@ BIT_INSERT_COIN_1 = 0
 BIT_INSERT_COIN_2 = 1
 BIT_START_1P = 3
 BIT_START_2P = 4
-*BIT_LEFT = 0
-*BIT_RIGHT = 1
+
+BIT_LEFT = 0
+BIT_RIGHT = 1
 BIT_UP = 2
 BIT_DOWN = 3
 BIT_FIRE = 4
@@ -858,7 +859,22 @@ osd_wait:
 	rts
 
 
-
+*void gyruss_state::draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect)
+*{
+*	for (int offs = 0xbc; offs >= 0; offs -= 4)
+*	{
+*		int const x = m_spriteram[offs];
+*		int const y = 241 - m_spriteram[offs + 3];
+*
+*		int const gfx_bank = m_spriteram[offs + 1] & 0x01;
+*		int const code = ((m_spriteram[offs + 2] & 0x20) << 2) | (m_spriteram[offs + 1] >> 1);
+*		int const color = m_spriteram[offs + 2] & 0x0f;
+*		int const flip_x = ~m_spriteram[offs + 2] & 0x40;
+*		int const flip_y =  m_spriteram[offs + 2] & 0x80;
+*
+*		m_gfxdecode->gfx(gfx_bank)->transpen(bitmap, cliprect, code, color, flip_x, flip_y, x, y, 0);
+*	}
+*}
 	
 	
 osd_update_sprites:
@@ -2098,6 +2114,11 @@ osd_get_frame_type:
 	
 osd_read_inputs_2:
 	moveq	#-1,d0
+
+	rts
+	
+osd_read_system_inputs:
+	moveq	#-1,d0
 	movem.l	a0/d1,-(a7)
 	lea		keyboard_table(pc),a0
 	* misc control keys
@@ -2118,28 +2139,24 @@ osd_read_inputs_2:
 	bclr	#BIT_START_2P,d0
 0:	
 
-	bsr		is_game_playing
-	jne	1f
-	move.l	_joypad_state,d1
-	* game not playing, we can insert coin/start with joypad
-	btst	#JPB_BTN_RED,d1		| "5" key like in MAME
-	beq.b	0f
-	bclr	#BIT_INSERT_COIN_1,d0
-0:
-	btst	#JPB_BTN_UP,d1		| "1" key like in MAME
-	beq.b	0f
-	bclr	#BIT_START_1P,d0
-0:
-	btst	#JPB_BTN_DOWN,d1		| "2" key like in MAME
-	beq.b	0f
-	bclr	#BIT_START_2P,d0
-0:	
-1:	
+*	bsr		is_game_playing
+*	jne	1f
+*	move.l	_joypad_state,d1
+*	* game not playing, we can insert coin/start with joypad
+*	btst	#JPB_BTN_RED,d1		| "5" key like in MAME
+*	beq.b	0f
+*	bclr	#BIT_INSERT_COIN_1,d0
+*0:
+*	btst	#JPB_BTN_UP,d1		| "1" key like in MAME
+*	beq.b	0f
+*	bclr	#BIT_START_1P,d0
+*0:
+*	btst	#JPB_BTN_DOWN,d1		| "2" key like in MAME
+*	beq.b	0f
+*	bclr	#BIT_START_2P,d0
+*0:	
+*1:	
 	movem.l	(a7)+,a0/d1
-	rts
-	
-osd_read_system_inputs:
-	moveq	#-1,d0
 	rts
 	
 osd_read_inputs_1:

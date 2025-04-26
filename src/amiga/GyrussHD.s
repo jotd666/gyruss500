@@ -42,7 +42,6 @@ _config
 	dc.b	"C1:X:invincible:0;"
 	dc.b	"C1:X:infinite lives:1;"
 	dc.b	"C1:X:cheat keys:4;"
-	dc.b	"C3:X:skip introduction:0;"
 	dc.b	"C3:X:25 Hz update:1;"
 	IFD		CHIP_ONLY
 	dc.b	"C3:X:break at startup:31;"
@@ -67,10 +66,10 @@ DECL_VERSION:MACRO
 	ENDC
 	ENDM
 _data   dc.b    0
-_name	dc.b	'Pooyan',0
-_copy	dc.b	'2024 JOTD',0
+_name	dc.b	'Gyruss',0
+_copy	dc.b	'2025 JOTD',0
 _info
-    dc.b    "Music by no9",0
+    ;dc.b    "Music by no9",0
 	dc.b	0
 _kickname   dc.b    0
 ;--- version id

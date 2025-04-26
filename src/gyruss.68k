@@ -1224,6 +1224,7 @@ l_07bb:
 	rts                                    	| [$07c8: ret]
 
 * < D0: message number
+* > D3: next screen address to write to
 write_message_07e4:
 	LEA_ROM	0x40A6,a0                          	| [$07e4: ld   hl,$40A6]
 	jbsr	load_rom_pointer_in_a1_d3_0010     | [$07e7: rst  $10]
@@ -1234,13 +1235,16 @@ write_message_07e4:
 	                           	| [$07ec: inc  hl]
 	move.b	(a0)+,d2                         	| [$07ed: ld   c,(hl)]
 	                           	| [$07ee: inc  hl]
+								
+
 display_text_07ef:
 	LOAD_D3_16_FROM_D3D4
-	move.l	d3,a1
+	exg	d3,a1
 1:
 	move.b	(a0),d0                         	| [$07ef: ld   a,(hl)]
 	cmp.b	#0x9E,d0                         	| [$07f0: cp   $9E]
 	bne.b	0f                               	| [...]
+	exg	d3,a1
 	rts                                    	| [$07f2: ret  z] [...]
 0:
 	jbsr	write_videoram_a1                         	| [$07f3: ld   (de),a]

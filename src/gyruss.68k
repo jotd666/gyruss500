@@ -149,6 +149,17 @@
 	LOAD_D3D4_FROM_D3_16
 	.endm
 	
+	.macro	LOAD_A1_FROM_D3D4_ROM
+	LOAD_D3_16_FROM_D3D4
+	cmp.w	#0x6000,d3
+	.ifndef	RELEASE
+	jcs		1111f
+	BREAKPOINT	"invalid ROM pointer in F3"
+1111:
+	.endif
+	lea		(a5,d3.w),a1
+	.endm
+	
 	.macro	LOAD_A0_FROM_D5D6_RAM
 	LOAD_D5_16_FROM_D5D6
 	* this is a RAM address
@@ -8738,8 +8749,9 @@ l_4f33:
 	move.b	(a0)+,d4                         	| [$4f33: ld   e,(hl)]
 	                           	| [$4f34: inc  hl]
 	move.b	(a0),d3                         	| [$4f35: ld   d,(hl)]
-	LOAD_D3_16_FROM_D3D4                              	| [$4f36: ex   de,hl]
-	BREAKPOINT	"address??? d3 8244"
+	LOAD_A1_FROM_D3D4_ROM                      
+	exg		a0,a1                        | [$4f36: ex   de,hl]
+	
 l_4f37:
 	move.b	(0x01,a2),d0                    	| [$4f37: ld   a,(ix+$01)]
 	addq.b	#0x04,d0                        	| [$4f3a: add  a,$04]
@@ -8752,8 +8764,8 @@ l_4f46:
 	                            	| [$4f47: rrca]
 	and.b	#0x3E,d0                         	| [$4f48: and  $3E]
 	jbsr	add_d0_to_a0_0018                            	| [$4f4a: rst  $18]
-	move.b	(a0),d4                         	| [$4f4b: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$4f4c: inc  hl]
+	move.b	(a0)+,d4                         	| [$4f4b: ld   e,(hl)]
+	                           	| [$4f4c: inc  hl]
 	move.b	(a0),d3                         	| [$4f4d: ld   d,(hl)]
 	LOAD_D3_16_FROM_D3D4
 	add.w	d1,a0                            	| [$4f4e: add  hl,bc]
@@ -8957,29 +8969,31 @@ l_59ac:
 	jra	l_1901                             	| [$59d4: jp   $1901]
 
 l_59d7:
-	LEA_ROM	0x59E7,a0                          	| [$59d7: ld   hl,$59E7]
+	pea		l_59e7(pc)                          	| [$59d7: ld   hl,$59E7]
 
-	move.l	a0,-(sp)                        	| [$59da: push hl]
+	                        	| [$59da: push hl]
 	move.b	l_9300(a6),d0                   	| [$59db: ld   a,($9300)]
 	addq.b	#1,d0                           	| [$59de: inc  a]
 	jeq	l_5a04                             	| [$59df: jp   z,$5A04]
 	addq.b	#1,d0                           	| [$59e2: inc  a]
 	jeq	l_5a77                             	| [$59e3: jp   z,$5A77]
 	move.l	(sp)+,a0                        	| [$59e6: pop  hl]
-	LEA_ROM	0x59F7,a0                          	| [$59e7: ld   hl,$59F7]
-
-	move.l	a0,-(sp)                        	| [$59ea: push hl]
+l_59e7:
+	pea		l_59f7(pc)                          	| [$59e7: ld   hl,$59F7]
+												| [$59ea: push hl]
 	move.b	l_9310(a6),d0                   	| [$59eb: ld   a,($9310)]
 	addq.b	#1,d0                           	| [$59ee: inc  a]
 	jeq	l_5a2a                             	| [$59ef: jp   z,$5A2A]
 	addq.b	#1,d0                           	| [$59f2: inc  a]
 	jeq	l_5a9c                             	| [$59f3: jp   z,$5A9C]
 	move.l	(sp)+,a0                        	| [$59f6: pop  hl]
+l_59f7:
 	move.b	l_9320(a6),d0                   	| [$59f7: ld   a,($9320)]
 	addq.b	#1,d0                           	| [$59fa: inc  a]
 	jeq	l_5a50                             	| [$59fb: jp   z,$5A50]
 	addq.b	#1,d0                           	| [$59fe: inc  a]
 	beq.b	0f                               	| [...]
+	* jump to the pushed address
 	rts                                    	| [$59ff: ret  nz] [...]
 0:
 	jra	l_5ac1                             	| [$5a00: jp   $5AC1]

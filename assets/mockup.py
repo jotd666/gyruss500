@@ -3,8 +3,11 @@ import os,pathlib
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 
+# in input, we use a MAME memory dump: save sprites,$A000,$400
+# (0x200 are read, but there's a kind of double buffering
 with open(os.path.join(this_dir,"sprites"),"rb") as f:
-    m_spriteram = f.read()
+    m_spriteram = f.read(0x200)
+
 
 
 

@@ -31,16 +31,16 @@ def ensure_empty(d):
     else:
         os.makedirs(d)
 
-def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,name_dict=None,cluts=None):
+def load_tileset(image_name,palette_index,width,height,tileset_name,dumpdir,dump=False,name_dict=None,cluts=None):
 
-    if isinstance(image_name,str):
-        full_image_path = os.path.join(this_dir,os.path.pardir,"sheets",
-                            tile_type,image_name)
-        tiles_1 = Image.open(full_image_path)
-    else:
-        tiles_1 = image_name
-    nb_rows = tiles_1.size[1] // side
-    nb_cols = tiles_1.size[0] // side
+##    if isinstance(image_name,str):
+##        full_image_path = os.path.join(this_dir,os.path.pardir,"sheets",
+##                            tile_type,image_name)
+##        tiles_1 = Image.open(full_image_path)
+##    else:
+    tiles_1 = image_name
+    nb_rows = tiles_1.size[1] // width
+    nb_cols = tiles_1.size[0] // height
 
 
     tileset_1 = []
@@ -61,8 +61,8 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
                 tileset_1.append(None)
             else:
 
-                img = Image.new("RGB",(side,side))
-                img.paste(tiles_1,(-i*side,-j*side))
+                img = Image.new("RGB",(width,height))
+                img.paste(tiles_1,(-i*width,-j*height))
 
                 # only consider colors of used tiles
                 palette.update(set(bitplanelib.palette_extract(img)))
@@ -109,64 +109,67 @@ def add_hw_sprite(index,name,cluts=[0]):
 #680000"]
 #actually_used_colors = {tuple(int(c[i:i+2],16) for i in range(0,6,2)) for c in actually_used_colors}
 
-nb_planes = 4
+nb_planes = 5
+
 nb_colors = 1<<nb_planes
 # colors collected from tiles/sprites but reported by Marconelly@eab as not used. Seems to be right
 colors_to_remove = {(104, 0, 251), (0, 255, 171)}
 
 
 sprite_names = {}
-sprite_cluts = [[] for _ in range(64)]
-hw_sprite_cluts = [[] for _ in range(64)]
-
-balloon_cluts = [0,1,9,4,0xC,0xF,0xB]
-wolf_cluts = [0,4,0xC]
-
-add_sprite([0x14,0x1B],"arrow")
-add_sprite(0x10,"meat")
-add_sprite(0x1c,"fruit",[6,7]) # strawberry or apple!
-
-add_sprite([0x11,0x25],"player_in_basket_top")
-add_sprite([0x12,0x16],"player_in_basket_bottom")
-add_sprite(0xA,"basket_top")
-add_sprite([7,0xF],"basket_bottom")
-
-
-add_sprite(0,"small_rock")
-add_sprite(1,"upside_down_wolf",wolf_cluts)
-add_sprite([3,4,9],"pooyan",cluts=[0,1,8,0xF])
-add_sprite([6,0x1D,0xB],"falling_wolf",wolf_cluts)
-
-add_sprite(0x3A,"points",[0xF])           # 1600
-add_sprite(0x37,"points",[8,2,3])  # 100, 200, 50
-add_sprite(0x39,"points",[3,2])  # 400, 800
-
-
-
-add_sprite(0x2C,"facing_boss",[4])
-
-add_sprite(range(0x26,0x2A),"wolf",wolf_cluts)
-add_sprite(range(0x20,0x25),"balloon",balloon_cluts)  # 0: yellow
-add_sprite(range(0x3B,0x3F),"balloon",balloon_cluts)  # 0: yellow
-add_sprite([0x2,0x2d],"baloon",balloon_cluts)
-
-add_sprite([0x17,0x18,0x13],"bow")
-add_sprite([0x30,0x3F,0x35,0x38],"rock")
-
-add_sprite(range(0x31,0x35),"burst",[0,1,4,5,7,9,0xF])
-add_sprite([0x15,0x1E],"mama")
-add_sprite([0xD,0x36],"buuyan",[5])
-
-
-add_sprite([0x19,0x1F,0x2a,0x2B],"wolf",wolf_cluts)
-add_sprite(range(0x2e,0x30),"ladder_wolf",[0])
-add_sprite([0xe,0x1A,0xC,5,8],"falling_player")
+##sprite_cluts = [[] for _ in range(64)]
+##hw_sprite_cluts = [[] for _ in range(64)]
+##
+##balloon_cluts = [0,1,9,4,0xC,0xF,0xB]
+##wolf_cluts = [0,4,0xC]
+##
+##add_sprite([0x14,0x1B],"arrow")
+##add_sprite(0x10,"meat")
+##add_sprite(0x1c,"fruit",[6,7]) # strawberry or apple!
+##
+##add_sprite([0x11,0x25],"player_in_basket_top")
+##add_sprite([0x12,0x16],"player_in_basket_bottom")
+##add_sprite(0xA,"basket_top")
+##add_sprite([7,0xF],"basket_bottom")
+##
+##
+##add_sprite(0,"small_rock")
+##add_sprite(1,"upside_down_wolf",wolf_cluts)
+##add_sprite([3,4,9],"pooyan",cluts=[0,1,8,0xF])
+##add_sprite([6,0x1D,0xB],"falling_wolf",wolf_cluts)
+##
+##add_sprite(0x3A,"points",[0xF])           # 1600
+##add_sprite(0x37,"points",[8,2,3])  # 100, 200, 50
+##add_sprite(0x39,"points",[3,2])  # 400, 800
+##
+##
+##
+##add_sprite(0x2C,"facing_boss",[4])
+##
+##add_sprite(range(0x26,0x2A),"wolf",wolf_cluts)
+##add_sprite(range(0x20,0x25),"balloon",balloon_cluts)  # 0: yellow
+##add_sprite(range(0x3B,0x3F),"balloon",balloon_cluts)  # 0: yellow
+##add_sprite([0x2,0x2d],"baloon",balloon_cluts)
+##
+##add_sprite([0x17,0x18,0x13],"bow")
+##add_sprite([0x30,0x3F,0x35,0x38],"rock")
+##
+##add_sprite(range(0x31,0x35),"burst",[0,1,4,5,7,9,0xF])
+##add_sprite([0x15,0x1E],"mama")
+##add_sprite([0xD,0x36],"buuyan",[5])
+##
+##
+##add_sprite([0x19,0x1F,0x2a,0x2B],"wolf",wolf_cluts)
+##add_sprite(range(0x2e,0x30),"ladder_wolf",[0])
+##add_sprite([0xe,0x1A,0xC,5,8],"falling_player")
 
 
 sheets_path = os.path.join(this_dir,os.path.pardir,"sheets")
 
 def remove_colors(imgname):
+
     img = Image.open(imgname)
+    return img
     for x in range(img.size[0]):
         for y in range(img.size[1]):
             c = img.getpixel((x,y))
@@ -174,14 +177,15 @@ def remove_colors(imgname):
                 img.putpixel((x,y),(0,0,0))
     return img
 
-#sprite_sheet_dict = {i:remove_colors(os.path.join(sheets_path,f"sprites_pal_{i:02x}.png")) for i in range(16)}
+
+sprite_sheet_dicts = [{i:remove_colors(os.path.join(sheets_path,"sprites",f"set_{z}",f"pal_{i:02x}.png")) for i in range(16)} for z in (0,1)]
 tile_sheet_dict = {i:remove_colors(os.path.join(sheets_path,"tiles",f"pal_{i:02x}.png")) for i in range(16)}
 
 tile_palette = set()
 tile_set_list = []
 
 for i,tsd in tile_sheet_dict.items():
-    tp,tile_set = load_tileset(tsd,i,8,"tiles",dump_dir,dump=dump_it,name_dict=None)
+    tp,tile_set = load_tileset(tsd,i,8,8,"tiles",dump_dir,dump=dump_it,name_dict=None)
     tile_set_list.append(tile_set)
     tile_palette.update(tp)
 
@@ -189,20 +193,21 @@ sprite_palette = set()
 sprite_set_list = []
 hw_sprite_set_list = []
 
-##for i,tsd in sprite_sheet_dict.items():
-##    # BOBs
-##    cluts = sprite_cluts
-##    sp,sprite_set = load_tileset(tsd,i,16,"sprites",dump_dir,dump=dump_it,name_dict=sprite_names,cluts=cluts)
-##    sprite_set_list.append(sprite_set)
-##    sprite_palette.update(sp)
-##    # Hardware sprites
+for sprite_sheet_dict in sprite_sheet_dicts:
+    for i,tsd in sprite_sheet_dict.items():
+        # BOBs
+        #cluts = sprite_cluts
+        sp,sprite_set = load_tileset(tsd,i,16,8,"sprites",dump_dir,dump=dump_it,name_dict=sprite_names,cluts=None)
+        sprite_set_list.append(sprite_set)
+        sprite_palette.update(sp)
+    break
+    # Hardware sprites
 ##    cluts = hw_sprite_cluts
 ##    _,hw_sprite_set = load_tileset(tsd,i,16,"hw_sprites",dump_dir,dump=dump_it,name_dict=sprite_names,cluts=cluts)
 ##    hw_sprite_set_list.append(hw_sprite_set)
 
 
 full_palette = sorted(sprite_palette | tile_palette)
-
 
 #full_palette_rgb4 = {(x>>4,y>>4,z>>4) for x,y,z in full_palette}
 #actually_used_colors_rgb4 = {(x>>4,y>>4,z>>4) for x,y,z in actually_used_colors}
@@ -211,8 +216,6 @@ full_palette = sorted(sprite_palette | tile_palette)
 
 # pad just in case we don't have 16 colors (but we have)
 full_palette += (nb_colors-len(full_palette)) * [(0x10,0x20,0x30)]
-
-sprite_table = [None]*NB_SPRITES
 
 
 
@@ -280,8 +283,8 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
 tile_plane_cache = {}
 tile_table = read_tileset(tile_set_list,full_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False)
 
-#bob_plane_cache = {}
-#sprite_table = read_tileset(sprite_set_list,full_palette,[True,False,True,False],cache=bob_plane_cache, is_bob=True)
+bob_plane_cache = {}
+sprite_table = read_tileset(sprite_set_list,full_palette,[True,True,True,True],cache=bob_plane_cache, is_bob=True)
 
 with open(os.path.join(src_dir,"palette.68k"),"w") as f:
     bitplanelib.palette_dump(full_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
@@ -338,7 +341,6 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
                                 f.write("\t.long\t0\n")
 
 
-                    #dump_asm_bytes(t["bitmap"],f)
 
     for k,v in tile_plane_cache.items():
         f.write(f"tile_plane_{v:02d}:")
@@ -405,7 +407,7 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
 
     f.write("\t.section\t.datachip\n")
 
-##    for k,v in bob_plane_cache.items():
-##        f.write(f"bob_plane_{v:02d}:")
-##        dump_asm_bytes(k,f)
+    for k,v in bob_plane_cache.items():
+        f.write(f"bob_plane_{v:02d}:")
+        dump_asm_bytes(k,f)
 

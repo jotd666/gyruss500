@@ -1,9 +1,10 @@
 - blank tile doesn't always erase
-- implement sprites (earth!)
-- 32 colors?
+- implement sprite logger like in BadDudes
+- read 2 sets of sprites (out of range ATM)
+- 32 colors
 - restore buffer?
 - 4ed9: reaches there when game starts
-- 1 inserts coin too!
 
-converter: .error: specify address
+
+converter: .error: specify address/line
 converter: jra/jmp (a0/a1/...) => .error

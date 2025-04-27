@@ -1,0 +1,1 @@
+z80268k.py -o mit gyruss_z80.asm -c conv.s -d data_.inc -r 8000-A800 -m small

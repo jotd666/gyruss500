@@ -4578,7 +4578,7 @@ l_24ae:
 	addq.b	#1,(a0)                         	| [$24b2: inc  (hl)]
 	add.b	d0,d0                            	| [$24b3: add  a,a]
 	add.b	d0,d0                            	| [$24b4: add  a,a]
-	lea	l_9611(a6),a0                      	| [$24b5: ld   hl,$9611]
+	lea	ram_pointer_9611(a6),a0                      	| [$24b5: ld   hl,$9611]
 	add.w	d0,a0                            	| [$24b8: add  a,l]
 	                           	| [$24b9: ld   l,a]
 	move.b	d2,(a0)+                         	| [$24ba: ld   (hl),c]
@@ -6764,13 +6764,13 @@ l_3698:
 	jra	l_3694                             	| [$369a: jr   $3694]
 l_369c:
 	BREAKPOINT	"a0/d6 mixup 6552"
-	move.b	l_9611(a6),d0                   	| [$369c: ld   a,($9611)]
+	move.b	ram_pointer_9611(a6),d0                   	| [$369c: ld   a,($9611)]
 	sub.b	d6,d0                            	| [$369f: sub  l]
 	jeq	l_3698                             	| [$36a0: jr   z,$3698]
-	move.b	l_9615(a6),d0                   	| [$36a2: ld   a,($9615)]
+	move.b	ram_pointer_9615(a6),d0                   	| [$36a2: ld   a,($9615)]
 	sub.b	d6,d0                            	| [$36a5: sub  l]
 	jeq	l_3698                             	| [$36a6: jr   z,$3698]
-	move.b	l_9619(a6),d0                   	| [$36a8: ld   a,($9619)]
+	move.b	ram_pointer_9619(a6),d0                   	| [$36a8: ld   a,($9619)]
 	sub.b	d6,d0                            	| [$36ab: sub  l]
 	jeq	l_3698                             	| [$36ac: jr   z,$3698]
 	add.w	d3,a0                            	| [$36ae: add  hl,de]
@@ -7988,10 +7988,8 @@ l_4816:
 	bcc.b	0f                               	| [...]
 	rts                                    	| [$4831: ret  c] [...]
 0:
-	LOAD_RAM_POINTER	l_9611(a6),a2         	| [$4832: ld   ix,($9611)]
-	BREAKPOINT	"7405 review check if pointed value is in RAM"
-	LOAD_RAM_POINTER	l_9613(a6),a3         	| [$4836: ld   iy,($9613)]
-	BREAKPOINT	"7407 review check if pointed value is in RAM"
+	LOAD_RAM_POINTER	ram_pointer_9611(a6),a2         	| [$4832: ld   ix,($9611)]
+	LOAD_RAM_POINTER	ram_pointer_9613(a6),a3         	| [$4836: ld   iy,($9613)]
 	st.b	(0x00,a3)                 	| [$483a: ld   (iy+$00),$FF]
 	st.b	(0x01,a2)                 	| [$483e: ld   (ix+$01),$FF]
 	clr.b	(0x04,a2)                        	| [$4842: ld   (ix+$04),$00]
@@ -8010,10 +8008,8 @@ l_4816:
 	add.b	#0x10,d0                         	| [$4864: add  a,$10]
 	move.b	d0,(0x03,a3)                    	| [$4866: ld   (iy+$03),a]
 	jbsr	l_4b1c                            	| [$4869: call $4B1C]
-	LOAD_RAM_POINTER	l_9615(a6),a2         	| [$486c: ld   ix,($9615)]
-	BREAKPOINT	"7427 review check if pointed value is in RAM"
-	LOAD_RAM_POINTER	l_9617(a6),a3         	| [$4870: ld   iy,($9617)]
-	BREAKPOINT	"7429 review check if pointed value is in RAM"
+	LOAD_RAM_POINTER	ram_pointer_9615(a6),a2         	| [$486c: ld   ix,($9615)]
+	LOAD_RAM_POINTER	ram_pointer_9617(a6),a3         	| [$4870: ld   iy,($9617)]
 	move.b	#0xFF,(0x01,a2)                 	| [$4874: ld   (ix+$01),$FF]
 	move.b	#0x01,(0x04,a2)                 	| [$4878: ld   (ix+$04),$01]
 	clr.b	(0x0b,a2)                        	| [$487c: ld   (ix+$0b),$00]
@@ -8024,10 +8020,8 @@ l_4816:
 	add.b	#0xF0,d0                         	| [$488f: add  a,$F0]
 	move.b	d0,(0x03,a3)                    	| [$4891: ld   (iy+$03),a]
 	jbsr	l_4b1c                            	| [$4894: call $4B1C]
-	LOAD_RAM_POINTER	l_9619(a6),a2         	| [$4897: ld   ix,($9619)]
-	BREAKPOINT	"7441 review check if pointed value is in RAM"
-	LOAD_RAM_POINTER	l_961B(a6),a3         	| [$489b: ld   iy,($961B)]
-	BREAKPOINT	"7443 review check if pointed value is in RAM"
+	LOAD_RAM_POINTER	ram_pointer_9619(a6),a2         	| [$4897: ld   ix,($9619)]
+	LOAD_RAM_POINTER	ram_pointer_961B(a6),a3         	| [$489b: ld   iy,($961B)]
 	st.b	(0x00,a3)                 	| [$489f: ld   (iy+$00),$FF]
 	st.b	(0x01,a2)                 	| [$48a3: ld   (ix+$01),$FF]
 	move.b	#0x02,(0x04,a2)                 	| [$48a7: ld   (ix+$04),$02]
@@ -8038,22 +8032,16 @@ l_4816:
 	jra	l_5d1c                             	| [$48b6: jp   $5D1C]
 
 l_48ba:
-	LOAD_RAM_POINTER	l_9611(a6),a2         	| [$48ba: ld   ix,($9611)]
-	BREAKPOINT	"7455 review check if pointed value is in RAM"
-	LOAD_RAM_POINTER	l_9613(a6),a3         	| [$48be: ld   iy,($9613)]
-	BREAKPOINT	"7457 review check if pointed value is in RAM"
+	LOAD_RAM_POINTER	ram_pointer_9611(a6),a2         	| [$48ba: ld   ix,($9611)]
+	LOAD_RAM_POINTER	ram_pointer_9613(a6),a3         	| [$48be: ld   iy,($9613)]
 	jbsr	l_4954                            	| [$48c2: call $4954]
 	move.b	(0x00,a3),d0                    	| [$48c5: ld   a,(iy+$00)]
 	move.b	d0,l_933E(a6)                   	| [$48c8: ld   ($933E),a]
-	LOAD_RAM_POINTER	l_9615(a6),a2         	| [$48cb: ld   ix,($9615)]
-	BREAKPOINT	"7462 review check if pointed value is in RAM"
-	LOAD_RAM_POINTER	l_9617(a6),a3         	| [$48cf: ld   iy,($9617)]
-	BREAKPOINT	"7464 review check if pointed value is in RAM"
+	LOAD_RAM_POINTER	ram_pointer_9615(a6),a2         	| [$48cb: ld   ix,($9615)]
+	LOAD_RAM_POINTER	ram_pointer_9617(a6),a3         	| [$48cf: ld   iy,($9617)]
 	jbsr	l_4954                            	| [$48d3: call $4954]
-	LOAD_RAM_POINTER	l_9619(a6),a2         	| [$48d6: ld   ix,($9619)]
-	BREAKPOINT	"7467 review check if pointed value is in RAM"
-	LOAD_RAM_POINTER	l_961B(a6),a3         	| [$48da: ld   iy,($961B)]
-	BREAKPOINT	"7469 review check if pointed value is in RAM"
+	LOAD_RAM_POINTER	ram_pointer_9619(a6),a2         	| [$48d6: ld   ix,($9619)]
+	LOAD_RAM_POINTER	ram_pointer_961B(a6),a3         	| [$48da: ld   iy,($961B)]
 	move.b	l_92FE(a6),d0                   	| [$48de: ld   a,($92FE)]
 	cmp.b	#0x02,d0                         	| [$48e1: cp   $02]
 	jcs	l_4933                             	| [$48e3: jr   c,$4933]
@@ -8164,7 +8152,7 @@ l_498a:
 	move.b	d0,l_9000(a6)                   	| [$49a1: ld   ($9000),a] [uncovered]
 l_49a4:
 	move.b	#0x20,(0x01,a2)                 	| [$49a4: ld   (ix+$01),$20]
-	LOAD_RAM_POINTER	l_961B(a6),a0         	| [$49a8: ld   hl,($961B)]
+	LOAD_RAM_POINTER	ram_pointer_961B(a6),a0         	| [$49a8: ld   hl,($961B)]
 	BREAKPOINT	"7578 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$49ab: ld   (hl),$00]
 	jra	l_5d22                             	| [$49ad: jp   $5D22]
@@ -8326,10 +8314,10 @@ l_4a86:
 	move.b	d0,l_92CE(a6)                   	| [$4aa1: ld   ($92CE),a]
 	clr.b	d0                               	| [$4aa4: xor  a]
 	move.b	d0,l_92BE(a6)                   	| [$4aa5: ld   ($92BE),a]
-	LOAD_RAM_POINTER	l_9617(a6),a0         	| [$4aa8: ld   hl,($9617)]
+	LOAD_RAM_POINTER	ram_pointer_9617(a6),a0         	| [$4aa8: ld   hl,($9617)]
 	BREAKPOINT	"7736 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$4aab: ld   (hl),$00]
-	LOAD_RAM_POINTER	l_9613(a6),a0         	| [$4aad: ld   hl,($9613)]
+	LOAD_RAM_POINTER	ram_pointer_9613(a6),a0         	| [$4aad: ld   hl,($9613)]
 	BREAKPOINT	"7739 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$4ab0: ld   (hl),$00]
 	rts                                    	| [$4ab2: ret]

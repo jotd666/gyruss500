@@ -52,18 +52,20 @@ for offs in range(0xBC,-4,-4):
 
     gfx_bank = m_spriteram[offs + 1] & 0x01
     code = ((m_spriteram[offs + 2] & 0x20) << 2) | (m_spriteram[offs + 1] >> 1)
-    color = m_spriteram[offs + 2] & 0x0f
-    flip_x = ~m_spriteram[offs + 2] & 0x40
-    flip_y =  m_spriteram[offs + 2] & 0x80
+    if code:
+        color = m_spriteram[offs + 2] & 0x0f
+        flip_x = ~m_spriteram[offs + 2] & 0x40
+        flip_y =  m_spriteram[offs + 2] & 0x80
 
-    bank = tile_set[gfx_bank]
-    im = bank[color][code]
+        print(y,x,hex(gfx_bank*0x100+code),hex(color))
+        bank = tile_set[gfx_bank]
+        im = bank[color][code]
 
-    if flip_x:
-        im = ImageOps.mirror(im)
-    if flip_y:
-        im = ImageOps.flip(im)
+        if flip_x:
+            im = ImageOps.mirror(im)
+        if flip_y:
+            im = ImageOps.flip(im)
 
-    result.paste(im,(y,x))
+        result.paste(im,(y,x))
 
 result.save("sprites.png")

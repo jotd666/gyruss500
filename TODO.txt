@@ -1,9 +1,13 @@
 - blank tile doesn't always erase
-- implement sprite logger like in BadDudes
-- read 2 sets of sprites (out of range ATM)
-- 32 colors
-- restore buffer?
-- 4ed9: reaches there when game starts
+- 32 colors => 16 + sprites?
+- sprite erase doesn't work
+- star effect how? sprites?? must be A200-xxxx
+- restore buffer to get rid of but then tiles would need
+  redrawing when crossing paths with sprites
+  OR hack something for title only
+- crash on demo start
+- lives drawn at wrong location (start game)
+
 
 
 converter: .error: specify address/line

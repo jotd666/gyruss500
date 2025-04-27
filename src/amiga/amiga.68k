@@ -23,7 +23,7 @@ CURRENT_SPRITE_SIZE = 4
 BORDERBLANK = 1
 
 
-SPRITE_X_CORRECTION = 24
+SPRITE_X_CORRECTION = 7
 SPRITE_Y_CORRECTION = 0
 
 Y_MAX = 256
@@ -42,20 +42,19 @@ BASE_BPLCON2_VALUE = 0x0064		| sprites above all playfields
 * and some bits differ
 
 TARGET_SPRITE_Y = 0
-TARGET_SPRITE_X = 0x401
-TARGET_SPRITE_ATTRIBUTES = 0x400
-TARGET_SPRITE_CODE = 1
+TARGET_SPRITE_X = 3
+TARGET_SPRITE_CODE1 = 1
+TARGET_SPRITE_CODE2 = 2
 
 
 	.ifdef	RELEASE
 OPT_ENABLE_PROFILING = 0         | DO NOT CHANGE THIS
 OPT_ENABLE_LOGGING = 0           | DO NOT CHANGE THIS
-ONE_TICK = 1
+
 	.else
-OPT_ENABLE_LOGGING = 0
+OPT_ENABLE_LOGGING = 1
 OPT_ENABLE_PROFILING = 0
 * set to higher values than 1 to speed game up
-ONE_TICK = 1
 
 
 	.endif
@@ -67,7 +66,7 @@ _custom = 0xDFF000
 
 OPT_ENABLE_MULTIPLEXED_SPRITES = 0
 
-NB_PLAYFIELD_PLANES = 4
+NB_PLAYFIELD_PLANES = 5
 TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
 NB_BYTES_PER_ROW = 40
 
@@ -83,7 +82,7 @@ RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 SCREEN_SIZE = SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 NB_HOST_SPRITES = 8
 
-NB_TARGET_SPRITES = 24
+NB_TARGET_SPRITES = 48
 
 SPRITE_X = 0
 SPRITE_Y = 1
@@ -1027,9 +1026,6 @@ really_update_tiles:
 * < A0: target sprite pointer
 
 	
-* drawing order is a bit strange. The last sprite has to be moved at the start of the list.
-* if ((which >= 0x10) && (which <= 0x17)) no sprites!
-
 really_update_sprites:
 update_bobs_and_hw_sprites:
 
@@ -1070,7 +1066,7 @@ update_bobs_and_hw_sprites:
 	*********************
 
 	GET_RAM_START_IN_A6
-  	lea		(sprite_ram_a000,a6),a0	
+  	lea		(sprite_ram_a000+NB_TARGET_SPRITES*4-4,a6),a0	
     lea _custom,A5
 	move.l	bob_previous_drawed_sprites(pc),a6
 	lea		bob_table,a4
@@ -1078,7 +1074,7 @@ update_bobs_and_hw_sprites:
 	moveq	#NB_TARGET_SPRITES-1,d7
 1:
 	jbsr	update_one_bob
-	addq.w	#2,a0
+	subq.w	#4,a0
 	dbf		d7,1b
 
 	rts
@@ -1086,13 +1082,6 @@ update_bobs_and_hw_sprites:
 	
 update_one_bob:
 	
-*		int const sx = m_spriteram[0][offs];
-*		int const sy = 240 - m_spriteram[1][offs + 1];
-*
-*		int const code = m_spriteram[0][offs + 1];
-*		int const color = m_spriteram[1][offs] & 0x0f;
-*		int const flipx = ~m_spriteram[1][offs] & 0x40;
-*		int const flipy = m_spriteram[1][offs] & 0x80;
 
 	* code = 0 and clut = 0 => disabled ?? to check
 	moveq	#0,d0
@@ -1112,34 +1101,58 @@ update_one_bob:
 	.endif
 	
 	moveq	#0,d2
-	move.b	(TARGET_SPRITE_CODE,a0),d2
-	and.w	#0x3F,d2
-	add.w	d2,d2
-	add.w	d2,d2
-	move.l	(a4,d2.w),a1		| get pointer from bob table
+	moveq	#0,d3
+	* code = ((m_spriteram[offs + 2] & 0x20) << 2) | (m_spriteram[offs + 1] >> 1)
+	move.b	(TARGET_SPRITE_CODE1,a0),d2
+	jeq		2f
+
+	move.b	(TARGET_SPRITE_CODE2,a0),d3
+	and.b	#0x20,d3
+	add.w	d3,d3
+	add.w	d3,d3
+	lsr.b	#1,d2
+	jcc		0f
+	bset	#8,d3			| sprite bank 1 (add 0x100)
+0:
+	or.b	d2,d3
 	
-	move.b	(TARGET_SPRITE_ATTRIBUTES,a0),d2
-	move.b	d2,d3
+	move.b	(TARGET_SPRITE_CODE2,a0),d2
+	* color = m_spriteram[offs + 2] & 0x0f
 	and.b	#0xF,d2		| CLUT
+	
+	* here D3 is code (with bank) and D2 is clut
+	* log the usage
+	
+	.ifne	OPT_ENABLE_LOGGING
+	lea		sprite_log_table,a2
+	movem.w	d2-d3,-(a7)
+	lsl.w	#4,d3		| 16 cluts
+	add.w	d2,d3		| clut offset
+
+	st.b	(a2,d3.l)
+	movem.w	(a7)+,d2-d3
+	.endif
+
+
+	
+	add.w	d3,d3
+	add.w	d3,d3
+	move.l	(a4,d3.w),d4		| get pointer from bob table
+	jeq		2f
+	* entry is valid, now what about clut?
+	
+	move.l	d4,a1
+
 	add.w	d2,d2
 	add.w	d2,d2
 	move.l	(a1,d2.w),d4
-	.ifdef	RELEASE
 	jeq		2f
-	.else
-	jne		100f
-	* CLUT not available, break & temp fix use color 0 mostly present
-	move.l	(a1),(a1,d2.w)
-	move.b	(TARGET_SPRITE_CODE,a0),d1
-	lsr.b	#2,d2
-	lea		unregistered_sprite_clut_error(pc),a0
-	jbsr	osd_break
-	move.l	(a1),d4
-	jeq		2f			| just in case fallback not working
-100:
-	.endif
+
 	move.l	a0,-(a7)
 	move.l	d4,a0
+	* flip bits are exactly like Pooyan
+    * flip_x = ~D3 & 0x40
+    * flip_y =  D3 & 0x80
 	btst	#7,d3
 	jeq		101f
 	* mirror
@@ -1157,7 +1170,6 @@ update_one_bob:
 	beq.b	2f		| mask is zero: blank tile => skip
 	move.l	d2,a3
 	moveq	#0,d2	| no y-clip
-	sub.w	#16,d0	| move each bob 16 bits to the left
 	* note down that this bob will have to be erased
 	move.w	d0,(a6)+			| store current sprite attributes to previous ones
 	move.w	d1,(a6)+			| store current sprite attributes to previous ones
@@ -1186,13 +1198,13 @@ update_one_bob:
 update_one_hw_sprite:
 	* code = 0 and clut = 0 => disabled ?? to check
 	moveq	#0,d2
-	move.b	(TARGET_SPRITE_CODE,a0),d2
+	move.b	(TARGET_SPRITE_CODE1,a0),d2
 	jeq	2f
 
 	move.b	(TARGET_SPRITE_X,a0),d0
 	add.w	d2,d2
 	add.w	d2,d2
-	btst    #2,(TARGET_SPRITE_ATTRIBUTES,a0)
+	btst    #2,(TARGET_SPRITE_CODE2,a0)
 	jeq		0f
 	addq	#2,d2
 0:
@@ -1203,7 +1215,7 @@ update_one_hw_sprite:
 	and.w	#0xFF,d2
 	* it is a HW sprite all right
 	lsl.w	#4,d2	| 4 pointers for each sprite
-	move.b  (TARGET_SPRITE_ATTRIBUTES,a0),d3
+	move.b  (TARGET_SPRITE_CODE2,a0),d3
 	btst	#0,d3
 	jeq		10f
 	addq	#8,d2			| mirror sprite couple
@@ -1254,6 +1266,34 @@ update_one_hw_sprite:
 	
 	rts
 
+	.ifne	OPT_ENABLE_LOGGING
+dump_logs:
+	move.w	sr,-(a7)
+	move.w	#0x2700,SR
+	movem.l	d0-a6,-(a7)
+	move.l	_resload(pc),a2
+	lea		sprite_log_table,a1
+	lea		sprite_log_name(pc),a0
+	move.l	#16*512,d0
+	jbsr	resload_SaveFile(a2)
+	
+	GET_RAM_START_IN_A6
+	lea		sprites_ram_name(pc),a0
+	lea	(0x2000,a6),a1		| sprites
+	move.l	#0x400,d0
+	jbsr	resload_SaveFile(a2)
+	
+    movem.l (a7)+,d0-a6
+	move.w	(a7)+,SR
+	rts
+sprites_ram_name:
+	.asciz	"sprite_ram"
+sprite_log_name:
+	.asciz	"used_sprites"
+
+	.align	2
+	.endif	
+	
 * what: blits 16x? data on one plane, cookie cut
 * args:
 * < A0: pointers on 16x? data
@@ -2313,6 +2353,15 @@ handle_keyboard:
 *
 10:
 	.ifndef	RELEASE
+
+	.ifne	OPT_ENABLE_LOGGING
+	cmp.b	#34,d0
+	bne		0f
+	* 'D': dump all logging buffers to data dir
+	jbsr	dump_logs
+0:
+	.endif
+	
 	cmp.b	#0x56,d0	| F7 key: hurry up!
 	bne.b	0f
 	move.w	#0x0FF,_custom+color
@@ -2567,18 +2616,17 @@ palette:
 	* whenever possible (and it does)
 	.ifndef	RELEASE
 	* easier to debug game to have memory aligned on 0x10000
-	.align	0x10000
 
 	.ifne	OPT_ENABLE_LOGGING
 	.section	.bss
-	.ascii	"TILE"
-tile_log_table:
-	* 32 cluts, 1024 tiles
+
+sprite_log_table:
+	* 16 cluts, 512 tiles
 	* a lot of combinations aren't used (fortunately!)
-	ds.w	0x10000
+	ds.b	16*512
 	.endif
 	.endif
-	.ascii	"CODE_END"
+
 
 
 	.section	.datachip

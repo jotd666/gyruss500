@@ -430,6 +430,19 @@ load_rom_pointer_in_a1_d3_0010:
 	lea		(a5,d3.w),a1		| can't be > 0x7FFF word add is ok
 	rts                                    	| [$0016: ret]
 
+* load_rom_pointer_in_a1_d3_0010: loads address in HL indexed by A
+* as 16 bit address in DE
+* 68000: loads ROM data in A1, offset in D3 
+load_word_in_d3_0010:
+	add.b	d0,d0                            	| [$0010: add  a,a]
+	jbsr	add_d0_to_a0_0018                            	| [$0011: rst  $18]
+	move.b	(a0)+,d4                         	| [$0012: ld   e,(hl)]
+	                           	| [$0013: inc  hl]
+	move.b	(a0)+,d3                         	| [$0014: ld   d,(hl)]
+	                           	| [$0015: inc  hl]
+	LOAD_D3_16_FROM_D3D4
+	rts                                    	| [$0016: ret]
+
 * add_d0_to_a0_0018: add A to HL
 add_d0_to_a0_0018:
 	and.w	#0xFF,d0                            	| [$0018: add  a,l]
@@ -3392,8 +3405,8 @@ l_18a1:
 l_18a9:
 	move.b	d0,l_943C(a6)                   	| [$18a9: ld   ($943C),a]
 	and.b	#0x0F,d0                         	| [$18ac: and  $0F]
-												| [$18ae: ld   hl,$19C7]
-	READ_ROM_WORD	0x19C7,d3                   | [$18b1: rst  $10]
+	LEA_ROM	0x19C7,a0                   		| [$18ae: ld   hl,$19C7]
+	jbsr	load_word_in_d3_0010				| [$18b1: rst  $10]
 	move.b	(0x01,a2),d5                    	| [$18b2: ld   h,(ix+$01)]
 	move.b	(0x05,a2),d6                    	| [$18b5: ld   l,(ix+$05)]
 	LOAD_D5_16_FROM_D5D6
@@ -3421,8 +3434,8 @@ l_18d6:
 l_18de:
 	move.b	d0,l_943C(a6)                   	| [$18de: ld   ($943C),a]
 	and.b	#0x0F,d0                         	| [$18e1: and  $0F]
-	READ_ROM_WORD	0x19F5,d3                          	| [$18e3: ld   hl,$19F5]
-	                            	| [$18e6: rst  $10]
+	LEA_ROM	0x19F5,a0                          	| [$18e3: ld   hl,$19F5]
+	jbsr	load_word_in_d3_0010               	| [$18e6: rst  $10]
 	move.b	(0x01,a2),d5                    	| [$18e7: ld   h,(ix+$01)]
 	move.b	(0x05,a2),d6                    	| [$18ea: ld   l,(ix+$05)]
 	LOAD_D5_16_FROM_D5D6
@@ -7532,14 +7545,15 @@ l_42e4:
 	bne.b	0f                               	| [...]
 	rts                                    	| [$42f0: ret  z] [...]
 0:
+	* displays lives on the bottom left of the screen
 	cmp.b	#0x06,d0                         	| [$42f1: cp   $06]
 	jcs	l_42f8                             	| [$42f3: jr   c,$42F8]
 	READ_ROM_BYTE	0x21EA,d0                       	| [$42f5: ld   a,($21EA)] [uncovered]
 l_42f8:
 	move.b	d0,d1                           	| [$42f8: ld   b,a]
 	* read video ram address
-	READ_ROM_WORD	0x432A,d3                          	| [$42f9: ld   hl,$432A]
-	                            	| [$42fc: rst  $10]
+	LEA_ROM	0x432A,a0                          	| [$42f9: ld   hl,$432A]
+	jbsr	load_word_in_d3_0010	      	| [$42fc: rst  $10]
 	exg	d3,a0                              	| [$42fd: ex   de,hl]
 l_42fe:
 	move.w	#0x001F,d3                      	| [$42fe: ld   de,$001F]

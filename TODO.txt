@@ -1,13 +1,10 @@
 - blank tile doesn't always erase
-- 32 colors => 16 + sprites?
-- sprite erase doesn't work
+- 32 colors => 16 + attached sprites?
+- sprite erase doesn't work all the time? (earth??)
 - star effect how? sprites?? must be A200-xxxx
 - restore buffer to get rid of but then tiles would need
   redrawing when crossing paths with sprites
   OR hack something for title only
-- crash on demo start
-- lives drawn at wrong location (start game)
-
 
 
 converter: .error: specify address/line

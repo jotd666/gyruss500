@@ -1167,7 +1167,7 @@ update_one_bob:
 	
 	* D0 and D1 are already set
 	move.l	(NB_PLAYFIELD_PLANES*4,a0),d2
-	beq.b	2f		| mask is zero: blank tile => skip
+	jeq	21f		| mask is zero: blank tile => skip
 	move.l	d2,a3
 	moveq	#0,d2	| no y-clip
 	* note down that this bob will have to be erased
@@ -1190,6 +1190,8 @@ update_one_bob:
 	bsr		blit_planes_any_internal_cookie_cut
 	move.l	(a7)+,a0
 	rts
+21:
+	move.l	(a7)+,a0
 2:
 	addq.w	#PREVIOUS_SPRITE_SIZE,a6
 	rts

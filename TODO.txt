@@ -1,3 +1,4 @@
+- game state reverse: 082f jump table
 - blank tile doesn't always erase
 - 32 colors => 16 + attached sprites?
 - sprite erase doesn't work all the time? (earth??)

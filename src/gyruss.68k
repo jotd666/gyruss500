@@ -401,6 +401,10 @@ load_video_ram_d5_to_a0:
 	.global	gyruss_irq
 	.global	gyruss_reset
 	
+is_active_00 = 0x00
+enemy_appear_timer_08 = 0x08
+object_state_0a = 0x0a
+
 * fetch_a0_plus_d0_0008: (HL+A)=>A
 fetch_a0_plus_d0_0008:
 	and.w	#0xFF,d0            | [$0008: add  a,l]
@@ -579,7 +583,7 @@ write_to_screen_00B0:
 	movem.l	(sp)+,d0/a0                        	| [$00bf: pop  hl]
 	rts                                    	| [$00c0: ret]
 
-l_00f9:
+swtch_to_game_demo_00f9:
 	lea		(0x063B,a6),a0                         	| [$00f9: ld   hl,$863B]
 	move.b	(a0),d0                         	| [$00fc: ld   a,(hl)]
 	sub.b	#0xEE,d0                         	| [$00fd: sub  $EE]
@@ -587,7 +591,7 @@ l_00f9:
 	rts                                    	| [$00ff: ret  nz] [...]
 0:
 l_0100:
-	jra	l_080b                             	| [$0100: jp   $080B]
+	jra	next_game_state_080b                             	| [$0100: jp   $080B]
 
 * ********************************
 * IRQ routine
@@ -678,7 +682,7 @@ l_0149:
 	jbsr	jump_table_jump_0030                            	| [$0189: rst  $30]
 * [jump_table]
 	.long	global_state_init_0efe
-	.long	global_state_title_scren_0f24
+	.long	global_state_title_screen_0f24
 	.long	global_state_push_start_101f
 	.long	global_state_demo_or_game_0828
 
@@ -856,7 +860,7 @@ l_055c:
 	rts                                    	| [$055f: ret  nz] [...]
 0:
 	READ_ROM_BYTE	0x3943,d0                       	| [$0560: ld   a,($3943)]
-	move.b	d0,game_state_942C(a6)                   	| [$0563: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0563: ld   ($942C),a]
 	READ_ROM_BYTE	0x09AD,d0                       	| [$0566: ld   a,($09AD)]
 	move.b	d0,global_state_942B(a6)                   	| [$0569: ld   ($942B),a]
 	move.b	d0,l_A7FF(a6)                       	| [$056c: ld   ($A7FF),a]
@@ -1121,7 +1125,7 @@ l_06de:
 	move.b	#0x07,d3                        	| [$06f1: ld   d,$07]
 	LOAD_D3_16_FROM_D3D4
 	jbsr	start_task_d3_0038                            	| [$06f3: rst  $38]
-	jra	l_080b                             	| [$06f4: jp   $080B]
+	jra	next_game_state_080b                             	| [$06f4: jp   $080B]
 
 l_06f7:
 	move.b	l_9458(a6),d0                   	| [$06f7: ld   a,($9458)]
@@ -1274,12 +1278,12 @@ l_07ff:
 	lea	global_state_942B(a6),a0                      	| [$07ff: ld   hl,$942B]
 	addq.b	#1,(a0)                         	| [$0802: inc  (hl)]
 	clr.b	d0                               	| [$0803: xor  a]
-	move.b	d0,game_state_942C(a6)                   	| [$0804: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0804: ld   ($942C),a]
 	jbsr	l_1400                            	| [$0807: call $1400]
 	rts                                    	| [$080a: ret]
 
-l_080b:
-	lea	game_state_942C(a6),a0                      	| [$080b: ld   hl,$942C]
+next_game_state_080b:
+	lea	sub_state_942C(a6),a0                      	| [$080b: ld   hl,$942C]
 	addq.b	#1,(a0)                         	| [$080e: inc  (hl)]
 	rts                                    	| [$080f: ret]
 
@@ -1287,7 +1291,7 @@ global_state_demo_or_game_0828:
 	pea		l_4b7c(pc)                          	| [$0828: ld   hl,$4B7C]
 
 											| [$082b: push hl]
-	move.b	game_state_942C(a6),d0                   	| [$082c: ld   a,($942C)]
+	move.b	sub_state_942C(a6),d0                   	| [$082c: ld   a,($942C)]
 	jbsr	jump_table_jump_0030                            	| [$082f: rst  $30]
 * [jump_table]
 	.long	l_5f4d
@@ -1424,7 +1428,7 @@ l_0953:
 	move.b	#0x5A,d0                        	| [$0953: ld   a,$5A]
 	move.b	d0,l_9465(a6)                   	| [$0955: ld   ($9465),a]
 	READ_ROM_BYTE	0x0067,d0                       	| [$0958: ld   a,($0067)]
-	move.b	d0,game_state_942C(a6)                   	| [$095b: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$095b: ld   ($942C),a]
 	rts                                    	| [$095e: ret]
 
 l_0980:
@@ -1446,7 +1450,7 @@ l_0993:
 	move.b	d0,l_9465(a6)                   	| [$099a: ld   ($9465),a]
 	jbsr	l_3af2                            	| [$099d: call $3AF2]
 	jbsr	l_0e43                            	| [$09a0: call $0E43]
-	jra	l_080b                             	| [$09a3: jp   $080B]
+	jra	next_game_state_080b                             	| [$09a3: jp   $080B]
 
 l_09a6:
 	move.b	l_9400(a6),d0                   	| [$09a6: ld   a,($9400)]
@@ -1649,7 +1653,7 @@ l_0ad7:
 	move.b	#0x78,d0                        	| [$0ad7: ld   a,$78]
 	move.b	d0,l_9465(a6)                   	| [$0ad9: ld   ($9465),a]
 	jbsr	l_5daa                            	| [$0adc: call $5DAA]
-	jra	l_080b                             	| [$0adf: jp   $080B]
+	jra	next_game_state_080b                             	| [$0adf: jp   $080B]
 
 l_0ae2:
 	clr.b	(a0)                             	| [$0ae2: ld   (hl),$00]
@@ -1735,7 +1739,7 @@ l_0b42:
 	READ_ROM_BYTE	0x0068,d0                       	| [$0b64: ld   a,($0068)]
 	move.b	d0,global_state_942B(a6)                   	| [$0b67: ld   ($942B),a]
 	READ_ROM_BYTE	0x0102,d0                       	| [$0b6a: ld   a,($0102)]
-	move.b	d0,game_state_942C(a6)                   	| [$0b6d: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0b6d: ld   ($942C),a]
 	rts                                    	| [$0b70: ret]
 
 l_0b71:
@@ -1756,7 +1760,7 @@ l_0b71:
 	jbsr	l_1b86                            	| [$0b8f: call $1B86]
 	move.b	#0xFB,d0                        	| [$0b92: ld   a,$FB]
 	move.b	d0,l_943B(a6)                   	| [$0b94: ld   ($943B),a]
-	jra	l_080b                             	| [$0b97: jp   $080B]
+	jra	next_game_state_080b                             	| [$0b97: jp   $080B]
 
 l_0b9a:
 	jbsr	l_3831                            	| [$0b9a: call $3831]
@@ -1780,7 +1784,7 @@ l_0b9a:
 l_0bb1:
 	lea	l_9465(a6),a0                      	| [$0bb1: ld   hl,$9465]
 	move.b	#0x06,(a0)                      	| [$0bb4: ld   (hl),$06]
-	jra	l_080b                             	| [$0bb6: jp   $080B]
+	jra	next_game_state_080b                             	| [$0bb6: jp   $080B]
 
 l_0bb9:
 	move.b	#0xFC,d0                        	| [$0bb9: ld   a,$FC]
@@ -1804,7 +1808,7 @@ l_0bb9:
 	and.b	#0x80,d0                         	| [$0bde: and  $80]
 	add.b	d1,d0                            	| [$0be0: add  a,b]
 	move.b	d0,l_9001(a6)                   	| [$0be1: ld   ($9001),a]
-	jra	l_080b                             	| [$0be4: jp   $080B]
+	jra	next_game_state_080b                             	| [$0be4: jp   $080B]
 
 l_0be7:
 	move.b	#0xFD,d0                        	| [$0be7: ld   a,$FD]
@@ -1820,7 +1824,7 @@ l_0be7:
 	move.w	#0x0314,d3                          	| [$0bfa: ld   de,$0314]
 	jbsr	start_task_d3_0038                            	| [$0bfd: rst  $38]
 	jbsr	l_5c82                            	| [$0bfe: call $5C82]
-	jra	l_080b                             	| [$0c01: jp   $080B]
+	jra	next_game_state_080b                             	| [$0c01: jp   $080B]
 
 l_0c04:
 	jbsr	l_3831                            	| [$0c04: call $3831]
@@ -1879,7 +1883,7 @@ l_0c53:
 	jbsr	l_05ea                            	| [$0c6e: call $05EA]
 	jbsr	l_5c88                            	| [$0c71: call $5C88]
 	jbsr	l_5dd4                            	| [$0c74: call $5DD4]
-	jra	l_080b                             	| [$0c77: jp   $080B]
+	jra	next_game_state_080b                             	| [$0c77: jp   $080B]
 
 
 l_0c7a:
@@ -1894,7 +1898,7 @@ l_0c7a:
 	BCLR_A0  2                         	| [$0c8e: res  2,h]
 	WRITE_VIDEORAM	1                      	| [$0c90: ld   (hl),$01]
 	jbsr	l_5c88                            	| [$0c92: call $5C88]
-	jra	l_080b                             	| [$0c95: jp   $080B]
+	jra	next_game_state_080b                             	| [$0c95: jp   $080B]
 
 
 l_0c98:
@@ -1911,7 +1915,7 @@ l_0c98:
 0:
 	lea	l_9465(a6),a0                      	| [$0cae: ld   hl,$9465]
 	move.b	#0x78,(a0)                      	| [$0cb1: ld   (hl),$78]
-	jra	l_080b                             	| [$0cb3: jp   $080B]
+	jra	next_game_state_080b                             	| [$0cb3: jp   $080B]
 
 l_0cb6:
 	move.b	l_9400(a6),d0                   	| [$0cb6: ld   a,($9400)]
@@ -1987,7 +1991,7 @@ l_0d3d:
 0:
 	jbsr	l_3b2d                            	| [$0d42: call $3B2D]
 	READ_ROM_BYTE	0x3526,d0                       	| [$0d45: ld   a,($3526)]
-	move.b	d0,game_state_942C(a6)                   	| [$0d48: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0d48: ld   ($942C),a]
 	move.w	#0x0319,d3                          	| [$0d4b: ld   de,$0319]
 	jbsr	start_task_d3_0038                            	| [$0d4e: rst  $38]
 	addq.b	#1,d3                           	| [$0d4f: inc  e]
@@ -2012,7 +2016,7 @@ l_0d6e:
 	
 l_0d75:
 	READ_ROM_BYTE	0x4418,d0                       	| [$0d75: ld   a,($4418)]
-	move.b	d0,game_state_942C(a6)                   	| [$0d78: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0d78: ld   ($942C),a]
 	READ_ROM_BYTE	0x46B0,d0                       	| [$0d7b: ld   a,($46B0)]
 	move.b	d0,global_state_942B(a6)                   	| [$0d7e: ld   ($942B),a]
 	READ_ROM_BYTE	0x57F5,d0                       	| [$0d81: ld   a,($57F5)]
@@ -2033,7 +2037,7 @@ l_0d97:
 0:
 	jbsr	l_172e                            	| [$0d9f: call $172E]
 	READ_ROM_BYTE	0x5859,d0                       	| [$0da2: ld   a,($5859)]
-	move.b	d0,game_state_942C(a6)                   	| [$0da5: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0da5: ld   ($942C),a]
 *  ROM checksum
 *	LEA_ROM	0x0500,a1                          	| [$0da8: ld   de,$0500]
 *	lea	0x8000,a4                          	| [$0dab: ld   bc,$8000]
@@ -2114,7 +2118,7 @@ l_0e08:
 	jbsr	start_task_d3_0038                            	| [$0e31: rst  $38]
 	lea	l_9465(a6),a0                      	| [$0e32: ld   hl,$9465]
 	move.b	#0x78,(a0)                      	| [$0e35: ld   (hl),$78]
-	lea	game_state_942C(a6),a0                      	| [$0e37: ld   hl,$942C]
+	lea	sub_state_942C(a6),a0                      	| [$0e37: ld   hl,$942C]
 	move.b	#0x14,(a0)                      	| [$0e3a: ld   (hl),$14]
 	jbsr	l_3af2                            	| [$0e3c: call $3AF2]
 	jra	l_5c9a                             	| [$0e3f: jp   $5C9A]
@@ -2169,7 +2173,7 @@ l_0e69:
 	move.b	#0x0F,d0                        	| [$0e95: ld   a,$0F]
 	move.b	d0,l_918E(a6)                   	| [$0e97: ld   ($918E),a]
 	READ_ROM_BYTE	0x3542,d0                       	| [$0e9a: ld   a,($3542)]
-	move.b	d0,game_state_942C(a6)                   	| [$0e9d: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0e9d: ld   ($942C),a]
 	rts                                    	| [$0ea0: ret]
 
 l_0ea1:
@@ -2244,18 +2248,18 @@ l_0ef8:
 	rts                                    	| [$0efd: ret]
 
 global_state_init_0efe:
-	move.b	game_state_942C(a6),d0                   	| [$0efe: ld   a,($942C)]
+	move.b	sub_state_942C(a6),d0                   	| [$0efe: ld   a,($942C)]
 	jbsr	jump_table_jump_0030                            	| [$0f01: rst  $30]
 * [jump_table]
-	.long	l_0f11
-	.long	l_4c00
+	.long	rom_checksum_and_next_state_0f11
+	.long	clear_screen_then_init_tasks_4C00
 	.long	-1                           	|   bogus
 	.long	-1                           	|   bogus
 	.long	-1                           	|   bogus
 	.long	-1
 	.long	-1
 
-l_0f11:
+rom_checksum_and_next_state_0f11:
 	jbsr	l_01bb                            	| [$0f11: call $01BB]
 * ROM checksum
 *	READ_ROM_BYTE	0x37A9,d0                       	| [$0f14: ld   a,($37A9)]
@@ -2265,23 +2269,23 @@ l_0f11:
 *	eor.b	d5,d0                            	| [$0f1b: xor  h]
 *	sub.b	#0xEB,d0                         	| [$0f1c: sub  $EB]
 *	jne	l_dd0000                             	| [$0f1e: jp   nz,$0000]
-	jra	l_080b                             	| [$0f21: jp   $080B]
+	jra	next_game_state_080b                             	| [$0f21: jp   $080B]
 
-global_state_title_scren_0f24:
+global_state_title_screen_0f24:
 	pea		l_0f4c(pc)                          	| [$0f24: ld   hl,$0F4C]
 
 												| [$0f27: push hl]
-	move.b	game_state_942C(a6),d0                   	| [$0f28: ld   a,($942C)]
+	move.b	sub_state_942C(a6),d0                   	| [$0f28: ld   a,($942C)]
 	jbsr	jump_table_jump_0030                            	| [$0f2b: rst  $30]
 * [jump_table]
-	.long	l_5e1a
-	.long	l_46b6
-	.long	l_24c2
-	.long	l_3509
-	.long	l_3909
-	.long	l_00f9
-	.long	l_4104
-	.long	new_game_start_2e8f
+	.long	title_screen_init_5e1a			| ran once
+	.long	start_title_screen_tasks_46b6
+	.long	show_title_for_a_while_24c2
+	.long	switch_to_highscores_3509		| ran once
+	.long	show_highscores_for_a_while_3909
+	.long	swtch_to_game_demo_00f9
+	.long	clear_screen_and_go_to_demo_4104
+	.long	new_demo_game_start_2e8f
 	.long	l_43f4
 	.long	l_055c
 	.long	-1                           	|   bogus
@@ -2302,7 +2306,7 @@ l_0f4c:
 	READ_ROM_BYTE	0x00F1,d0                       	| [$0f5a: ld   a,($00F1)]
 	move.b	d0,global_state_942B(a6)                   	| [$0f5d: ld   ($942B),a]
 	READ_ROM_BYTE	0x0112,d0                       	| [$0f60: ld   a,($0112)]
-	move.b	d0,game_state_942C(a6)                   	| [$0f63: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0f63: ld   ($942C),a]
 	rts                                    	| [$0f66: ret]
 
 l_0f67:
@@ -2351,7 +2355,7 @@ l_0fab:
 	READ_ROM_BYTE	0x06D9,d0                       	| [$0fab: ld   a,($06D9)]
 	move.b	d0,global_state_942B(a6)                   	| [$0fae: ld   ($942B),a]
 	READ_ROM_BYTE	0x0981,d0                       	| [$0fb1: ld   a,($0981)]
-	move.b	d0,game_state_942C(a6)                   	| [$0fb4: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$0fb4: ld   ($942C),a]
 	jbsr	osd_read_dsw_2                      	| [$0fb7: ld   a,($C000)]
 	not.b	d0                               	| [$0fba: cpl]
 	ror.b	#4,d0                            	| [$0fbb: rrca] * 4
@@ -2365,7 +2369,7 @@ l_1019:
 
 global_state_push_start_101f:
 	jbsr	l_3804                            	| [$101f: call $3804]
-	move.b	game_state_942C(a6),d0                   	| [$1022: ld   a,($942C)]
+	move.b	sub_state_942C(a6),d0                   	| [$1022: ld   a,($942C)]
 	jbsr	jump_table_jump_0030                            	| [$1025: rst  $30]
 * [jump_table]
 	.long	l_139d
@@ -2392,7 +2396,7 @@ l_1043:
 0:
 	move.w	#0x0117,d3                          	| [$1053: ld   de,$0117] [uncovered]
 	jbsr	start_task_d3_0038                            	| [$1056: rst  $38] [uncovered]
-	jra	l_080b                             	| [$1057: jp   $080B] [uncovered]
+	jra	next_game_state_080b                             	| [$1057: jp   $080B] [uncovered]
 
 l_105a:
 	jbsr	l_0cb6                            	| [$105a: call $0CB6]
@@ -2773,7 +2777,7 @@ l_13b1:
 	jne	l_13b1                             	| [$13b3: djnz $13B1]
 	sub.b	#0xC8,d0                         	| [$13b5: sub  $C8]
 	jne	l_0fab                             	| [$13b7: jp   nz,$0FAB]
-	jra	l_080b                             	| [$13ba: jp   $080B]
+	jra	next_game_state_080b                             	| [$13ba: jp   $080B]
 
 l_13bd:
 	move.b	#0xFB,d0                        	| [$13bd: ld   a,$FB]
@@ -2798,7 +2802,7 @@ l_13dd:
 	move.b	(a0),d0                         	| [$13dd: ld   a,(hl)]
 	                               	| [$13de: and  a]
 	jne	l_13e5                             	| [$13df: jp   nz,$13E5]
-	jra	l_080b                             	| [$13e2: jp   $080B]
+	jra	next_game_state_080b                             	| [$13e2: jp   $080B]
 
 
 l_13e5:
@@ -2811,7 +2815,7 @@ l_13e5:
 	move.b	#0x5A,d0                        	| [$13f4: ld   a,$5A]
 	move.b	d0,l_9465(a6)                   	| [$13f6: ld   ($9465),a]
 	READ_ROM_BYTE	0x24F4,d0                       	| [$13f9: ld   a,($24F4)]
-	move.b	d0,game_state_942C(a6)                   	| [$13fc: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$13fc: ld   ($942C),a]
 	rts                                    	| [$13ff: ret]
 
 l_1400:
@@ -2942,7 +2946,7 @@ l_1580:
 	jbsr	start_task_d3_0038                            	| [$1580: rst  $38]
 *	LEA_ROM	0x24C1,a0                          	| [$1581: ld   hl,$24C1]
 *	clr.b	d2                               	| [$1584: ld   c,$00]
-*	move.b	game_state_942C(a6),d0                   	| [$1586: ld   a,($942C)]
+*	move.b	sub_state_942C(a6),d0                   	| [$1586: ld   a,($942C)]
 *l_1589:
 *	sub.b	(a0)+,d0                          	| [$1589: sub  (hl)]
 *												| [$158a: inc  hl]
@@ -2950,14 +2954,14 @@ l_1580:
 *	jne	l_1589                             	| [$158c: jr   nz,$1589]
 *	eor.b	#0x1E,d0                         	| [$158e: xor  $1E]
 *   result of 0x1C ^ 0x1E is 2
-	move.b	#2,game_state_942C(a6)                   	| [$1590: ld   ($942C),a]
-	jra	l_080b                             	| [$1593: jp   $080B]
+	move.b	#2,sub_state_942C(a6)                   	| [$1590: ld   ($942C),a]
+	jra	next_game_state_080b                             	| [$1593: jp   $080B]
 
 l_1596:
 	move.b	#0x17,d3                        	| [$1596: ld   e,$17]
 	jbsr	start_task_d3_0038                            	| [$1598: rst  $38]
 	READ_ROM_BYTE	0x05E8,d0                       	| [$1599: ld   a,($05E8)]
-	move.b	d0,game_state_942C(a6)                   	| [$159c: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$159c: ld   ($942C),a]
 	rts                                    	| [$159f: ret]
 
 l_15a0:
@@ -3881,7 +3885,7 @@ l_1c90:
 	lea	l_9810(a6),a3                      	| [$1c90: ld   iy,$9810]
 	lea	l_9010(a6),a2                      	| [$1c94: ld   ix,$9010]
 	move.b	#0x02,d1                        	| [$1c98: ld   b,$02]
-	move.b	game_state_942C(a6),d0                   	| [$1c9a: ld   a,($942C)]
+	move.b	sub_state_942C(a6),d0                   	| [$1c9a: ld   a,($942C)]
 	btst.b	#4,d0                           	| [$1c9d: bit  4,a]
 	jeq	l_1ca3                             	| [$1c9f: jr   z,$1CA3]
 	move.b	#0x30,d1                        	| [$1ca1: ld   b,$30]
@@ -3890,7 +3894,7 @@ l_1ca3:
 	cmp.b	d1,d0                            	| [$1ca6: cp   b]
 	jcs	l_1d1a                             	| [$1ca7: jp   c,$1D1A]
 	LEA_ROM	0x00C0,a1                          	| [$1caa: ld   de,$00C0]
-	move.b	game_state_942C(a6),d0                   	| [$1cad: ld   a,($942C)]
+	move.b	sub_state_942C(a6),d0                   	| [$1cad: ld   a,($942C)]
 	btst.b	#4,d0                           	| [$1cb0: bit  4,a]
 	jeq	l_1cb7                             	| [$1cb2: jr   z,$1CB7]
 	LEA_ROM	0x0180,a1                          	| [$1cb4: ld   de,$0180]
@@ -4072,8 +4076,8 @@ l_1ffb:
 	subq.b	#1,d2                           	| [$1ffd: dec  c]
 	jne	l_1ffb                             	| [$1ffe: jr   nz,$1FFB]
 	add.b	#0x94,d0                         	| [$2000: add  a,$94]
-	move.b	d0,game_state_942C(a6)                   	| [$2002: ld   ($942C),a]
-	jra	l_080b                             	| [$2005: jp   $080B]
+	move.b	d0,sub_state_942C(a6)                   	| [$2002: ld   ($942C),a]
+	jra	next_game_state_080b                             	| [$2005: jp   $080B]
 
 l_2008:
 	READ_ROM_BYTE	0x3504,d0                       	| [$2008: ld   a,($3504)]
@@ -4399,7 +4403,7 @@ l_22d2:
 	rts                                    	| [$22ee: ret]
 
 l_22f3:
-	jbsr	l_2339                            	| [$22f3: call $2339]
+	jbsr	handle_enemies_2339                            	| [$22f3: call $2339]
 	move.b	l_922E(a6),d0                   	| [$22f6: ld   a,($922E)]
 	move.b	d0,l_913E(a6)                   	| [$22f9: ld   ($913E),a]
 	jbsr	l_23b0                            	| [$22fc: call $23B0]
@@ -4438,37 +4442,45 @@ l_22f3:
 	move.b	d0,l_924E(a6)                   	| [$2326: ld   ($924E),a]
 	rts                                    	| [$2329: ret]
 
-l_2339:
-	CLEAR_XC_FLAGS                         	| [$2339: xor  a]
+* handle objects (swarm doesn't seem to count, only objects arriving
+* attacking or close to the player count)
+* also enemy bullets aren't handled there, neither are ice blocks or
+* the couple of beam emitting stuff that race to the player
+*
+* here are only handled:
+* - non-swarm saucers (attacking, bailing out, arriving in waves)
+* - 3-satellite formation
+
+handle_enemies_2339:
 	clr.b	d0                               	| [$2339: xor  a]
 	move.b	d0,l_922E(a6)                   	| [$233a: ld   ($922E),a]
 	lea	l_9010(a6),a2                      	| [$233d: ld   ix,$9010]
 	lea	l_9810(a6),a3                      	| [$2341: ld   iy,$9810]
-	jbsr	l_2518                            	| [$2345: call $2518]
+	jbsr	handle_enemy_2518                            	| [$2345: call $2518]
 	lea	l_9020(a6),a2                      	| [$2348: ld   ix,$9020]
 	lea	l_9818(a6),a3                      	| [$234c: ld   iy,$9818]
-	jbsr	l_2518                            	| [$2350: call $2518]
+	jbsr	handle_enemy_2518                            	| [$2350: call $2518]
 	lea	l_9030(a6),a2                      	| [$2353: ld   ix,$9030]
 	lea	l_9820(a6),a3                      	| [$2357: ld   iy,$9820]
-	jbsr	l_2518                            	| [$235b: call $2518]
+	jbsr	handle_enemy_2518                            	| [$235b: call $2518]
 	lea	l_9040(a6),a2                      	| [$235e: ld   ix,$9040]
 	lea	l_9828(a6),a3                      	| [$2362: ld   iy,$9828]
-	jbsr	l_2518                            	| [$2366: call $2518]
+	jbsr	handle_enemy_2518                            	| [$2366: call $2518]
 	lea	l_9050(a6),a2                      	| [$2369: ld   ix,$9050]
 	lea	l_9830(a6),a3                      	| [$236d: ld   iy,$9830]
-	jbsr	l_2518                            	| [$2371: call $2518]
+	jbsr	handle_enemy_2518                            	| [$2371: call $2518]
 	lea	l_9060(a6),a2                      	| [$2374: ld   ix,$9060]
 	lea	l_9838(a6),a3                      	| [$2378: ld   iy,$9838]
-	jbsr	l_2518                            	| [$237c: call $2518]
+	jbsr	handle_enemy_2518                            	| [$237c: call $2518]
 	lea	l_9070(a6),a2                      	| [$237f: ld   ix,$9070]
 	lea	l_9840(a6),a3                      	| [$2383: ld   iy,$9840]
-	jbsr	l_2518                            	| [$2387: call $2518]
+	jbsr	handle_enemy_2518                            	| [$2387: call $2518]
 	lea	l_9080(a6),a2                      	| [$238a: ld   ix,$9080]
 	lea	l_9848(a6),a3                      	| [$238e: ld   iy,$9848]
-	jbsr	l_2518                            	| [$2392: call $2518]
+	jbsr	handle_enemy_2518                            	| [$2392: call $2518]
 	lea	l_9090(a6),a2                      	| [$2395: ld   ix,$9090]
 	lea	l_9850(a6),a3                      	| [$2399: ld   iy,$9850]
-	jbsr	l_2518                            	| [$239d: call $2518]
+	jbsr	handle_enemy_2518                            	| [$239d: call $2518]
 	move.b	l_915E(a6),d0                   	| [$23a0: ld   a,($915E)]
 	                               	| [$23a3: and  a]
 	beq.b	0f                               	| [...]
@@ -4476,7 +4488,7 @@ l_2339:
 0:
 	lea	l_90A0(a6),a2                      	| [$23a5: ld   ix,$90A0]
 	lea	l_9858(a6),a3                      	| [$23a9: ld   iy,$9858]
-	jra	l_2518                             	| [$23ad: jp   $2518]
+	jra	handle_enemy_2518                             	| [$23ad: jp   $2518]
 
 l_23b0:
 	lea	l_90B0(a6),a2                      	| [$23b0: ld   ix,$90B0]
@@ -4527,6 +4539,7 @@ l_23fc:
 	move.b	d0,(0x00,a3)                    	| [$240e: ld   (iy+$00),a]
 l_2411:
 	jbsr	exx                               	| [$2411: exx]
+	* optimize this D3=0x10 and D1=0x4
 	add.w	d3,a2                            	| [$2412: add  ix,de]
 	add.w	d1,a3                            	| [$2414: add  iy,bc]
 	jbsr	exx                               	| [$2416: exx]
@@ -4604,7 +4617,7 @@ l_24ae:
 	move.b	d3,(a0)                         	| [$24c0: ld   (hl),d]
 	rts                                    	| [$24c1: ret]
 
-l_24c2:
+show_title_for_a_while_24c2:
 	move.b	l_9400(a6),d0                   	| [$24c2: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$24c5: and  $01]
 	beq.b	0f                               	| [...]
@@ -4644,7 +4657,7 @@ l_24ec:
 	jbsr	start_task_d3_0038                            	| [$24f6: rst  $38]
 	addq.b	#1,d3                           	| [$24f7: inc  e]
 	jbsr	start_task_d3_0038                            	| [$24f8: rst  $38]
-	jra	l_080b                             	| [$24f9: jp   $080B]
+	jra	next_game_state_080b                             	| [$24f9: jp   $080B]
 
 l_24fc:
 	clr.w	d5                               	| [$24fc: ld   h,$00]
@@ -4670,43 +4683,47 @@ l_24fc:
 	
 	jra	l_24ae                             	| [$2516: jr   $24AE]
 
-l_2518:
-	move.b	(0x00,a2),d0                    	| [$2518: ld   a,(ix+$00)]
+* < A2: object structure (0x90x0), 0x10 bytes
+* < A3: object shadow sprite ram (0x98x0), 0x8 bytes
+handle_enemy_2518:
+	move.b	(is_active_00,a2),d0                    	| [$2518: ld   a,(ix+$00)]
 	                               	| [$251b: and  a]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$251c: ret  z] [...]
 0:
 	lea	l_922E(a6),a0                      	| [$251d: ld   hl,$922E]
 	addq.b	#1,(a0)                         	| [$2520: inc  (hl)]
+	* active = 0xFF, adding 1 makes it 0 => we handle the full object state
 	addq.b	#1,d0                           	| [$2521: inc  a]
-	jeq	l_253d                             	| [$2522: jr   z,$253D]
+	jeq	handle_object_state_253d                             	| [$2522: jr   z,$253D]
 	addq.b	#1,d0                           	| [$2524: inc  a]
 	jeq	l_252a                             	| [$2525: jr   z,$252A]
-	jne	l_2a2b                             	| [$2527: jp   nz,$2A2B]
+	jra	l_2a2b                             	| [$2527: jp   nz,$2A2B]
+	* smaller switch case with only 3 cases
 l_252a:
-	move.b	(0x0a,a2),d0                    	| [$252a: ld   a,(ix+$0a)]
+	move.b	(object_state_0a,a2),d0                    	| [$252a: ld   a,(ix+$0a)]
 	cmp.b	#0x07,d0                         	| [$252d: cp   $07]
-	jeq	l_463a                             	| [$252f: jp   z,$463A]
+	jeq	bonus_central_ship_appearing_463a                             	| [$252f: jp   z,$463A]
 	cmp.b	#0x08,d0                         	| [$2532: cp   $08]
-	jeq	l_4713                             	| [$2534: jp   z,$4713]
-	tst.b	d0                               	| [$2537: cp   $00] [uncovered]
-	jeq	l_26be                             	| [$2539: jp   z,$26BE] [uncovered]
+	jeq	bonus_satellite_appearing_4713                             	| [$2534: jp   z,$4713]
+	tst.b	d0                               | [$2537: cp   $00] [uncovered]
+	jeq	saucer_init_26be                      | [$2539: jp   z,$26BE] [uncovered]
 	rts                                    	| [$253c: ret] [uncovered]
-
-l_253d:
-	move.b	(0x0a,a2),d0                    	| [$253d: ld   a,(ix+$0a)]
-	jbsr	jump_table_jump_0030                            	| [$2540: rst  $30]
+	* the big switch case
+handle_object_state_253d:
+	move.b	(object_state_0a,a2),d0                    	| [$253d: ld   a,(ix+$0a)]
+	jbsr	jump_table_jump_0030                | [$2540: rst  $30]
 * [jump_table]
-	.long	l_26be
-	.long	l_26cf
-	.long	l_2735
-	.long	l_280a
-	.long	l_2978
+	.long	saucer_init_26be                  | wave init
+	.long	arrival_in_wave_26cf              | saucers arrive in waves
+	.long	l_2735		                      | player hit but not only ???
+	.long	saucer_attacks_280a		          | individual/small-group attack?
+	.long	saucer_bails_out_2978		      | "fuck it, I'm going home" for last ship
 	.long	l_29ab
-	.long	l_275b
-	.long	l_463a
-	.long	l_4713
-	.long	l_477e
+	.long	player_hit_275B                   | player IX=0x9010 but not only???
+	.long	bonus_central_ship_appearing_463a | central double shot bonus or just another satellite appearing
+	.long	bonus_satellite_appearing_4713    | 2/3 satellites
+	.long	handle_satellite_477e             | move the now appeared satellite
 	.long	l_2661
 	.long	l_25f3
 	.long	l_261f
@@ -4759,7 +4776,7 @@ l_256d:
 	move.b	#0x2A,d0                        	| [$25a1: ld   a,$2A]
 	move.b	d0,l_9465(a6)                   	| [$25a3: ld   ($9465),a]
 	jbsr	l_5c82                            	| [$25a6: call $5C82]
-	jra	l_080b                             	| [$25a9: jp   $080B]
+	jra	next_game_state_080b                             	| [$25a9: jp   $080B]
 
 l_25ac:
 	move.b	starting_stage_9609(a6),d0      	| [$25ac: ld   a,(starting_stage_9609)]
@@ -4882,26 +4899,26 @@ l_26a5:
 	move.b	l_91EE(a6),d0                   	| [$26ad: ld   a,($91EE)]
 	                               	| [$26b0: and  a]
 	jne	l_296f                             	| [$26b1: jp   nz,$296F]
-	move.b	#0x02,(0x0a,a2)                 	| [$26b4: ld   (ix+$0a),$02]
+	move.b	#0x02,(object_state_0a,a2)                 	| [$26b4: ld   (ix+$0a),$02]
 	rts                                    	| [$26b8: ret]
 
 l_26b9:
-	move.b	#0x03,(0x0a,a2)                 	| [$26b9: ld   (ix+$0a),$03]
+	move.b	#0x03,(object_state_0a,a2)                 	| [$26b9: ld   (ix+$0a),$03]
 	rts                                    	| [$26bd: ret]
 
-l_26be:
+saucer_init_26be:
 	move.b	l_9000(a6),d0                   	| [$26be: ld   a,($9000)]
 	addq.b	#1,d0                           	| [$26c1: inc  a]
 	jne	l_26c8                             	| [$26c2: jr   nz,$26C8]
-	subq.b	#1,(0x08,a2)                    	| [$26c4: dec  (ix+$08)]
+	subq.b	#1,(enemy_appear_timer_08,a2)                    	| [$26c4: dec  (ix+$08)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$26c7: ret  nz] [...]
 0:
 l_26c8:
-	move.b	#0x01,(0x0a,a2)                 	| [$26c8: ld   (ix+$0a),$01]
+	move.b	#0x01,(object_state_0a,a2)     	| [$26c8: ld   (ix+$0a),$01]
 	jra	l_26ef                             	| [$26cc: jp   $26EF]
 
-l_26cf:
+arrival_in_wave_26cf:
 	move.b	l_9000(a6),d0                   	| [$26cf: ld   a,($9000)]
 	addq.b	#1,d0                           	| [$26d2: inc  a]
 	jne	l_271c                             	| [$26d3: jr   nz,$271C]
@@ -4923,11 +4940,11 @@ l_26ef:
 	move.b	d0,d2                           	| [$26f2: ld   c,a]
 	LEA_ROM	0x577E,a0                          	| [$26f3: ld   hl,$577E]
 	and.b	#0x7F,d0                         	| [$26f6: and  $7F]
-	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$26f8: rst  $10]
-	exg	a1,a0                              	| [$26f9: ex   de,hl]
+	jbsr	load_rom_pointer_in_a1_d3_0010      | [$26f8: rst  $10]
+	exg	a1,a0                              	    | [$26f9: ex   de,hl]
 	move.b	(0x06,a2),d0                    	| [$26fa: ld   a,(ix+$06)]
 	add.b	d0,d0                            	| [$26fd: add  a,a]
-	jbsr	fetch_a0_plus_d0_0008                            	| [$26fe: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008               | [$26fe: rst  $08]
 	cmp.b	#0xFF,d0                         	| [$26ff: cp   $FF]
 	jeq	l_271c                             	| [$2701: jr   z,$271C]
 	cmp.b	#0xFE,d0                         	| [$2703: cp   $FE]
@@ -4949,15 +4966,15 @@ l_271c:
 	move.b	l_91AE(a6),d0                   	| [$271c: ld   a,($91AE)]
 	                               	| [$271f: and  a]
 	jne	l_2727                             	| [$2720: jr   nz,$2727]
-	move.b	#0x02,(0x0a,a2)                 	| [$2722: ld   (ix+$0a),$02]
+	move.b	#0x02,(object_state_0a,a2)                 	| [$2722: ld   (ix+$0a),$02]
 	rts                                    	| [$2726: ret]
 
 l_2727:
-	move.b	#0x04,(0x0a,a2)                 	| [$2727: ld   (ix+$0a),$04]
+	move.b	#0x04,(object_state_0a,a2)                 	| [$2727: ld   (ix+$0a),$04]
 	rts                                    	| [$272b: ret]
 
 l_272c:
-	move.b	#0x05,(0x0a,a2)                 	| [$272c: ld   (ix+$0a),$05]
+	move.b	#0x05,(object_state_0a,a2)                 	| [$272c: ld   (ix+$0a),$05]
 	move.b	#0xC0,(0x0b,a2)                 	| [$2730: ld   (ix+$0b),$C0]
 	rts                                    	| [$2734: ret]
 
@@ -4984,10 +5001,10 @@ l_2752:
 	rts                                    	| [$2755: ret]
 
 l_2756:
-	move.b	#0x06,(0x0a,a2)                 	| [$2756: ld   (ix+$0a),$06]
+	move.b	#0x06,(object_state_0a,a2)                 	| [$2756: ld   (ix+$0a),$06]
 	rts                                    	| [$275a: ret]
 
-l_275b:
+player_hit_275B:
 	jbsr	l_2d81                            	| [$275b: call $2D81]
 	jbsr	l_2bb3                            	| [$275e: call $2BB3]
 	jbsr	l_4f16                            	| [$2761: call $4F16]
@@ -5086,7 +5103,7 @@ l_275b:
 	clr.b	(0x00,a3)                        	| [$2805: ld   (iy+$00),$00]
 	rts                                    	| [$2809: ret]
 
-l_280a:
+saucer_attacks_280a:
 	move.b	l_9000(a6),d0                   	| [$280a: ld   a,($9000)]
 	addq.b	#1,d0                           	| [$280d: inc  a]
 	jne	l_295d                             	| [$280e: jp   nz,$295D]
@@ -5277,16 +5294,16 @@ l_2964:
 	move.b	l_91EE(a6),d0                   	| [$2964: ld   a,($91EE)]
 	                               	| [$2967: and  a]
 	jne	l_296f                             	| [$2968: jr   nz,$296F]
-	move.b	#0x02,(0x0a,a2)                 	| [$296a: ld   (ix+$0a),$02]
+	move.b	#0x02,(object_state_0a,a2)                 	| [$296a: ld   (ix+$0a),$02]
 	rts                                    	| [$296e: ret]
 
 l_296f:
 	move.b	#0xC0,(0x01,a2)                 	| [$296f: ld   (ix+$01),$C0]
-	move.b	#0x04,(0x0a,a2)                 	| [$2973: ld   (ix+$0a),$04]
+	move.b	#0x04,(object_state_0a,a2)                 	| [$2973: ld   (ix+$0a),$04]
 	rts                                    	| [$2977: ret]
 
 
-l_2978:
+saucer_bails_out_2978:
 	jbsr	l_4f16                            	| [$2978: call $4F16]
 	jbsr	l_2bb3                            	| [$297b: call $2BB3]
 	jbsr	l_2996                            	| [$297e: call $2996]
@@ -5971,7 +5988,7 @@ l_2e10:
 	move.b	d0,l_960E(a6)                   	| [$2e51: ld   ($960E),a]
 	move.b	d0,l_903E(a6)                   	| [$2e54: ld   ($903E),a]
 	move.b	d0,l_9478(a6)                   	| [$2e57: ld   ($9478),a]
-	jra	l_080b                             	| [$2e5a: jp   $080B]
+	jra	next_game_state_080b                             	| [$2e5a: jp   $080B]
 
 l_2e5d:
 	lea	l_900E(a6),a0                      	| [$2e5d: ld   hl,$900E]
@@ -6007,7 +6024,7 @@ l_2e80:
 l_2e8c:
 	jra	l_2f06                             	| [$2e8c: jp   $2F06]
 
-new_game_start_2e8f:
+new_demo_game_start_2e8f:
 	jbsr	clear_screen_row_0207                            	| [$2e8f: call $0207]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$2e92: ret  nz] [...]
@@ -6055,7 +6072,7 @@ new_game_start_2e8f:
 	move.b	d0,l_9444(a6)                   	| [$2ef3: ld   ($9444),a]
 	jbsr	l_4171                            	| [$2ef6: call $4171]
 	READ_ROM_BYTE	0x06D7,d0                       	| [$2ef9: ld   a,($06D7)]
-	move.b	d0,game_state_942C(a6)                   	| [$2efc: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$2efc: ld   ($942C),a]
 	READ_ROM_BYTE	0x4421,d0                       	| [$2eff: ld   a,($4421)]
 	move.b	d0,global_state_942B(a6)                   	| [$2f02: ld   ($942B),a]
 	rts                                    	| [$2f05: ret]
@@ -6383,8 +6400,8 @@ l_3280:
 	movem.w	d3/d4,-(sp)                    	| [$3290: push de]
 	move.l	a1,-(sp)                        	| [$3290: push de]
 	addq.w	#1,a0                           	| [$3291: inc  hl]
-	move.b	(a0),d4                         	| [$3292: ld   e,(hl)]
-	addq.w	#1,a0                           	| [$3293: inc  hl]
+	move.b	(a0)+,d4                         	| [$3292: ld   e,(hl)]
+	                           	| [$3293: inc  hl]
 	move.b	(a0),d3                         	| [$3294: ld   d,(hl)]
 	BREAKPOINT	"d3/D4/A1 val 5989"
 	exg	a1,a0                              	| [$3295: ex   de,hl]
@@ -6538,7 +6555,7 @@ l_3481:
 	move.b	d0,l_9605(a6)                   	| [$3505: ld   ($9605),a]
 	rts                                    	| [$3508: ret]
 
-l_3509:
+switch_to_highscores_3509:
 	move.w	#0x0113,d3                          	| [$3509: ld   de,$0113]
 	jbsr	start_task_d3_0038                            	| [$350c: rst  $38]
 	move.b	#0x07,d3                        	| [$350d: ld   d,$07]
@@ -6560,7 +6577,7 @@ l_3509:
 	sub.b	d1,d0                            	| [$3528: sub  b]
 	addq.b	#1,d0                           	| [$3529: inc  a]
 	move.b	d0,global_state_942B(a6)                   	| [$352a: ld   ($942B),a]
-	jra	l_080b                             	| [$352d: jp   $080B]
+	jra	next_game_state_080b                             	| [$352d: jp   $080B]
 
 l_3530:
 	lea	l_902E(a6),a0                      	| [$3530: ld   hl,$902E]
@@ -6875,7 +6892,7 @@ l_37e9:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$37ef: ret  nz] [...]
 0:
-	jra	l_080b                             	| [$37f0: jp   $080B]
+	jra	next_game_state_080b                             	| [$37f0: jp   $080B]
 
 l_37f3:
 	move.b	l_91AE(a6),d0                   	| [$37f3: ld   a,($91AE)]
@@ -6983,7 +7000,7 @@ l_388b:
 	move.b	#0x1C,d1                        	| [$389c: ld   b,$1C]
 	jbsr	change_attribute_line_38b4                            	| [$389e: call $38B4]
 	jbsr	l_3b2d                            	| [$38a1: call $3B2D]
-	jbsr	l_080b                            	| [$38a4: call $080B]
+	jbsr	next_game_state_080b                            	| [$38a4: call $080B]
 	move.b	l_960C(a6),d0                   	| [$38a7: ld   a,($960C)]
 	                               	| [$38aa: and  a]
 	jeq	l_38ba                             	| [$38ab: jp   z,$38BA]
@@ -7057,7 +7074,7 @@ l_3901:
 	move.b	d0,d1                           	| [$3907: ld   b,a]
 	rts                                    	| [$3908: ret]
 
-l_3909:
+show_highscores_for_a_while_3909:
 	lea	l_9465(a6),a0                      	| [$3909: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$390c: dec  (hl)]
 	beq.b	0f                               	| [...]
@@ -7085,7 +7102,7 @@ l_3909:
 *	nop                                    	| [$3932: nop]
 *	nop                                    	| [$3933: nop]
 *	nop                                    	| [$3934: nop]
-	jra	l_080b                             	| [$3935: jp   $080B]
+	jra	next_game_state_080b                             	| [$3935: jp   $080B]
 
 l_3938:
 	READ_ROM_BYTE	0x1222,d0                       	| [$3938: ld   a,($1222)]
@@ -7352,7 +7369,7 @@ l_404e:
 *	jne	l_0192                             	| [$4068: jp   nz,$0192]
 	move.b	#0xFB,d0                        	| [$406b: ld   a,$FB]
 	move.b	d0,l_943B(a6)                   	| [$406d: ld   ($943B),a]
-	jra	l_080b                             	| [$4070: jp   $080B]
+	jra	next_game_state_080b                             	| [$4070: jp   $080B]
 
 l_4073:
 	READ_ROM_BYTE	0x0661,d0                       	| [$4073: ld   a,($0661)]
@@ -7389,7 +7406,7 @@ l_4095:
 	move.b	d0,(0x04,a2)                    	| [$409a: ld   (ix+$04),a]
 	rts                                    	| [$409d: ret]
 
-l_4104:
+clear_screen_and_go_to_demo_4104:
 	jbsr	osd_read_dsw_3                       	| [$4104: ld   a,($C100)]
 	not.b	d0                               	| [$4107: cpl]
 	btst.b	#0,d0                           	| [$4108: bit  0,a]
@@ -7409,7 +7426,7 @@ l_4104:
 *	add.b	#0xF7,d0                         	| [$4117: add  a,$F7]
 *	jne	l_152b                             	| [$4119: jp   nz,$152B]
 	jbsr	l_01d6                            	| [$411c: call $01D6]
-	jra	l_080b                             	| [$411f: jp   $080B]
+	jra	next_game_state_080b                             	| [$411f: jp   $080B]
 
 l_4171:
 	move.b	l_960A(a6),d0                   	| [$4171: ld   a,($960A)]
@@ -7520,12 +7537,12 @@ l_4282:
 	move.w	#0x030B,d3                          	| [$4296: ld   de,$030B] [uncovered]
 	jbsr	start_task_d3_0038                            	| [$4299: rst  $38] [uncovered]
 	READ_ROM_BYTE	0x5E25,d0                       	| [$429a: ld   a,($5E25)] [uncovered]
-	move.b	d0,game_state_942C(a6)                   	| [$429d: ld   ($942C),a] [uncovered]
+	move.b	d0,sub_state_942C(a6)                   	| [$429d: ld   ($942C),a] [uncovered]
 	jra	l_13d1                             	| [$42a0: jp   $13D1] [uncovered]
 
 l_42a3:
 	jbsr	l_01d6                            	| [$42a3: call $01D6]
-	jra	l_080b                             	| [$42a6: jp   $080B]
+	jra	next_game_state_080b                             	| [$42a6: jp   $080B]
 l_42DC:
 	move.b	#0x0E,d1                        	| [$42dc: ld   b,$0E]
 	move.w	#0x001F,d3                      	| [$42de: ld   de,$001F]
@@ -7593,15 +7610,15 @@ l_43f4:
 	jbsr	l_01d6                            	| [$4401: call $01D6]
 	clr.b	d2                               	| [$4404: ld   c,$00]
 	LEA_ROM	0x4C09,a0                          	| [$4406: ld   hl,$4C09]
-	move.b	game_state_942C(a6),d0                   	| [$4409: ld   a,($942C)]
+	move.b	sub_state_942C(a6),d0                   	| [$4409: ld   a,($942C)]
 l_440c:
 	sub.b	(a0)+,d0                          	| [$440c: sub  (hl)]
 	                           	| [$440d: inc  hl]
 	subq.b	#1,d2                           	| [$440e: dec  c]
 	jne	l_440c                             	| [$440f: jr   nz,$440C]
 	eor.b	#0x02,d0                         	| [$4411: xor  $02]
-	move.b	d0,game_state_942C(a6)                   	| [$4413: ld   ($942C),a]
-	jra	l_080b                             	| [$4416: jp   $080B]
+	move.b	d0,sub_state_942C(a6)                   	| [$4413: ld   ($942C),a]
+	jra	next_game_state_080b                             	| [$4416: jp   $080B]
 
 l_4516:
 	move.b	l_91AE(a6),d0                   	| [$4516: ld   a,($91AE)]
@@ -7669,7 +7686,7 @@ l_456f:
 	subq.b	#1,d1                           	| [...]
 	jne	l_456f                             	| [$4571: djnz $456F]
 	add.b	#0x9F,d0                         	| [$4573: add  a,$9F]
-	move.b	d0,game_state_942C(a6)                   	| [$4575: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$4575: ld   ($942C),a]
 	rts                                    	| [$4578: ret]
 
 l_4579:
@@ -7735,7 +7752,7 @@ l_45e0:
 	move.b	d0,l_943B(a6)                   	| [$45e2: ld   ($943B),a]
 	jbsr	l_3831                            	| [$45e5: call $3831]
 	jbsr	l_01d6                            	| [$45e8: call $01D6]
-	jra	l_080b                             	| [$45eb: jp   $080B]
+	jra	next_game_state_080b                             	| [$45eb: jp   $080B]
 
 l_45ee:
 	clr.b	(0x00,a2)                        	| [$45ee: ld   (ix+$00),$00]
@@ -7752,7 +7769,7 @@ l_45ee:
 	move.b	d0,l_906E(a6)                   	| [$4606: ld   ($906E),a]
 	rts                                    	| [$4609: ret]
 
-l_463a:
+bonus_central_ship_appearing_463a:
 	move.b	(0x08,a2),d0                    	| [$463a: ld   a,(ix+$08)]
 	                               	| [$463d: and  a]
 	jeq	l_470a                             	| [$463e: jp   z,$470A]
@@ -7824,7 +7841,7 @@ l_46a3:
 	move.b	#0x08,(0x02,a3)                 	| [$46b1: ld   (iy+$02),$08]
 	rts                                    	| [$46b5: ret]
 
-l_46b6:
+start_title_screen_tasks_46b6:
 	move.b	#0x01,d0                        	| [$46b6: ld   a,$01]
 	move.b	d0,l_A7FF(a6)                       	| [$46b8: ld   ($A7FF),a]
 	READ_ROM_BYTE	0x25C9,d0                       	| [$46bb: ld   a,($25C9)]
@@ -7864,14 +7881,14 @@ l_46ed:
 	jbsr	start_task_d3_0038                            	| [$46ef: rst  $38]
 	move.b	#0xB4,d0                        	| [$46f0: ld   a,$B4]
 	move.b	d0,l_9465(a6)                   	| [$46f2: ld   ($9465),a]
-	jra	l_080b                             	| [$46f5: jp   $080B]
+	jra	next_game_state_080b                             	| [$46f5: jp   $080B]
 
 l_470a:
 	move.b	#0x18,(0x08,a2)                 	| [$470a: ld   (ix+$08),$18]
 	move.b	#0x08,(0x0a,a2)                 	| [$470e: ld   (ix+$0a),$08]
 	rts                                    	| [$4712: ret]
 
-l_4713:
+bonus_satellite_appearing_4713:
 	subq.b	#1,(0x08,a2)                    	| [$4713: dec  (ix+$08)]
 	jeq	l_474f                             	| [$4716: jr   z,$474F]
 	st.b	d0                                	| [$4718: ld   a,$FF]
@@ -7924,7 +7941,7 @@ l_4773:
 	move.b	#0x28,(0x09,a2)                 	| [$4779: ld   (ix+$09),$28]
 	rts                                    	| [$477d: ret]
 
-l_477e:
+handle_satellite_477e:
 	lea	l_93AE(a6),a0                      	| [$477e: ld   hl,$93AE]
 	addq.b	#1,(a0)                         	| [$4781: inc  (hl)]
 	move.b	l_9000(a6),d0                   	| [$4782: ld   a,($9000)]
@@ -8384,7 +8401,7 @@ l_4b7c:
 	bne.b	0f                               	| [...]
 	rts                                    	| [$4b8e: ret  z] [...]
 0:
-	move.b	game_state_942C(a6),d0                   	| [$4b8f: ld   a,($942C)]
+	move.b	sub_state_942C(a6),d0                   	| [$4b8f: ld   a,($942C)]
 	cmp.b	#0x04,d0                         	| [$4b92: cp   $04]
 	bcc.b	0f                               	| [...]
 	rts                                    	| [$4b94: ret  c] [...]
@@ -8438,7 +8455,9 @@ l_4bd6:
 	jra	l_4d04                             	| [$4bf0: jp   $4D04]
 
 
-l_4c00:
+* called once for each line to clear (clearing effect)
+* then init tasks and go to next state
+clear_screen_then_init_tasks_4C00:
 	jbsr	clear_screen_row_0207                            	| [$4c00: call $0207]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$4c03: ret  nz] [...]
@@ -8465,9 +8484,9 @@ l_4c00:
 *	jne	l_0066                             	| [$4c21: jp   nz,$0066]
 	jbsr	l_0755                            	| [$4c24: call $0755]
 	jbsr	l_0769                            	| [$4c27: call $0769]
-	CLEAR_XC_FLAGS                         	| [$4c2a: xor  a]
+	* next global state (resets sub state)
 	clr.b	d0                               	| [$4c2a: xor  a]
-	move.b	d0,game_state_942C(a6)                   	| [$4c2b: ld   ($942C),a]
+	move.b	d0,sub_state_942C(a6)                   	| [$4c2b: ld   ($942C),a]
 	addq.b	#1,d0                           	| [$4c2e: inc  a]
 	move.b	d0,global_state_942B(a6)                   	| [$4c2f: ld   ($942B),a]
 	move.b	l_9440(a6),d0                   	| [$4c32: ld   a,($9440)]
@@ -8525,7 +8544,7 @@ l_4c84:
 	BCLR_A1	10                           	| [$4c96: res  2,d]
 	move.b	(a1),d0                         	| [$4c98: ld   a,(de)]
 	move.b	d0,saved_character_9410(a6)                   	| [$4c99: ld   ($9410),a]
-	jra	l_080b                             	| [$4c9c: jp   $080B]
+	jra	next_game_state_080b                             	| [$4c9c: jp   $080B]
 
 l_4c9f:
 	lea	0x85CE,a0                      	| [$4c9f: ld   hl,$85CE]
@@ -8812,6 +8831,7 @@ l_4f16:
 	                             	| [$4f25: jr   $4F2A]
 
 l_4f27:
+	moveq	#0,d0
 	move.b	l_9477(a6),d0                   	| [$4f27: ld   a,($9477)] [uncovered]
 	add.b	d0,d0                            	| [$4f2a: add  a,a]
 	LEA_ROM	0x37B9,a0                          	| [$4f2b: ld   hl,$37B9]
@@ -9468,7 +9488,7 @@ l_5c5d:
 	rts                                    	| [$5c66: ret]
 
 l_5c67:
-	move.b	game_state_942C(a6),d0                   	| [$5c67: ld   a,($942C)] [uncovered]
+	move.b	sub_state_942C(a6),d0                   	| [$5c67: ld   a,($942C)] [uncovered]
 	sub.b	#0x08,d0                         	| [$5c6a: sub  $08]
 	cmp.b	#0x03,d0                         	| [$5c6c: cp   $03]
 	bcs.b	0f                               	| [...]
@@ -9701,14 +9721,14 @@ l_5dd4:
 	READ_ROM_BYTE	0x23C5,d0                       	| [$5dd4: ld   a,($23C5)]
 	jra	l_5c5b                             	| [$5dd7: jp   $5C5B]
 
-l_5e1a:
+title_screen_init_5e1a:
 	jbsr	l_5c88                            	| [$5e1a: call $5C88]
 	jbsr	l_5dd4                            	| [$5e1d: call $5DD4]
 	move.b	l_9440(a6),d0                   	| [$5e20: ld   a,($9440)]
 	                               	| [$5e23: and  a]
-	jne	l_080b                             	| [$5e24: jp   nz,$080B]
+	jne	next_game_state_080b                             	| [$5e24: jp   nz,$080B]
 	jbsr	l_135a                            	| [$5e27: call $135A]
-	jra	l_080b                             	| [$5e2a: jp   $080B]
+	jra	next_game_state_080b                             	| [$5e2a: jp   $080B]
 
 l_5f4d:
 	jbsr	l_3804                            	| [$5f4d: call $3804]
@@ -9757,7 +9777,7 @@ l_5f96:
 	move.b	d0,l_9465(a6)                   	| [$5fb4: ld   ($9465),a]
 	jbsr	l_0e43                            	| [$5fb7: call $0E43]
 	jbsr	l_3af2                            	| [$5fba: call $3AF2]
-	jra	l_080b                             	| [$5fbd: jp   $080B]
+	jra	next_game_state_080b                             	| [$5fbd: jp   $080B]
 
 * < D0: byte possibly containing lowernibble > 9
 * > D0: value corrected to full BCD

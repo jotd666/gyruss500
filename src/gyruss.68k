@@ -223,12 +223,18 @@
 	lea		(a5,d3.w),a1
 	.endm
 	
-	.macro	LOAD_A0_FROM_D5D6_RAM
-	LOAD_D5_16_FROM_D5D6
+	.macro	LOAD_A0_FROM_D5_16_RAM
 	* this is a RAM address
 	sub.w	#0x8000,d5
 	lea		(a6,d5.w),a0
 	.endm
+
+	.macro	LOAD_A0_FROM_D5D6_RAM
+	LOAD_D5_16_FROM_D5D6
+	* this is a RAM address
+	LOAD_A0_FROM_D5_16_RAM
+	.endm
+	
 
 	.macro	LOAD_A1_FROM_D3D4_RAM
 	LOAD_D3_16_FROM_D3D4
@@ -369,6 +375,34 @@
 	move.l	(a7)+,a0
 	.endm
 
+	.ifndef	RELEASE
+	
+	* to trace at some virtual PCs, insert this macro
+	
+	.macro	LOG_REGS	z80pc
+	move.w	sr,-(a7)
+	move.l	a6,-(a7)
+	move.l	log_ptr,a6
+	move.w	#0x\z80pc,(a6)+
+	move.b	d0,(a6)+
+	move.b	d1,(a6)+
+	move.b	d2,(a6)+
+	move.b	d3,(a6)+
+	move.b	d4,(a6)+
+	move.b	d5,(a6)+
+	move.b	d6,(a6)+
+	move.b	d7,(a6)+
+	move.w	a0,(a6)+
+	move.w	a1,(a6)+
+	move.w	a2,(a6)+
+	move.w	a3,(a6)+
+	move.w	#0xDEAD,(a6)+
+	move.l	a6,log_ptr
+	move.l	(a7)+,a6
+	move.w	(a7)+,sr
+	.endm
+	.endif
+
 read_videoram_a0:
 	move.l	a0,-(a7)
 	sub.l	#0x8000,a0
@@ -401,18 +435,23 @@ load_video_ram_d5_to_a0:
 	.global	gyruss_irq
 	.global	gyruss_reset
 	
-is_active_00 = 0x00
+enemy_active_00 = 0x00
+fine_x_02 = 0x02
+fine_y_03 = 0x03
 enemy_appear_timer_08 = 0x08
-object_state_0a = 0x0a
+enemy_state_0a = 0x0a
 
-* fetch_a0_plus_d0_0008: (HL+A)=>A
+displayed_y_00 = 0x00
+displayed_x_03 = 0x03
+
+* fetch_a0_plus_d0_0008: HL+=A then (HL) => A
 fetch_a0_plus_d0_0008:
 	and.w	#0xFF,d0            | [$0008: add  a,l]
 	add.w	d0,a0               | [$0009: ld   l,a]
 	                         	| [$000a: jr   nc,$000D]
 	                          	| [$000c: inc  h]
-	move.b	(a0),d0                         	| [$000d: ld   a,(hl)]
-	rts                                    	| [$000e: ret]
+	move.b	(a0),d0             | [$000d: ld   a,(hl)]
+	rts                         | [$000e: ret]
 
 * load_rom_pointer_in_a1_d3_0010: loads address in HL indexed by A
 * as 16 bit address in DE
@@ -864,17 +903,18 @@ l_055c:
 	READ_ROM_BYTE	0x09AD,d0                       	| [$0566: ld   a,($09AD)]
 	move.b	d0,global_state_942B(a6)                   	| [$0569: ld   ($942B),a]
 	move.b	d0,l_A7FF(a6)                       	| [$056c: ld   ($A7FF),a]
-	move.b	#0x80,d1                        	| [$056f: ld   b,$80]
-	LEA_ROM	0x3778,a0                          	| [$0571: ld   hl,$3778]
-	sub.b	d0,d0                            	| [$0574: sub  a]
-l_0575:
-	move.b	(a0),d7
-	eor.b	d7,d0                            	| [$0575: xor  (hl)]
-	addq.w	#1,a0                           	| [$0576: inc  hl]
-	subq.b	#1,d1                           	| [...]
-	jne	l_0575                             	| [$0577: djnz $0575]
-	add.b	#0x10,d0                         	| [$0579: add  a,$10]
-	jne	l_1845                             	| [$057b: jp   nz,$1845]
+	* ROM checksum
+*	move.b	#0x80,d1                        	| [$056f: ld   b,$80]
+*	LEA_ROM	0x3778,a0                          	| [$0571: ld   hl,$3778]
+*	sub.b	d0,d0                            	| [$0574: sub  a]
+*l_0575:
+*	move.b	(a0),d7
+*	eor.b	d7,d0                            	| [$0575: xor  (hl)]
+*	addq.w	#1,a0                           	| [$0576: inc  hl]
+*	subq.b	#1,d1                           	| [...]
+*	jne	l_0575                             	| [$0577: djnz $0575]
+*	add.b	#0x10,d0                         	| [$0579: add  a,$10]
+*	jne	l_1845                             	| [$057b: jp   nz,$1845]
 	rts                                    	| [$057e: ret]
 
 display_gyruss_title_057f:
@@ -3118,7 +3158,6 @@ l_1686:
 	neg.b	d0                               	| [$169b: neg]
 	add.b	d1,d0                            	| [$169d: add  a,b]
 	move.b	d0,l_937E(a6)                   	| [$169e: ld   ($937E),a]
-	CLEAR_XC_FLAGS                         	| [$16a1: xor  a]
 	clr.b	d0                               	| [$16a1: xor  a]
 	move.b	d0,l_939E(a6)                   	| [$16a2: ld   ($939E),a]
 	jra	l_16c8                             	| [$16a5: jr   $16C8]
@@ -3282,11 +3321,11 @@ l_17a0:
 	move.b	l_9407(a6),d0                   	| [$17a0: ld   a,($9407)]
 	                               	| [$17a3: and  a]
 	jeq	l_17bf                             	| [$17a4: jr   z,$17BF]
-	move.b	(a0),d0                         	| [$17a6: ld   a,(hl)] [uncovered]
+	move.b	(a0)+,d0                         	| [$17a6: ld   a,(hl)] [uncovered]
 	add.b	#0x0D,d0                         	| [$17a7: add  a,$0D] [uncovered]
 	not.b	d0                               	| [$17a9: cpl] [uncovered]
 	move.b	d0,(0x03,a3)                    	| [$17aa: ld   (iy+$03),a] [uncovered]
-	addq.w	#1,a0                           	| [$17ad: inc  hl] [uncovered]
+												| [$17ad: inc  hl] [uncovered]
 	move.b	(a0),d0                         	| [$17ae: ld   a,(hl)] [uncovered]
 	addq.b	#0x07,d0                        	| [$17af: add  a,$07] [uncovered]
 	not.b	d0                               	| [$17b1: cpl] [uncovered]
@@ -3294,8 +3333,8 @@ l_17a0:
 	jra	l_17c8                             	| [$17b5: jr   $17C8] [uncovered]
 
 l_17bf:
-	move.b	(a0),d0                         	| [$17bf: ld   a,(hl)]
-	addq.w	#1,a0                           	| [$17c0: inc  hl]
+	move.b	(a0)+,d0                         	| [$17bf: ld   a,(hl)]
+										| [$17c0: inc  hl]
 	move.b	d0,(0x03,a3)                    	| [$17c1: ld   (iy+$03),a]
 	move.b	(a0),d0                         	| [$17c4: ld   a,(hl)]
 	move.b	d0,(0x00,a3)                    	| [$17c5: ld   (iy+$00),a]
@@ -3306,8 +3345,8 @@ l_17c8:
 	move.b	l_9407(a6),d0                   	| [$17d1: ld   a,($9407)]
 	ror.b	#1,d0                            	| [$17d4: rrca]
 	and.b	#0x80,d0                         	| [$17d5: and  $80]
-	add.b	(a0),d0                          	| [$17d7: add  a,(hl)]
-	addq.w	#1,a0                           	| [$17d8: inc  hl]
+	add.b	(a0)+,d0                          	| [$17d7: add  a,(hl)]
+												| [$17d8: inc  hl]
 	move.b	d0,(0x01,a2)                    	| [$17d9: ld   (ix+$01),a]
 	move.b	#0xFF,(0x00,a2)                 	| [$17dc: ld   (ix+$00),$FF]
 	add.w	d3,a3                            	| [$17e0: add  iy,de]
@@ -3349,7 +3388,6 @@ l_183b:
 	LOAD_A1_FROM_D3D4_ROM
 	exg	a1,a0                              	| [$1843: ex   de,hl]
 	move.b	(a0),d0                         	| [$1844: ld   a,(hl)]
-l_1845:
 	                           	| [$1845: dec  de]
 	addq.b	#1,d0                           	| [$1846: inc  a]
 	move.b	d0,-(a1)                         	| [$1847: ld   (de),a]
@@ -3515,23 +3553,23 @@ l_1976:
 	and.b	#0x01,d0                         	| [$197a: and  $01]
 	add.b	d1,d0                            	| [$197c: add  a,b]
 	move.b	d0,d1                           	| [$197d: ld   b,a]
-	move.b	(a0),d0                         	| [$197e: ld   a,(hl)]
+	move.b	(a0)+,d0                         	| [$197e: ld   a,(hl)]
 	add.b	d1,d0                            	| [$197f: add  a,b]
 	move.b	d0,(0x02,a3)                    	| [$1980: ld   (iy+$02),a]
 	move.b	d0,(0x06,a3)                    	| [$1983: ld   (iy+$06),a]
 	move.b	d0,(0x0a,a3)                    	| [$1986: ld   (iy+$0a),a]
 	move.b	d0,(0x0e,a3)                    	| [$1989: ld   (iy+$0e),a]
-	addq.w	#1,a0                           	| [$198c: inc  hl]
+												| [$198c: inc  hl]
 	move.b	(a0),d0                         	| [$198d: ld   a,(hl)]
 l_198e:
 	move.b	d0,(0x01,a3)                    	| [$198e: ld   (iy+$01),a]
 	addq.w	#1,a0                           	| [$1991: inc  hl]
-	move.b	(a0),d0                         	| [$1992: ld   a,(hl)]
+	move.b	(a0)+,d0                         	| [$1992: ld   a,(hl)]
 	move.b	d0,(0x05,a3)                    	| [$1993: ld   (iy+$05),a]
-	addq.w	#1,a0                           	| [$1996: inc  hl]
-	move.b	(a0),d0                         	| [$1997: ld   a,(hl)]
+	                           	| [$1996: inc  hl]
+	move.b	(a0)+,d0                         	| [$1997: ld   a,(hl)]
 	move.b	d0,(0x09,a3)                    	| [$1998: ld   (iy+$09),a]
-	addq.w	#1,a0                           	| [$199b: inc  hl]
+	                           	| [$199b: inc  hl]
 	move.b	(a0),d0                         	| [$199c: ld   a,(hl)]
 	move.b	d0,(0x0d,a3)                    	| [$199d: ld   (iy+$0d),a]
 	rts                                    	| [$19a0: ret]
@@ -3571,23 +3609,23 @@ l_19be:
 l_1a15:
 	LEA_ROM	0x5E2D,a0                          	| [$1a15: ld   hl,$5E2D]
 	jbsr	add_d0_to_a0_0018                            	| [$1a18: rst  $18]
-	move.b	(a0),d1                         	| [$1a19: ld   b,(hl)]
-	addq.w	#1,a0                           	| [$1a1a: inc  hl]
+	move.b	(a0)+,d1                         	| [$1a19: ld   b,(hl)]
+												| [$1a1a: inc  hl]
 	move.b	(0x02,a2),d3                    	| [$1a1b: ld   d,(ix+$02)]
 	move.b	d3,d0                           	| [$1a1e: ld   a,d]
 	add.b	d1,d0                            	| [$1a1f: add  a,b]
 	move.b	d0,(0x03,a3)                    	| [$1a20: ld   (iy+$03),a]
 	move.b	d0,(0x07,a3)                    	| [$1a23: ld   (iy+$07),a]
-	move.b	(a0),d1                         	| [$1a26: ld   b,(hl)]
-	addq.w	#1,a0                           	| [$1a27: inc  hl]
+	move.b	(a0)+,d1                         	| [$1a26: ld   b,(hl)]
+												| [$1a27: inc  hl]
 	move.b	(0x03,a2),d4                    	| [$1a28: ld   e,(ix+$03)]
 	move.b	d4,d0                           	| [$1a2b: ld   a,e]
 	add.b	d1,d0                            	| [$1a2c: add  a,b]
 	move.b	d0,(0x00,a3)                    	| [$1a2d: ld   (iy+$00),a]
 	add.b	#0x08,d0                         	| [$1a30: add  a,$08]
 	move.b	d0,(0x04,a3)                    	| [$1a32: ld   (iy+$04),a]
-	move.b	(a0),d1                         	| [$1a35: ld   b,(hl)]
-	addq.w	#1,a0                           	| [$1a36: inc  hl]
+	move.b	(a0)+,d1                         	| [$1a35: ld   b,(hl)]
+	                           	| [$1a36: inc  hl]
 	move.b	d3,d0                           	| [$1a37: ld   a,d]
 	add.b	d1,d0                            	| [$1a38: add  a,b]
 	move.b	d0,(0x0b,a3)                    	| [$1a39: ld   (iy+$0b),a]
@@ -3659,16 +3697,15 @@ l_1ab3:
 	cmp.b	#0x02,d0                         	| [$1abd: cp   $02]
 	jcs	l_1adc                             	| [$1abf: jr   c,$1ADC]
 	movem.w	d1/d2,-(sp)                    	| [$1ac1: push bc]
-	move.l	a4,-(sp)                        	| [$1ac1: push bc]
 	jbsr	l_4ebf                            	| [$1ac2: call $4EBF]
 	move.b	l_9400(a6),d0                   	| [$1ac5: ld   a,($9400)]
 	ror.b	#2,d0                            	| [$1ac8: rrca] * 2
 	and.b	#0x0F,d0                         	| [$1aca: and  $0F]
 	move.b	d0,(0x02,a3)                    	| [$1acc: ld   (iy+$02),a]
-	move.l	(sp)+,a4                        	| [$1acf: pop  bc]
 	movem.w	(sp)+,d1/d2                    	| [$1acf: pop  bc]
 	move.b	d2,(0x01,a3)                    	| [$1ad0: ld   (iy+$01),c]
 l_1ad3:
+	* optim, add 4/1 directly
 	jbsr	exx                               	| [$1ad3: exx]
 	add.w	d3,a3                            	| [$1ad4: add  iy,de]
 	add.w	d1,a2                            	| [$1ad6: add  ix,bc]
@@ -3760,7 +3797,6 @@ l_1b86:
 	move.w	#0x8000,d5                          	| [$1b8e: ld   hl,$8000]
 	move.b	(0x02,a2),d3                    	| [$1b91: ld   d,(ix+$02)]
 	clr.b	d4                               	| [$1b94: ld   e,$00]
-	CLEAR_XC_FLAGS
 	LOAD_D3_16_FROM_D3D4                        | [$1b96: and  a]
 	sub.w	d3,d5                            	| [$1b97: sbc  hl,de]
 	LOAD_D5D6_FROM_D5_16
@@ -3770,7 +3806,6 @@ l_1b86:
 	move.w	#0x8000,d5                          	| [$1ba2: ld   hl,$8000]
 	move.b	(0x03,a2),d3                    	| [$1ba5: ld   d,(ix+$03)]
 	clr.b	d4                               	| [$1ba8: ld   e,$00]
-	CLEAR_XC_FLAGS
 	LOAD_D3_16_FROM_D3D4                               	| [$1baa: and  a]
 	sub.w	d3,d5                            	| [$1bab: sbc  hl,de]
 	LOAD_D5D6_FROM_D5_16
@@ -3850,7 +3885,6 @@ l_1c32:
 	move.b	d0,(0x03,a3)                    	| [$1c40: ld   (iy+$03),a]
 	move.b	#0x36,(0x00,a3)                 	| [$1c43: ld   (iy+$00),$36]
 	move.b	#0x40,(0x01,a2)                 	| [$1c47: ld   (ix+$01),$40]
-	CLEAR_XC_FLAGS                         	| [$1c4b: xor  a]
 	clr.b	d0                               	| [$1c4b: xor  a]
 	move.b	d0,l_9803(a6)                   	| [$1c4c: ld   ($9803),a]
 	move.b	d0,l_9807(a6)                   	| [$1c4f: ld   ($9807),a]
@@ -4589,14 +4623,12 @@ l_249b:
 	bcs.b	0f                               	| [...]
 	rts                                    	| [$24a7: ret  nc] [...]
 0:
-
+	BREAKPOINT	"a2 decomposed to D1/D2"
 	move.l	a2,-(sp)                        	| [$24a8: push ix]
-	move.l	(sp)+,a4                        	| [$24aa: pop  bc]
 	movem.w	(sp)+,d1/d2                    	| [$24aa: pop  bc]
 
-	move.l	a3,-(sp)                        	| [$24ab: push iy]
-	move.l	(sp)+,a1                        	| [$24ad: pop  de]
-	movem.w	(sp)+,d3/d4                    	| [$24ad: pop  de]
+	move.l	a3,a1                        	| [$24ab: push iy]
+	                        	            | [$24ad: pop  de]
 * < D1/D2/D3/D4
 l_24ae:
 	lea	l_9610(a6),a0                      	| [$24ae: ld   hl,$9610]
@@ -4686,7 +4718,7 @@ l_24fc:
 * < A2: object structure (0x90x0), 0x10 bytes
 * < A3: object shadow sprite ram (0x98x0), 0x8 bytes
 handle_enemy_2518:
-	move.b	(is_active_00,a2),d0                    	| [$2518: ld   a,(ix+$00)]
+	move.b	(enemy_active_00,a2),d0                    	| [$2518: ld   a,(ix+$00)]
 	                               	| [$251b: and  a]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$251c: ret  z] [...]
@@ -4701,7 +4733,7 @@ handle_enemy_2518:
 	jra	l_2a2b                             	| [$2527: jp   nz,$2A2B]
 	* smaller switch case with only 3 cases
 l_252a:
-	move.b	(object_state_0a,a2),d0                    	| [$252a: ld   a,(ix+$0a)]
+	move.b	(enemy_state_0a,a2),d0                    	| [$252a: ld   a,(ix+$0a)]
 	cmp.b	#0x07,d0                         	| [$252d: cp   $07]
 	jeq	bonus_central_ship_appearing_463a                             	| [$252f: jp   z,$463A]
 	cmp.b	#0x08,d0                         	| [$2532: cp   $08]
@@ -4711,22 +4743,22 @@ l_252a:
 	rts                                    	| [$253c: ret] [uncovered]
 	* the big switch case
 handle_object_state_253d:
-	move.b	(object_state_0a,a2),d0                    	| [$253d: ld   a,(ix+$0a)]
+	move.b	(enemy_state_0a,a2),d0                    	| [$253d: ld   a,(ix+$0a)]
 	jbsr	jump_table_jump_0030                | [$2540: rst  $30]
 * [jump_table]
-	.long	saucer_init_26be                  | wave init
-	.long	arrival_in_wave_26cf              | saucers arrive in waves
-	.long	l_2735		                      | player hit but not only ???
-	.long	saucer_attacks_280a		          | individual/small-group attack?
-	.long	saucer_bails_out_2978		      | "fuck it, I'm going home" for last ship
-	.long	l_29ab
-	.long	player_hit_275B                   | player IX=0x9010 but not only???
-	.long	bonus_central_ship_appearing_463a | central double shot bonus or just another satellite appearing
-	.long	bonus_satellite_appearing_4713    | 2/3 satellites
-	.long	handle_satellite_477e             | move the now appeared satellite
-	.long	l_2661
-	.long	l_25f3
-	.long	l_261f
+	.long	saucer_init_26be                  | 0 wave init
+	.long	arrival_in_wave_26cf              | 1 saucers arrive in waves
+	.long	l_2735		                      | 2 happens when player hit
+	.long	saucer_attacks_280a		          | 3 individual/small-group attack?
+	.long	saucer_bails_out_2978		      | 4 "fuck it, I'm going home" for last ship
+	.long	exit_screen_to_return_swarm_29ab  | 5 move to the outside to wrap to the center
+	.long	direct_return_to_swarm_275b       | 6 move to the center
+	.long	bonus_central_ship_appearing_463a | 7 central double shot bonus or just another satellite appearing
+	.long	bonus_satellite_appearing_4713    | 8 2/3 satellites
+	.long	handle_satellite_477e             | 9 move the now appeared satellite
+	.long	change_attack_direction_2661      | A while attacking, change rotation direction
+	.long	dash_on_player_25f3               | B TBC ship is going straight to the player
+	.long	dash_on_player_261f               | C TBC next dash sequence
 
 l_255b:
 	jbsr	l_590e                            	| [$255b: call $590E]
@@ -4800,7 +4832,7 @@ l_25ca:
 	jne	l_25ca                             	| [$25cc: djnz $25CA]
 	rts                                    	| [$25ce: ret]
 
-l_25f3:
+dash_on_player_25f3:
 	jbsr	l_4ecb                            	| [$25f3: call $4ECB]
 	jbsr	l_2d81                            	| [$25f6: call $2D81]
 	move.b	(0x00,a3),d0                    	| [$25f9: ld   a,(iy+$00)]
@@ -4810,7 +4842,7 @@ l_25f3:
 
 l_2603:
 	move.b	#0x10,(0x05,a2)                 	| [$2603: ld   (ix+$05),$10]
-	move.b	#0x0C,(0x0a,a2)                 	| [$2607: ld   (ix+$0a),$0C]
+	move.b	#0x0C,(enemy_state_0a,a2)                 	| [$2607: ld   (ix+$0a),$0C]
 	move.b	l_9000(a6),d0                   	| [$260b: ld   a,($9000)]
 	sub.b	(0x03,a3),d0                     	| [$260e: sub  (iy+$03)]
 	cmp.b	#0x80,d0                         	| [$2611: cp   $80]
@@ -4822,7 +4854,7 @@ l_261a:
 	move.b	#0x01,(0x07,a2)                 	| [$261a: ld   (ix+$07),$01] [uncovered]
 	rts                                    	| [$261e: ret]
 
-l_261f:
+dash_on_player_261f:
 	jbsr	l_4ecb                            	| [$261f: call $4ECB]
 	jbsr	l_2bb3                            	| [$2622: call $2BB3]
 	jbsr	l_2d81                            	| [$2625: call $2D81]
@@ -4855,10 +4887,10 @@ l_264d:
 	rol.b	#1,d0                            	| [$2656: rlca]
 	and.b	#0x01,d0                         	| [$2657: and  $01]
 	move.b	d0,(0x07,a2)                    	| [$2659: ld   (ix+$07),a]
-	move.b	#0x0A,(0x0a,a2)                 	| [$265c: ld   (ix+$0a),$0A]
+	move.b	#0x0A,(enemy_state_0a,a2)                 	| [$265c: ld   (ix+$0a),$0A]
 	rts                                    	| [$2660: ret]
 
-l_2661:
+change_attack_direction_2661:
 	subq.b	#1,(0x05,a2)                    	| [$2661: dec  (ix+$05)]
 	jeq	l_2683                             	| [$2664: jp   z,$2683]
 	READ_ROM_BYTE	0x0120,d0                       	| [$266b: ld   a,($0120)]
@@ -4899,11 +4931,11 @@ l_26a5:
 	move.b	l_91EE(a6),d0                   	| [$26ad: ld   a,($91EE)]
 	                               	| [$26b0: and  a]
 	jne	l_296f                             	| [$26b1: jp   nz,$296F]
-	move.b	#0x02,(object_state_0a,a2)                 	| [$26b4: ld   (ix+$0a),$02]
+	move.b	#0x02,(enemy_state_0a,a2)                 	| [$26b4: ld   (ix+$0a),$02]
 	rts                                    	| [$26b8: ret]
 
 l_26b9:
-	move.b	#0x03,(object_state_0a,a2)                 	| [$26b9: ld   (ix+$0a),$03]
+	move.b	#0x03,(enemy_state_0a,a2)                 	| [$26b9: ld   (ix+$0a),$03]
 	rts                                    	| [$26bd: ret]
 
 saucer_init_26be:
@@ -4915,7 +4947,7 @@ saucer_init_26be:
 	rts                                    	| [$26c7: ret  nz] [...]
 0:
 l_26c8:
-	move.b	#0x01,(object_state_0a,a2)     	| [$26c8: ld   (ix+$0a),$01]
+	move.b	#0x01,(enemy_state_0a,a2)     	| [$26c8: ld   (ix+$0a),$01]
 	jra	l_26ef                             	| [$26cc: jp   $26EF]
 
 arrival_in_wave_26cf:
@@ -4948,7 +4980,7 @@ l_26ef:
 	cmp.b	#0xFF,d0                         	| [$26ff: cp   $FF]
 	jeq	l_271c                             	| [$2701: jr   z,$271C]
 	cmp.b	#0xFE,d0                         	| [$2703: cp   $FE]
-	jeq	l_272c                             	| [$2705: jr   z,$272C]
+	jeq	l_set_to_return_to_swarm_by_outside_272c                             	| [$2705: jr   z,$272C]
 	btst.b	#7,d2                           	| [$2707: bit  7,c]
 	jeq	l_2710                             	| [$2709: jr   z,$2710]
 	move.b	d0,d1                           	| [$270b: ld   b,a]
@@ -4960,21 +4992,22 @@ l_2710:
 	move.b	(a0),d0                         	| [$2714: ld   a,(hl)]
 	move.b	d0,(0x07,a2)                    	| [$2715: ld   (ix+$07),a]
 	addq.b	#1,(0x06,a2)                    	| [$2718: inc  (ix+$06)]
-	rts                                    	| [$271b: ret]
+	rts                                    	    | [$271b: ret]
 
 l_271c:
 	move.b	l_91AE(a6),d0                   	| [$271c: ld   a,($91AE)]
 	                               	| [$271f: and  a]
 	jne	l_2727                             	| [$2720: jr   nz,$2727]
-	move.b	#0x02,(object_state_0a,a2)                 	| [$2722: ld   (ix+$0a),$02]
+	move.b	#0x02,(enemy_state_0a,a2)                 	| [$2722: ld   (ix+$0a),$02]
 	rts                                    	| [$2726: ret]
 
 l_2727:
-	move.b	#0x04,(object_state_0a,a2)                 	| [$2727: ld   (ix+$0a),$04]
+	move.b	#0x04,(enemy_state_0a,a2)                 	| [$2727: ld   (ix+$0a),$04]
 	rts                                    	| [$272b: ret]
 
-l_272c:
-	move.b	#0x05,(object_state_0a,a2)                 	| [$272c: ld   (ix+$0a),$05]
+* exit the screen by the edges then return to swarm
+l_set_to_return_to_swarm_by_outside_272c:
+	move.b	#0x05,(enemy_state_0a,a2)                 	| [$272c: ld   (ix+$0a),$05]
 	move.b	#0xC0,(0x0b,a2)                 	| [$2730: ld   (ix+$0b),$C0]
 	rts                                    	| [$2734: ret]
 
@@ -4983,7 +5016,7 @@ l_2735:
 	jbsr	l_2d81                            	| [$2738: call $2D81]
 	move.b	(0x00,a3),d0                    	| [$273b: ld   a,(iy+$00)]
 	cmp.b	#0x88,d0                         	| [$273e: cp   $88]
-	jcc	l_2756                             	| [$2740: jr   nc,$2756]
+	jcc	l_set_to_return_to_swarm_2756                             	| [$2740: jr   nc,$2756]
 l_2742:
 	move.b	(0x01,a2),d0                    	| [$2742: ld   a,(ix+$01)]
 	sub.b	#0xBE,d0                         	| [$2745: sub  $BE]
@@ -5000,11 +5033,11 @@ l_2752:
 	addq.b	#1,(0x01,a2)                    	| [$2752: inc  (ix+$01)]
 	rts                                    	| [$2755: ret]
 
-l_2756:
-	move.b	#0x06,(object_state_0a,a2)                 	| [$2756: ld   (ix+$0a),$06]
+l_set_to_return_to_swarm_2756:
+	move.b	#0x06,(enemy_state_0a,a2)                 	| [$2756: ld   (ix+$0a),$06]
 	rts                                    	| [$275a: ret]
 
-player_hit_275B:
+direct_return_to_swarm_275b:
 	jbsr	l_2d81                            	| [$275b: call $2D81]
 	jbsr	l_2bb3                            	| [$275e: call $2BB3]
 	jbsr	l_4f16                            	| [$2761: call $4F16]
@@ -5068,19 +5101,19 @@ player_hit_275B:
 	add.w	d5,d5                            	| [$27cd: add  hl,hl]
 	add.w	d5,d5                            	| [$27ce: add  hl,hl]
 	add.w	d3,d5                            	| [$27cf: add  hl,de]
-	jbsr	load_video_ram_d5_to_a0
-	WRITE_VIDEORAM	0xFF                      	| [$27d0: ld   (hl),$FF]
-	addq.w	#1,a0                           	| [$27d2: inc  hl]
-	WRITE_VIDEORAM	0x40                      	| [$27d3: ld   (hl),$40]
+	LOAD_A0_FROM_D5_16_RAM
+	st.b	(a0)+                      	| [$27d0: ld   (hl),$FF]
+	                           	| [$27d2: inc  hl]
+	move.b	#0x40,(a0)                      	| [$27d3: ld   (hl),$40]
 	move.w	#0x0008,d3                      	| [$27d5: ld   de,$0008]
 	add.w	d3,a0                            	| [$27d8: add  hl,de]
 	move.b	(0x09,a2),d0                    	| [$27d9: ld   a,(ix+$09)]
-	jbsr	osd_w_videoram                         	| [$27dc: ld   (hl),a]
+	move.b	d0,(a0)                         	| [$27dc: ld   (hl),a]
 	move.w	#0x0003,d3                      	| [$27dd: ld   de,$0003]
 	add.w	d3,a0                            	| [$27e0: add  hl,de]
 	move.b	(0x0c,a2),d0                    	| [$27e1: ld   a,(ix+$0c)]
-	jbsr	osd_w_videoram                         	| [$27e4: ld   (hl),a]
-	addq.w	#1,a0                           	| [$27e5: inc  l]
+	move.b	d0,(a0)+                         	| [$27e4: ld   (hl),a]
+												| [$27e5: inc  l]
 	move.b	(0x0d,a2),d0                    	| [$27e6: ld   a,(ix+$0d)]
 	move.b	d0,(a0)                         	| [$27e9: ld   (hl),a]
 	move.w	#0x9860,d3                      	| [$27ea: ld   de,$9860]
@@ -5089,12 +5122,11 @@ player_hit_275B:
 	add.w	d5,d5                            	| [$27f2: add  hl,hl]
 	add.w	d5,d5                            	| [$27f3: add  hl,hl]
 	add.w	d3,d5                            	| [$27f4: add  hl,de]
-	jbsr	load_video_ram_d5_to_a0
+	LOAD_A0_FROM_D5_16_RAM
 	exg	a0,a1                             	| [$27f5: ex   de,hl]
 
 	move.l	a3,a0                        	| [$27f6: push iy]
 	                        	| [$27f8: pop  hl]
-	BREAKPOINT	"A1 is videoram! 27F8"
 	jbsr	ldi                               	| [$27f9: ldi]
 	jbsr	ldi                               	| [$27fb: ldi]
 	jbsr	ldi                               	| [$27fd: ldi]
@@ -5238,7 +5270,7 @@ l_28e9:
 	rts                                    	| [$2901: ret]
 
 l_2902:
-	move.b	#0x0B,(0x0a,a2)                 	| [$2902: ld   (ix+$0a),$0B]
+	move.b	#0x0B,(enemy_state_0a,a2)                 	| [$2902: ld   (ix+$0a),$0B]
 	rts                                    	| [$2906: ret]
 
 l_2907:
@@ -5294,12 +5326,12 @@ l_2964:
 	move.b	l_91EE(a6),d0                   	| [$2964: ld   a,($91EE)]
 	                               	| [$2967: and  a]
 	jne	l_296f                             	| [$2968: jr   nz,$296F]
-	move.b	#0x02,(object_state_0a,a2)                 	| [$296a: ld   (ix+$0a),$02]
+	move.b	#0x02,(enemy_state_0a,a2)                 	| [$296a: ld   (ix+$0a),$02]
 	rts                                    	| [$296e: ret]
 
 l_296f:
 	move.b	#0xC0,(0x01,a2)                 	| [$296f: ld   (ix+$01),$C0]
-	move.b	#0x04,(object_state_0a,a2)                 	| [$2973: ld   (ix+$0a),$04]
+	move.b	#0x04,(enemy_state_0a,a2)                 	| [$2973: ld   (ix+$0a),$04]
 	rts                                    	| [$2977: ret]
 
 
@@ -5329,7 +5361,7 @@ l_2996:
 	jeq	l_2d81                             	| [$29a5: jp   z,$2D81]
 	jra	l_3171                             	| [$29a8: jp   $3171]
 
-l_29ab:
+exit_screen_to_return_swarm_29ab:
 	move.b	l_924E(a6),d0                   	| [$29ab: ld   a,($924E)]
 	                               	| [$29ae: and  a]
 	jeq	l_29bd                             	| [$29af: jr   z,$29BD]
@@ -5719,7 +5751,7 @@ l_2c55:
 	move.b	l_960A(a6),d0                   	| [$2c79: ld   a,($960A)]
 	add.b	d0,d0                            	| [$2c7c: add  a,a]
 	LEA_ROM	0x4474,a0                          	| [$2c7d: ld   hl,$4474]
-	jbsr	fetch_a0_plus_d0_0008                            	| [$2c80: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008               | [$2c80: rst  $08]
 	move.b	d0,(0x08,a2)                    	| [$2c81: ld   (ix+$08),a]
 	addq.w	#1,a0                           	| [$2c84: inc  hl]
 	move.b	(a0),d0                         	| [$2c85: ld   a,(hl)]
@@ -8144,19 +8176,19 @@ l_4954:
 0:
 	addq.b	#1,d0                           	| [$4959: inc  a]
 	jne	l_4a37                             	| [$495a: jp   nz,$4A37]
-	move.b	(0x02,a2),d4                    	| [$495d: ld   e,(ix+$02)]
-	move.b	(0x00,a3),d0                    	| [$4960: ld   a,(iy+$00)]
+	move.b	(fine_x_02,a2),d4                    	| [$495d: ld   e,(ix+$02)]
+	move.b	(displayed_y_00,a3),d0                    	| [$4960: ld   a,(iy+$00)]
 	cmp.b	#0x20,d0                         	| [$4963: cp   $20]
 	jcs	l_49b0                             	| [$4965: jp   c,$49B0]
 	*move.b	d0,d3  | useless!                           	| [$4968: ld   d,a]
-	move.b	(0x00,a3),d5                    	| [$4969: ld   h,(iy+$00)]
-	move.b	(0x03,a2),d6                    	| [$496c: ld   l,(ix+$03)]
+	move.b	(displayed_y_00,a3),d5                    	| [$4969: ld   h,(iy+$00)]
+	move.b	(fine_y_03,a2),d6                    	| [$496c: ld   l,(ix+$03)]
 	move.w	#-0x140,d3                      	| [$496f: ld   de,$FEC0]
 	LOAD_D5D6_FROM_D5_16
 	add.w	d3,d5                            	| [$4972: add  hl,de]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x00,a3)                    	| [$4973: ld   (iy+$00),h]
-	move.b	d0,(0x03,a2)                    	| [$4976: ld   (ix+$03),a]
+	move.b	d5,(displayed_y_00,a3)                    	| [$4973: ld   (iy+$00),h]
+	move.b	d0,(fine_y_03,a2)                    	| [$4976: ld   (ix+$03),a]
 	jbsr	l_4b1c                            	| [$4979: call $4B1C]
 	move.b	(0x04,a2),d0                    	| [$497c: ld   a,(ix+$04)]
 	subq.b	#1,d0                           	| [$497f: dec  a]
@@ -8165,7 +8197,7 @@ l_4954:
 	eor.b	#0xC0,d0                         	| [$4985: xor  $C0]
 	move.b	d0,(0x02,a3)                    	| [$4987: ld   (iy+$02),a]
 l_498a:
-	move.b	(0x00,a3),d0                    	| [$498a: ld   a,(iy+$00)]
+	move.b	(displayed_y_00,a3),d0                    	| [$498a: ld   a,(iy+$00)]
 	cmp.b	#0x30,d0                         	| [$498d: cp   $30]
 	jcc	l_49b7                             	| [$498f: jr   nc,$49B7]
 	cmp.b	#0x20,d0                         	| [$4991: cp   $20]
@@ -8799,20 +8831,20 @@ l_4eea:
 	                           	| [$4ef4: dec  hl]
 	move.b	-(a0),d2                         	| [$4ef5: ld   c,(hl)]
 	LOAD_D1_16_FROM_D1D2
-	move.b	(0x02,a2),d6                    	| [$4ef6: ld   l,(ix+$02)]
-	move.b	(0x03,a3),d5                    	| [$4ef9: ld   h,(iy+$03)]
+	move.b	(fine_x_02,a2),d6                    	| [$4ef6: ld   l,(ix+$02)]
+	move.b	(displayed_x_03,a3),d5                    	| [$4ef9: ld   h,(iy+$03)]
 	LOAD_D5_16_FROM_D5D6
 	add.w	d3,d5                            	| [$4efc: add  hl,de]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x03,a3)                    	| [$4efd: ld   (iy+$03),h]
-	move.b	d6,(0x02,a2)                    	| [$4f00: ld   (ix+$02),l]
-	move.b	(0x03,a2),d6                    	| [$4f03: ld   l,(ix+$03)]
-	move.b	(0x00,a3),d5                    	| [$4f06: ld   h,(iy+$00)]
+	move.b	d5,(displayed_x_03,a3)                    	| [$4efd: ld   (iy+$03),h]
+	move.b	d6,(fine_x_02,a2)                    	| [$4f00: ld   (ix+$02),l]
+	move.b	(fine_y_03,a2),d6                    	| [$4f03: ld   l,(ix+$03)]
+	move.b	(displayed_y_00,a3),d5                    	| [$4f06: ld   h,(iy+$00)]
 	LOAD_D5_16_FROM_D5D6
 	add.w	d1,d5                            	| [$4f09: add  hl,bc]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x00,a3)                    	| [$4f0a: ld   (iy+$00),h]
-	move.b	d6,(0x03,a2)                    	| [$4f0d: ld   (ix+$03),l]
+	move.b	d5,(displayed_y_00,a3)                    	| [$4f0a: ld   (iy+$00),h]
+	move.b	d6,(fine_y_03,a2)                    	| [$4f0d: ld   (ix+$03),l]
 	rts                                    	| [$4f10: ret]
 
 l_4f11:
@@ -8861,21 +8893,24 @@ l_4f46:
 	move.b	(a0)+,d4                         	| [$4f4b: ld   e,(hl)]
 	                           	| [$4f4c: inc  hl]
 	move.b	(a0),d3                         	| [$4f4d: ld   d,(hl)]
+	* X displacement in D3
 	LOAD_D3_16_FROM_D3D4
 	add.w	d1,a0                            	| [$4f4e: add  hl,bc]
 	move.b	(a0),d1                         	| [$4f4f: ld   b,(hl)]
-	                           	| [$4f50: dec  hl]
+	                           	                | [$4f50: dec  hl]
 	move.b	-(a0),d2                         	| [$4f51: ld   c,(hl)]
-	move.b	(0x02,a2),d6                    	| [$4f52: ld   l,(ix+$02)]
-	move.b	(0x03,a3),d5                    	| [$4f55: ld   h,(iy+$03)]
+	* Y displacement in D1
+	LOAD_D1_16_FROM_D1D2
+	move.b	(fine_x_02,a2),d6                    	| [$4f52: ld   l,(ix+$02)] fine X
+	move.b	(displayed_x_03,a3),d5                    	| [$4f55: ld   h,(iy+$03)] displayed X
 	LOAD_D5_16_FROM_D5D6
 	add.w	d3,d5                            	| [$4f58: add  hl,de]
 	add.w	d3,d5                            	| [$4f59: add  hl,de]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x03,a3)                    	| [$4f5a: ld   (iy+$03),h]
-	move.b	d6,(0x02,a2)                    	| [$4f5d: ld   (ix+$02),l]
-	move.b	(0x03,a2),d6                    	| [$4f60: ld   l,(ix+$03)]
-	move.b	(0x00,a3),d5                    	| [$4f63: ld   h,(iy+$00)]
+	move.b	d5,(displayed_x_03,a3)                    	| [$4f5a: ld   (iy+$03),h]
+	move.b	d6,(fine_x_02,a2)                    	| [$4f5d: ld   (ix+$02),l]
+	move.b	(0x03,a2),d6                    	| [$4f60: ld   l,(ix+$03)] fine Y
+	move.b	(0x00,a3),d5                    	| [$4f63: ld   h,(iy+$00)] displayed Y (portrait)
 	LOAD_D5_16_FROM_D5D6
 	add.w	d1,d5                            	| [$4f66: add  hl,bc]
 	add.w	d1,d5                            	| [$4f67: add  hl,bc]
@@ -9000,17 +9035,17 @@ l_595a:
 	subq.b	#0x05,d0                        	| [$5969: sub  $05]
 	move.b	d0,d3                           	| [$596b: ld   d,a]
 l_596c:
-	move.b	(0x00,a2),d0                    	| [$596c: ld   a,(ix+$00)]
+	move.b	(enemy_active_00,a2),d0                    	| [$596c: ld   a,(ix+$00)]
 	addq.b	#1,d0                           	| [$596f: inc  a]
 	jne	l_5994                             	| [$5970: jr   nz,$5994]
-	move.b	(0x0a,a2),d0                    	| [$5972: ld   a,(ix+$0a)]
+	move.b	(enemy_state_0a,a2),d0                    	| [$5972: ld   a,(ix+$0a)]
 	subq.b	#1,d0                           	| [$5975: dec  a]
 	jeq	l_5994                             	| [$5976: jr   z,$5994]
 	move.b	(0x00,a3),d0                    	| [$5978: ld   a,(iy+$00)]
 	sub.b	d5,d0                            	| [$597b: sub  h]
 	cmp.b	d6,d0                            	| [$597c: cp   l]
 	jcc	l_5994                             	| [$597d: jr   nc,$5994]
-	move.b	(0x03,a3),d0                    	| [$597f: ld   a,(iy+$03)]
+	move.b	(displayed_x_03,a3),d0                    	| [$597f: ld   a,(iy+$03)]
 	sub.b	d3,d0                            	| [$5982: sub  d]
 	cmp.b	d6,d0                            	| [$5983: cp   l]
 	jcc	l_5994                             	| [$5984: jr   nc,$5994]
@@ -9321,7 +9356,7 @@ l_5b79:
 	addq.b	#1,d0                           	| [$5b7a: inc  a]
 	jne	l_5b95                             	| [$5b7b: jp   nz,$5B95]
 	jbsr	exx                               	| [$5b7e: exx]
-	move.b	(0x03,a3),d0                    	| [$5b7f: ld   a,(iy+$03)]
+	move.b	(displayed_x_03,a3),d0                    	| [$5b7f: ld   a,(iy+$03)]
 	sub.b	d5,d0                            	| [$5b82: sub  h]
 	add.b	d3,d0                            	| [$5b83: add  a,d]
 	cmp.b	d4,d0                            	| [$5b84: cp   e]
@@ -9354,7 +9389,7 @@ l_5b9e:
 	addq.b	#1,d0                           	| [$5b9f: inc  a]
 	jne	l_5bb9                             	| [$5ba0: jp   nz,$5BB9]
 	jbsr	exx                               	| [$5ba3: exx]
-	move.b	(0x03,a3),d0                    	| [$5ba4: ld   a,(iy+$03)]
+	move.b	(displayed_x_03,a3),d0                    	| [$5ba4: ld   a,(iy+$03)]
 	sub.b	d5,d0                            	| [$5ba7: sub  h]
 	add.b	d3,d0                            	| [$5ba8: add  a,d]
 	cmp.b	d4,d0                            	| [$5ba9: cp   e]
@@ -9388,7 +9423,7 @@ l_5bc3:
 	addq.b	#1,d0                           	| [$5bc4: inc  a]
 	jne	l_5be1                             	| [$5bc5: jp   nz,$5BE1]
 	jbsr	exx                               	| [$5bc8: exx]
-	move.b	(0x03,a3),d0                    	| [$5bc9: ld   a,(iy+$03)]
+	move.b	(displayed_x_03,a3),d0                    	| [$5bc9: ld   a,(iy+$03)]
 	sub.b	d5,d0                            	| [$5bcc: sub  h]
 	add.b	d3,d0                            	| [$5bcd: add  a,d]
 	cmp.b	d4,d0                            	| [$5bce: cp   e]

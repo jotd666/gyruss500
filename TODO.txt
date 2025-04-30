@@ -1,4 +1,5 @@
-- game state reverse: 082f jump table
+- LOG_REGS insert in arrival_in_wave_26cf compare with MAME
+- game state reverse: 082f jump table & other jump tables
 - blank tile doesn't always erase
 - 32 colors => 16 + attached sprites?
 - sprite erase doesn't work all the time? (earth??)

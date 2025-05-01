@@ -1,4 +1,9 @@
-- LOG_REGS insert in arrival_in_wave_26cf compare with MAME
+- create name mapping for sprites
+- MAME sprite dump doesn't display properly with python moclup!!
+- update sprites: if Y = 0 don't display (spriteram offset 0)
+- update sprites: symmetry flags wrong (see player ship)
+- ship materailization not visible
+
 - game state reverse: 082f jump table & other jump tables
 - blank tile doesn't always erase
 - 32 colors => 16 + attached sprites?

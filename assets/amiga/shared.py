@@ -30,3 +30,23 @@ def ensure_exists(d):
         pass
     else:
         os.makedirs(d)
+
+def get_sprite_names():
+    rval = {}
+    def add_range(a,b,name):
+        for i in range(a,b):
+            rval[i] = name
+    def add_dual_range(a,b,name):
+        for i in range(a,b):
+            rval[i] = name
+            rval[i+0x100] = name
+    def add(i,name):
+            rval[i] = name
+
+    add_dual_range(0x3A,0x3F,"small_blue_enemy")
+    add_dual_range(0,0x13,"player_ship")
+    add_range(0x34,0x39,"iceberg")
+    add(0x134,"iceberg")
+    add_dual_range(0xD4,0xDD,"earth")
+
+    return rval

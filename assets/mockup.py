@@ -5,7 +5,7 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 
 # in input, we use a MAME memory dump: save sprites,$A000,$400
 # (0x200 are read, but there's a kind of double buffering
-with open(os.path.join(this_dir,"sprites"),"rb") as f:
+with open(os.path.join(this_dir,"sprite_ram_mame_A000_2"),"rb") as f:
     m_spriteram = f.read(0x200)
 
 
@@ -52,12 +52,12 @@ for offs in range(0xBC,-4,-4):
 
     gfx_bank = m_spriteram[offs + 1] & 0x01
     code = ((m_spriteram[offs + 2] & 0x20) << 2) | (m_spriteram[offs + 1] >> 1)
-    if code:
+    if x:
         color = m_spriteram[offs + 2] & 0x0f
         flip_x = ~m_spriteram[offs + 2] & 0x40
         flip_y =  m_spriteram[offs + 2] & 0x80
 
-        print(y,x,hex(gfx_bank*0x100+code),hex(color))
+        print(hex(0x9800+offs),y,x,hex(gfx_bank*0x100+code),hex(color))
         bank = tile_set[gfx_bank]
         im = bank[color][code]
 

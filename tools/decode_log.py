@@ -1,11 +1,15 @@
 import os,struct,re
 
-# save log like S log $100 $4000
+# log has the registers, then "DEAD" in hex then ram and rom base addresses
+
 with open(r"..\cpu_log","rb") as f:
     contents = f.read()
     ram_base,rom_base = struct.unpack(">II",contents[-8:])
-    contents = contents[:-8]
+    dead_marker, = struct.unpack(">H",contents[-10:-8])
 
+    contents = contents[:-8]
+    if dead_marker != 0xDEAD:
+        raise Exception("Corrupt CPU log, should end by 0xDEAD at offset -8")
 
 pcs = set()
 # generated using LOG_REGS
@@ -23,10 +27,10 @@ macro = """
     move.b    d5,(a6)+
     move.b    d6,(a6)+
     move.b    d7,(a6)+
-    move.w    a0,(a6)+
-    move.w    a1,(a6)+
-    move.w    a2,(a6)+
-    move.w    a3,(a6)+
+    move.l    a0,(a6)+
+    move.l    a1,(a6)+
+    move.l    a2,(a6)+
+    move.l    a3,(a6)+
     move.w    #0xDEAD,(a6)+
     move.l    a6,log_ptr
     move.l    (a7)+,a6
@@ -35,11 +39,20 @@ macro = """
 """
 len_block = 0
 
+def decode_address(address):
+    if rom_base < address < rom_base+0x6000:
+        return address-rom_base
+    if ram_base < address < ram_base+0x2800:
+        return (address-ram_base)+0x8000
+    return 0xDEAD
+
+size = {"b":1,"w":2,"l":4}
+
 for line in macro.splitlines():
-    m = re.search ("move.([bw]).*,\(a6\)",line)
+    m = re.search ("move.([bwl]).*,\(a6\)",line)
     if m:
         s = m.group(1)
-        len_block += 2 if s == "w" else 1
+        len_block += size[s]
 
 print("Block size = ",hex(len_block))
 
@@ -49,10 +62,7 @@ regslist = list("abcdehl")+["ix","iy","hl","de"]
 
 
 def rework(name):
-    if regs[name]<0 or regs[name]>=0x8000:
-        regs[name]=0xFFFF  # invalid (points to ROM?)
-    else:
-        regs[name]+=0x8000
+    regs[name] = decode_address(regs[name])
 
 lst = []
 for i in range(0,len(contents),len_block):
@@ -60,14 +70,16 @@ for i in range(0,len(contents),len_block):
     if len(chunk)<len_block:
         break
     regs=dict()
-    regs["pc"],regs["a"],regs["b"],regs["c"],regs["d"],regs["e"],regs["h"],regs["l"],regs["d7"],regs["hl"],regs["de"],regs["ix"],regs["iy"],end = struct.unpack_from(">HBBBBBBBBHHHHH",chunk)
+    regs["pc"],regs["a"],regs["b"],regs["c"],regs["d"],regs["e"],regs["h"],regs["l"],regs["d7"],regs["hl"],regs["de"],regs["ix"],regs["iy"],end = struct.unpack_from(">HBBBBBBBBIIIIH",chunk)
     if end==0xCCCC:
         break
     pcs.add(regs["pc"])
 
+
     rework("hl")
     rework("ix")
     rework("iy")
+    rework("de")
 
 
 

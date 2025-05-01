@@ -772,7 +772,8 @@ _vblank:
 	subq.w	#1,delay_timer
 		
 	jbsr		gyruss_irq
-
+	eor.b	#1,frame_type
+	
 	tst.b	frameskip
 	jeq		0f
 	eor.b	#1,flip_flop
@@ -2164,7 +2165,7 @@ seed:
 	dc.l	0x12345678
 
 osd_get_frame_type:
-	moveq	#0,d0
+	move.b	frame_type,d0
 	rts
 	
 	
@@ -2524,6 +2525,8 @@ system_vbr:
 
 
 flip_flop:
+	.byte	0
+frame_type:
 	.byte	0
 
 	.align	2

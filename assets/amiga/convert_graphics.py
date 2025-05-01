@@ -4,7 +4,7 @@ import os,sys,bitplanelib
 from shared import *
 
 
-sprite_names = dict()
+sprite_names = get_sprite_names()
 
 NB_SPRITES = 0x200
 
@@ -79,7 +79,7 @@ def load_tileset(image_name,palette_index,width,height,tileset_name,dumpdir,dump
     return sorted(set(palette)),tileset_1
 
 
-sprite_names = {}
+
 sprite_cluts = [[] for _ in range(NB_SPRITES)]
 ##hw_sprite_cluts = [[] for _ in range(64)]
 nb_planes = 5
@@ -97,7 +97,6 @@ def add_sprite(index,name,cluts=[0]):
     elif not isinstance(index,(list,tuple)):
         index = [index]
     for idx in index:
-        sprite_names[idx] = name
         sprite_cluts[idx] = cluts
 
 with open(used_graphics_dir / "used_sprites","rb") as f:
@@ -105,8 +104,7 @@ with open(used_graphics_dir / "used_sprites","rb") as f:
         d = f.read(16)
         cluts = [i for i,c in enumerate(d) if c]
         if cluts:
-            print(hex(index),cluts)
-            add_sprite(index,"unknown",cluts=cluts)
+            add_sprite(index,cluts=cluts)
 
 def add_hw_sprite(index,name,cluts=[0]):
     if isinstance(index,range):

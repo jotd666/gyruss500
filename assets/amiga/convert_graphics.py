@@ -91,7 +91,7 @@ colors_to_remove = {(104, 0, 251), (0, 255, 171)}
 
 
 
-def add_sprite(index,name,cluts=[0]):
+def add_sprite(index,cluts=[0]):
     if isinstance(index,range):
         pass
     elif not isinstance(index,(list,tuple)):

@@ -7,6 +7,7 @@
 
 
 .include "../src/gyruss.inc"
+.include "../src/data.inc"
 .include "custom.i"
 .include "exec_lvos.i"
 .include "dos_lvos.i"
@@ -173,7 +174,6 @@ start:
 		.global osd_read_dsw_1
 		.global osd_read_dsw_2
 		.global osd_read_dsw_3
-		.global osd_get_frame_type
 		.global osd_read_inputs_1
 		.global osd_read_inputs_2
 		.global osd_read_system_inputs
@@ -772,7 +772,6 @@ _vblank:
 	subq.w	#1,delay_timer
 		
 	jbsr		gyruss_irq
-	eor.b	#1,frame_type
 	
 	tst.b	frameskip
 	jeq		0f
@@ -1068,6 +1067,10 @@ update_bobs_and_hw_sprites:
 
 	GET_RAM_START_IN_A6
   	lea		(sprite_ram_a000+NB_TARGET_SPRITES*4-4,a6),a0	
+	tst.b	(l_A700,a6)
+	jeq		0f
+	add.w	#0x200,a0
+0:
     lea _custom,A5
 	move.l	bob_previous_drawed_sprites(pc),a6
 	lea		bob_table,a4
@@ -1281,9 +1284,13 @@ dump_logs:
 	jbsr	resload_SaveFile(a2)
 	
 	GET_RAM_START_IN_A6
-	lea		sprites_ram_name(pc),a0
+	lea		sprites_ram_name_A000(pc),a0
 	lea	(0x2000,a6),a1		| sprites
-	move.l	#0x400,d0
+	move.l	#0x200,d0
+	jbsr	resload_SaveFile(a2)
+	lea		sprites_ram_name_A200(pc),a0
+	lea	(0x2200,a6),a1		| sprites
+	move.l	#0x200,d0
 	jbsr	resload_SaveFile(a2)
 	
 	lea		LOG_PTR_START,a1
@@ -1302,8 +1309,10 @@ dump_logs:
     movem.l (a7)+,d0-a6
 	move.w	(a7)+,SR
 	rts
-sprites_ram_name:
-	.asciz	"sprite_ram"
+sprites_ram_name_A000:
+	.asciz	"sprite_ram_A000"
+sprites_ram_name_A200:
+	.asciz	"sprite_ram_A200"
 sprite_log_name:
 	.asciz	"used_sprites"
 cpu_log_name:
@@ -2164,9 +2173,7 @@ osd_get_random:
 seed:
 	dc.l	0x12345678
 
-osd_get_frame_type:
-	move.b	frame_type,d0
-	rts
+	
 	
 	
 osd_read_inputs_2:
@@ -2526,8 +2533,7 @@ system_vbr:
 
 flip_flop:
 	.byte	0
-frame_type:
-	.byte	0
+
 
 	.align	2
 

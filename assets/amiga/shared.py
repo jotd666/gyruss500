@@ -48,5 +48,9 @@ def get_sprite_names():
     add_range(0x34,0x39,"iceberg")
     add(0x134,"iceberg")
     add_dual_range(0xD4,0xDD,"earth")
+    add_dual_range(0x2F,0x34,"explosion")
+    add_dual_range(0xa0,0xd3,"blue_saucer")
+    add_dual_range(0xde,0xef,"blue_saucer")
+    add_dual_range(0x71,0x77,"blue_saucer")
 
     return rval

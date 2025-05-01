@@ -633,11 +633,11 @@ l_0100:
 	jra	next_game_state_080b                             	| [$0100: jp   $080B]
 
 * ********************************
-* IRQ routine
+* IRQ routine, enter with A5 set to ROM,
+* A6 set to ram (0x8000)
 * ********************************
 
 gyruss_irq:
-	lea		rom_base,a5
 l_0103:
 	move.w	d0,-(sp)                        	| [$0103: push af]
 	movem.w	d1/d2,-(sp)                    	| [$0104: push bc]
@@ -659,8 +659,8 @@ l_0103:
 	move.l	a2,-(sp)                        	| [$010d: push ix]
 
 	move.l	a3,-(sp)                        	| [$010f: push iy]
-	                          	| [$0111: ld   hl,$A700]
-	jbsr	osd_get_frame_type                         	| [$0114: ld   a,(hl)]
+	lea		l_A700(a6),a0                          	| [$0111: ld   hl,$A700]
+	move.b	(a0),d0                         	| [$0114: ld   a,(hl)]
 	addq.b	#1,d0                           	| [$0115: inc  a]
 	and.b	#0x01,d0                         	| [$0116: and  $01]
 	move.b	d0,(a0)                         	| [$0118: ld   (hl),a]
@@ -809,11 +809,10 @@ l_020f:
 	rts                                    	| [$0225: ret]
 
 update_sprites_0244:
-	jbsr	osd_get_frame_type                       	| [$0244: ld   a,($A700)]
-	                               	| [$0247: and  a]
+											| [$0247: and  a]
 	lea	sprite_shadow_ram_9800(a6),a0      	| [$0248: ld   hl,sprite_shadow_ram_9800]
 	lea	sprite_ram_a000(a6),a1                          	| [$024b: ld   de,$A000]
-	tst.b	d0
+	move.b	l_A700(a6),d0                       	| [$0244: ld   a,($A700)]
 	jeq	l_0253                             	| [$024e: jr   z,$0253]
 	lea	sprite_ram_a200(a6),a1                          	| [$0250: ld   de,$A200]
 l_0253:
@@ -824,6 +823,7 @@ l_0253:
 	dbf		d0,0b
 	add.w	#0x10,a1        	| [$0433: inc  d]
 	                           	| [$0434: ld   e,$00]
+	* stars?
 	lea	l_9900(a6),a0           | [$0436: ld   hl,$9900]
 	move.w	#0x38,d0
 0:
@@ -8919,17 +8919,17 @@ l_4f46:
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(displayed_y_00,a3)                    	| [$4f68: ld   (iy+$00),h]
 	move.b	d6,(fine_y_03,a2)                    	| [$4f6b: ld   (ix+$03),l]
-	* bpset 4f6e,H==$8E && L==$10 && IX==$9010
-	cmp.b	#0x8E,D5
-	jne	0f
-	cmp.b	#0x10,D6
-	jne	0f
-	move.l	a2,d5
-	sub.l	a6,d5
-	cmp.w	#0x1010,d5
-	jne	0f
-	jbsr	osd_break
-0:
+	* breaks when wave arrives: bpset 4f6e,H==$8E && L==$10 && IX==$9010
+*	cmp.b	#0x8E,D5
+*	jne	0f
+*	cmp.b	#0x10,D6
+*	jne	0f
+*	move.l	a2,d5
+*	sub.l	a6,d5
+*	cmp.w	#0x1010,d5
+*	jne	0f
+*	jbsr	osd_break
+*0:
 	rts                                    	| [$4f6e: ret]
 
 l_4faf:

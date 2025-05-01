@@ -486,7 +486,7 @@ load_word_in_d3_0010:
 	LOAD_D3_16_FROM_D3D4
 	rts                                    	| [$0016: ret]
 
-* add_d0_to_a0_0018: add A to HL
+* add_d0_to_a0_0018: add A to HL, update L
 add_d0_to_a0_0018:
 	and.w	#0xFF,d0                            	| [$0018: add  a,l]
 	add.w	d0,a0                           	| [$0019: ld   l,a]
@@ -8883,6 +8883,7 @@ l_4f37:
 	addq.b	#0x04,d0                        	| [$4f3a: add  a,$04]
 	move.w	#-0x10,d1                       	| [$4f3c: ld   bc,$FFF0]
 	cmp.b	#0x40,d0                         	| [$4f3f: cp   $40]
+	LOG_REGS	4f41
 	jcc	l_4f46                             	| [$4f41: jr   nc,$4F46]
 	move.w	#0x0030,d1                      	| [$4f43: ld   bc,$0030]
 l_4f46:
@@ -8893,6 +8894,7 @@ l_4f46:
 	move.b	(a0)+,d4                         	| [$4f4b: ld   e,(hl)]
 	                           	| [$4f4c: inc  hl]
 	move.b	(a0),d3                         	| [$4f4d: ld   d,(hl)]
+	LOG_REGS	4f4e
 	* X displacement in D3
 	LOAD_D3_16_FROM_D3D4
 	add.w	d1,a0                            	| [$4f4e: add  hl,bc]
@@ -8903,18 +8905,22 @@ l_4f46:
 	LOAD_D1_16_FROM_D1D2
 	move.b	(fine_x_02,a2),d6                    	| [$4f52: ld   l,(ix+$02)] fine X
 	move.b	(displayed_x_03,a3),d5                    	| [$4f55: ld   h,(iy+$03)] displayed X
+	LOG_REGS	4f58
 	LOAD_D5_16_FROM_D5D6
 	add.w	d3,d5                            	| [$4f58: add  hl,de]
 	add.w	d3,d5                            	| [$4f59: add  hl,de]
+	LOG_REGS	4f5a
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(displayed_x_03,a3)                    	| [$4f5a: ld   (iy+$03),h]
 	move.b	d6,(fine_x_02,a2)                    	| [$4f5d: ld   (ix+$02),l]
 	move.b	(0x03,a2),d6                    	| [$4f60: ld   l,(ix+$03)] fine Y
 	move.b	(0x00,a3),d5                    	| [$4f63: ld   h,(iy+$00)] displayed Y (portrait)
+	LOG_REGS	4f66
 	LOAD_D5_16_FROM_D5D6
 	add.w	d1,d5                            	| [$4f66: add  hl,bc]
 	add.w	d1,d5                            	| [$4f67: add  hl,bc]
 	LOAD_D5D6_FROM_D5_16
+	LOG_REGS	4f68
 	move.b	d5,(0x00,a3)                    	| [$4f68: ld   (iy+$00),h]
 	move.b	d6,(0x03,a2)                    	| [$4f6b: ld   (ix+$03),l]
 	rts                                    	| [$4f6e: ret]

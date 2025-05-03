@@ -1,27 +1,33 @@
-*	map(0x0000, 0x0000).r(FUNC(gyruss_state::scanline_r));
-*	map(0x2000, 0x2000).w(FUNC(gyruss_state::slave_irq_mask_w)).nopr();
-*	map(0x4000, 0x403f).ram();
-*	map(0x4040, 0x40ff).ram().w(FUNC(gyruss_state::spriteram_w)).share(m_spriteram);
-*	map(0x4100, 0x47ff).ram();
-*	map(0x6000, 0x67ff).ram().share("main_cpus");
-*	map(0xe000, 0xffff).rom();
+;	map(0x0000, 0x0000).r(FUNC(gyruss_state::scanline_r));
+;	map(0x2000, 0x2000).w(FUNC(gyruss_state::slave_irq_mask_w)).nopr();
+;	map(0x4000, 0x403f).ram();
+;	map(0x4040, 0x40ff).ram().w(FUNC(gyruss_state::spriteram_w)).share(m_spriteram);
+;	map(0x4100, 0x47ff).ram();
+;	map(0x6000, 0x67ff).ram().share("main_cpus");
+;	map(0xe000, 0xffff).rom();
+;
+;   to set a breakpoint: bpset $F00F:sub
 
+irq_flag_2000 = 0x2000
 sprite_ram_4040 = 0x4040
-* mapped to A000 on the other CPU, so everything RAM over A000 on the other
-* cpu is visible by this CPU
+; mapped to A000 on the other CPU, so everything RAM over A000 on the other
+; cpu is visible by this CPU
 shared_memory_6000 = 0x6000
 select_sprite_buffer_flag_6700 = 0x6700
 
-F000: 7F 02 82    CLR    irq_flag_2000                                        
-F003: CC 22 22    LDD    #$0000                                       
+m6809_reset:
+F000: 7F 02 82    CLR    irq_flag_2000          ; disable interrupts                              
+F003: CC 22 22    LDD    #$0000 				; active wait                                      
 F006: B7 E5 DD    STA    $67F5
+cpu_active_loop_f009:
 F009: 4A          DECA
-F00A: 26 75       BNE    $F009
+F00A: 26 75       BNE    cpu_active_loop_F009
 F00C: 5A          DECB
-F00D: 26 72       BNE    $F009
-F00F: B6 45 D2    LDA    $67F0
+F00D: 26 72       BNE    cpu_active_loop_F009
+F00F: B6 45 D2    LDA    $67F0		; service mode??
 F012: 81 83       CMPA   #$01
-F014: 26 5D       BNE    $F095
+F014: 26 5D       BNE    $F095		; always branches
+
 F016: CE 62 28    LDU    #$E000    ; [uncovered] 
 F019: 4F          CLRA    ; [uncovered] 
 F01A: 5F          CLRB    ; [uncovered] 
@@ -71,7 +77,8 @@ F085: 4C          INCA    ; [uncovered]
 F086: B7 E5 DD    STA    $67F5    ; [uncovered] 
 F089: 20 82       BRA    $F095    ; [uncovered] 
 
-F095: 7F A2 82    CLR    irq_flag_2000
+F095: 7F A2 82    CLR    irq_flag_2000		; clear interrupts (again)
+; clear sprite ram
 F098: CE 68 C8    LDU    #sprite_ram_4040
 F09B: 8E 2C 28    LDX    #$0400
 F09E: ED 49       STD    ,U++
@@ -146,9 +153,10 @@ F151: F1 E6 42    CMPB   $64C0
 F154: 24 21       BCC    $F159
 F156: F7 E6 E8    STB    $64C0    ; [uncovered] 
 F159: B6 88 88    LDA    >$0000
+; at this point, A = $29, everytime!
 F15C: B7 4F 98    STA    $6710
 F15F: 86 23       LDA    #$01
-F161: B7 A2 82    STA    irq_flag_2000
+F161: B7 A2 82    STA    irq_flag_2000	; enable interrupts
 F164: 3B          RTI
 
 F165: BD 77 E4    JSR    $F566
@@ -223,8 +231,10 @@ F223: F7 47 E2    STB    $65C0    ; [uncovered]
 F226: 86 83       LDA    #$01
 F228: B7 08 88    STA    irq_flag_2000
 F22B: B6 28 28    LDA    >$0000
+; A (aka beamy) varies between $9A and $B4 (approx), rather end of frame
 F22E: B7 EF 32    STA    $6710
 F231: 3B          RTI
+
 F232: BD 77 44    JSR    $F566
 F235: BD 74 17    JSR    $F695
 F238: BD DE E8    JSR    $F660
@@ -797,6 +807,7 @@ F697: 81 2C       CMPA   #$04
 F699: 24 B1       BCC    $F6D4
 F69B: 86 26       LDA    #$0E
 F69D: 97 82       STA    $0A
+; racing the beam: check if all sprites are above the current beam position
 F69F: CE 62 62    LDU    #sprite_ram_4040
 F6A2: B6 82 22    LDA    >$0000
 F6A5: AB C1       ADDA   $3,U
@@ -844,6 +855,7 @@ F6F0: 81 26       CMPA   #$04
 F6F2: 24 BB       BCC    $F72D
 F6F4: 86 2C       LDA    #$0E
 F6F6: 97 88       STA    $0A
+; racing the beam again
 F6F8: CE 68 C8    LDU    #sprite_ram_4040
 F6FB: B6 28 28    LDA    >$0000
 F6FE: AB CB       ADDA   $3,U

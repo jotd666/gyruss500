@@ -9,11 +9,15 @@
 	.global highscore_needs_saving_flag
 	.global sprite_ram_9000
 	.global	regscopy
-	.global	ram_buffer
 	.global vbl_sync_counter
 	.global vbl_sync_flag
 	.global no_sync_flag
-	.ifndef	RELEASE
+	.ifdef	RELEASE
+	.global m6809_ram_buffer
+	.global z80_ram_buffer
+	.else
+	.global	dev_ram_buffer
+	.global ram_start_4000
 	.global ram_start_8000
 	.endif
 	
@@ -32,12 +36,17 @@
 
 	
 
-ram_buffer:
 	.ifdef	RELEASE
+z80_ram_buffer:
 	.skip	0xA800-0x8000
+m6809_ram_buffer:
+	.skip	0x800
 	.else
+dev_ram_buffer:
 	.skip	0x20000
 ram_start_8000:
+	.long	0
+ram_start_4000:
 	.long	0
 	.endif
 

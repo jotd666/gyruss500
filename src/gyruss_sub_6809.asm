@@ -1,3 +1,10 @@
+; Gyruss 6809 sub cpu code
+;
+; Reverse engineering 2025 by JOTD
+;
+; this code is mainly used to convert Z80-handled coordinates to polar 
+; displayable coordinates for enemy ships (not all sprites are concerned)
+;
 ;	map(0x0000, 0x0000).r(FUNC(gyruss_state::scanline_r));
 ;	map(0x2000, 0x2000).w(FUNC(gyruss_state::slave_irq_mask_w)).nopr();
 ;	map(0x4000, 0x403f).ram();

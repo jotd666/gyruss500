@@ -102,11 +102,21 @@ BIT_UP = 2
 BIT_DOWN = 3
 BIT_FIRE = 4
 
-.macro	GET_RAM_START_IN_A6	
+.macro	GET_Z80_RAM_START_IN_A6	
 	.ifdef	RELEASE
-	lea		ram_buffer,a6
+	lea		z80_ram_buffer,a6
 	.else
 	move.l		ram_start_8000,a6
+	.endif
+	.endm
+.macro	GET_M6809_RAM_BLOCKS_IN_A5A6	
+	.ifdef	RELEASE
+	lea		m6809_ram_buffer,a6
+	lea		z80_ram_buffer+0x2000,a5
+	.else
+	move.l		ram_start_4000,a6
+	move.l		ram_start_8000,a5
+	add.w	#0x2000,a5			      | a5 maps to 0xA000 (at 0x6000)
 	.endif
 	.endm
 	
@@ -673,18 +683,22 @@ demo_game:
 		bsr			platform_init					| amiga-specific init
 		
 0:	
-	* compute ram start
-	lea		ram_buffer,a6
 	.ifndef	RELEASE
-	* align so real addresses are $xxxx8yyyy
+	* compute ram start for dev mode
+	* align so real addresses LSW match actual arcade addresses
 	* and lower 16-bit match original RAM offsets
+	lea		dev_ram_buffer,a6
 	move.l	a6,d0
 	clr.w	d0
-	add.l	#0x18000,d0
-	move.l	d0,a6
-	move.l	a6,ram_start_8000
+	add.l	#0x14000,d0
+	move.l	d0,ram_start_4000		| 6809 memory
+	add.l	#0x4000,d0
+	move.l	d0,ram_start_8000		| Z80 memory (some shared with 6809)
 	.endif
-	jmp			gyruss_reset					| pass control to the mpatrol core
+	GET_M6809_RAM_BLOCKS_IN_A5A6
+	jbsr		gyruss_sub_reset				| initialize the subcpu memory
+	GET_Z80_RAM_START_IN_A6
+	jmp			gyruss_reset					| pass control to the cpu core
 		
 	
 * just in case some hardware calls nmi
@@ -744,7 +758,7 @@ _vblank:
 
 
 	* set base for RAM
-	GET_RAM_START_IN_A6
+	GET_Z80_RAM_START_IN_A6
 	lea		rom_base,a5
 
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
@@ -890,21 +904,21 @@ osd_update_sprites:
 * Z: set if not playing
 is_game_playing:
 	move.l	a6,-(a7)
-	GET_RAM_START_IN_A6
+	GET_Z80_RAM_START_IN_A6
 	*tst.b	game_in_play_8806(a6)
 	move.l	(a7)+,a6
 	rts
 	
 lose_all_lives:
 	move.l	a6,-(a7)
-	GET_RAM_START_IN_A6
+	GET_Z80_RAM_START_IN_A6
 	*clr.b	nb_lives_8908(a6)
 	move.l	(a7)+,a6
 	rts
 
 add_10000_points:
 	move.l	a6,-(a7)
-	GET_RAM_START_IN_A6
+	GET_Z80_RAM_START_IN_A6
 	movem.w	d0/d7,-(a7)
 	*move.b	player_1_score_88A4(a6),d0
 	MOVEQ	#1,d7
@@ -986,7 +1000,7 @@ blit_background:
 really_update_tiles:
 	lea		_custom,a5
 	WAIT_BLIT
-	GET_RAM_START_IN_A6
+	GET_Z80_RAM_START_IN_A6
 	lea		(0x400,a6),a5
 	lea		tiles_row_flags(pc),a1
 	moveq	#0,d3
@@ -1065,7 +1079,7 @@ update_bobs_and_hw_sprites:
 	* draw current BOBs *
 	*********************
 
-	GET_RAM_START_IN_A6
+	GET_Z80_RAM_START_IN_A6
   	lea		(sprite_ram_a000+NB_TARGET_SPRITES*4-4,a6),a0	
 	tst.b	(l_A700,a6)
 	jeq		0f
@@ -1283,7 +1297,7 @@ dump_logs:
 	move.l	#16*512,d0
 	jbsr	resload_SaveFile(a2)
 	
-	GET_RAM_START_IN_A6
+	GET_Z80_RAM_START_IN_A6
 	lea		sprites_ram_name_A000(pc),a0
 	lea	(0x2000,a6),a1		| sprites
 	move.l	#0x200,d0

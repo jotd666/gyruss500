@@ -13,10 +13,8 @@
   redrawing when crossing paths with sprites
   OR hack something for title only
 
-converter: stu/sty/stx store WORD, check ldx??, ldy??, ldu: OK except for
-  move.w => MOVE_W macro to code, plus optimize if offset is even use move.w??
-  do that with post processing only
-  
-converter: get_?_address avec 0: optimize
+converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
+remove the second one
+ 
 converter: .error: specify address/line
 converter: jra/jmp (a0/a1/...) => .error

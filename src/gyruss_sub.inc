@@ -85,12 +85,34 @@
 	.macro POP_SR
 	move.w	(sp)+,ccr
 	.endm
+	.macro	MOVE_W_TO_REG	src,dest
+	move.w	\src,\dest
+	.endm
+	.macro	MOVE_W_FROM_REG	src,dest
+	move.w	\src,\dest
+	.endm
 	.else
 	.macro PUSH_SR
 	move.w	sr,-(sp)
 	.endm
 	.macro POP_SR
 	move.w	(sp)+,sr
+	.endm
+	
+	.macro	MOVE_W_TO_REG	src,dest
+	ror.w	#8,\dest
+	move.b	\src+,\dest
+	ror.w	#8,\dest
+	move.b	\src,\dest
+	subq	#1,\dest
+	.endm
+	
+	.macro	MOVE_W_FROM_REG	src,dest
+	ror.w	#8,\src
+	move.b	\src,\dest+
+	ror.w	#8,\src
+	move.b	\src,\dest
+	subq	#1,\dest
 	.endm
 	.endif
 

@@ -152,8 +152,12 @@
 	.endm
 
 	.macro GET_X_ADDRESS	offset
+	.ifeq	\offset
+	move.l	d2,a0
+	.else
 	lea	\offset,a0
 	add.l	d2,a0
+	.endif
 	jbsr	get_6809_address
 	.endm
 
@@ -164,7 +168,11 @@
 	.endm
 
 	.macro GET_Y_ADDRESS	offset
+	.ifeq	\offset
+	move.l	d3,a0
+	.else
 	lea	\offset,a0
+	.endif
 	add.l	d3,a0
 	jbsr	get_6809_address
 	.endm
@@ -176,8 +184,12 @@
 	.endm
 
 	.macro GET_U_ADDRESS	offset
+	.ifeq	\offset
+	move.l	d4,a0
+	.else
 	lea	\offset,a0
 	add.l	d4,a0
+	.endif
 	jbsr	get_6809_address
 	.endm
 
@@ -198,7 +210,43 @@ cpu_init:
 	moveq	#0,d7
 	rts
 
+* < A0: 16-bit address
+* < A5: ram start (0x6000, maps to 0xA000 in the other CPU)
+* < A6: ram start (0x4000)
 get_6809_address:
-	*.error: "`TODO: implement this by adding memory base to a0"
+	sub.w	#0x4000,a0
+	.ifndef	RELEASE
+	jpl		0f
+	* should not happen
+	add.w	#0x4000,a0
+	BREAKPOINT	"invalid 6809 address < 0x4000"
+	rts
+0:
+	cmp.w	#0x2000,a0
+	jcc		1f
+	cmp.w	#0x800,a0
+	jcs		0f
+	BREAKPOINT	"invalid 6809 0x6000 > address > 0x4800"
+	rts
+0:
+	.endif
+	cmp.w	#0x2000,a0
+	jcc		0f
+1:
+	* 0x4000-0x4800 area
+	lea	(a6,a0.w),a0
+	rts
+0:
+	* 0x6000 area
+	.ifndef	RELEASE
+	cmp.w	#0x2800,a0
+	jcs		0f
+	BREAKPOINT	"invalid 6809 address > 0x67FF"
+	rts
+0:
+	.endif
+	
+	sub.w	#0x2000,a0
+	lea	(a5,a0.w),a0
 	rts
 

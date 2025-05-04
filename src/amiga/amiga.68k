@@ -116,6 +116,7 @@ BIT_FIRE = 4
 	.else
 	move.l		ram_start_4000,a6
 	move.l		ram_start_8000,a5
+	lea			0xA4A4A4A4,a4		| invalid DP pointer. Page 0 is not accessed
 	add.w	#0x2000,a5			      | a5 maps to 0xA000 (at 0x6000)
 	.endif
 	.endm

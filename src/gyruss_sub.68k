@@ -1,14 +1,15 @@
+****************************************************************************
 *
 * Gyruss 68k port by JOTD
+* 6809 sub cpu code
 *
-* /***************************************************************************
+* Reverse engineering & conversion 2025 by JOTD
+*
+****************************************************************************
 
+	.include "gyruss.inc"
 	.include "gyruss_sub.inc"
 
-* Gyruss 6809 sub cpu code
-*
-* Reverse engineering 2025 by JOTD
-*
 * this code is mainly used to convert Z80-handled coordinates to polar
 * displayable coordinates for enemy ships (not all sprites are concerned)
 *
@@ -36,12 +37,12 @@ clear_irq_flag_2000:
 	rts
 	
 gyruss_sub_reset:
+	jbsr	cpu_init
 	jbsr	clear_irq_flag_2000              	| [$f000: clr    irq_flag_2000] disable interrupts
 	                         	| [...]
 	move.b	#0x00,d0                        	| [$f003: ldd    #$0000] active wait
 	move.b	#0x00,d1                        	| [$f003: ldd    #$0000] active wait
 	MAKE_D                                 	| [$f003: ldd    #$0000] active wait
-	tst.w	d0                               	| [$f003: ldd    #$0000] active wait
 	GET_ADDRESS	0x67f5                     	| [$f006: sta    $67f5]
 	move.b	d0,(a0)                         	| [...]
 	* we completely skip the code there. It contains some
@@ -49,19 +50,21 @@ gyruss_sub_reset:
 	* code which is called when?? (there is no service mode in the game)
 	
 
-	jbsr	clear_irq_flag_2000              	| [$f095: clr    irq_flag_2000] clear interrupts (again)
+	              	| [$f095: clr    irq_flag_2000] clear interrupts (again)
 	                         	| [...]
 * clear sprite ram
 	move.w	#sprite_ram_4040,d4             	| [$f098: ldu    #sprite_ram_4040]
 	moveq	#0,d2
-	move.w	#0x0400,d2                      	| [$f09b: ldx    #$0400]
-l_f09e:
+	move.w	#0x0400-0x20,d2         | [$f09b: ldx    #$0400] do not overshoot!
 	MAKE_D
+	* could be optimized but this is some init routine...
+l_f09e:
 	GET_U_ADDRESS	0                        	| [$f09e: std    ,u++]
 	addq.w	#2,d4
 	move.w	d0,(a0)                         	| [...]
 	subq.w	#0x1,d2                         	| [$f0a0: leax   -$1,x]
 	bne	l_f09e                             	| [$f0a2: bne    $f09e]
+	BREAKPOINT   "dp"
 	move.b	#0x42,d0                        	| [$f0a4: lda    #$42]
 	SET_DP_FROM_A                          	| [$f0a6: tfr    a,dp]
 	jbsr	clear_irq_flag_2000              	| [$f0a8: clr    irq_flag_2000]
@@ -73,6 +76,7 @@ l_f09e:
                                	| [$f0b6: bra    $f0b6]
 
 gyruss_sub_irq:
+	jbsr	cpu_init
 * the IRQ
 	jbsr	clear_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
 	GET_ADDRESS	0x67ff                     	| [$f0bb: lda    $67ff]

@@ -1,4 +1,5 @@
-- implement: VBLANK wakes up Z80 irq then 6809 IRQ 
+- implement: VBLANK wakes up Z80 irq then 6809 IRQ
+- check with earth only sprites, 0x4040 subcpu zone vs 0xA000...
 - update sprites: if Y = 0 don't display (spriteram offset 0) ??
 - update sprites: symmetry flags wrong (see player ship)
 - ship materailization not visible/logged
@@ -12,6 +13,10 @@
   redrawing when crossing paths with sprites
   OR hack something for title only
 
-
+converter: stu/sty/stx store WORD, check ldx??, ldy??, ldu: OK except for
+  move.w => MOVE_W macro to code, plus optimize if offset is even use move.w??
+  do that with post processing only
+  
+converter: get_?_address avec 0: optimize
 converter: .error: specify address/line
 converter: jra/jmp (a0/a1/...) => .error

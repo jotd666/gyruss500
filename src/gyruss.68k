@@ -457,6 +457,17 @@ enemy_state_0a = 0x0a
 displayed_y_00 = 0x00
 displayed_x_03 = 0x03
 
+cpu_init:
+	moveq	#0,d0
+	moveq	#0,d1
+	moveq	#0,d2
+	moveq	#0,d3
+	moveq	#0,d4
+	moveq	#0,d5
+	moveq	#0,d6
+	moveq	#0,d7
+	rts
+
 * fetch_a0_plus_d0_0008: HL+=A then (HL) => A
 fetch_a0_plus_d0_0008:
 	and.w	#0xFF,d0            | [$0008: add  a,l]
@@ -651,15 +662,16 @@ l_0100:
 * ********************************
 
 gyruss_irq:
+	jbsr	cpu_init
 l_0103:
-	move.w	d0,-(sp)                        	| [$0103: push af]
-	movem.w	d1/d2,-(sp)                    	| [$0104: push bc]
-	move.l	a4,-(sp)                        	| [$0104: push bc]
-	movem.w	d3/d4,-(sp)                    	| [$0105: push de]
-	move.l	a1,-(sp)                        	| [$0105: push de]
-
-	move.l	a0,-(sp)                        	| [$0106: push hl]
-	                              	| [$0107: ex   af,af']
+									| [$0103: push af]
+									| [$0104: push bc]
+									| [$0104: push bc]
+									| [$0105: push de]
+									| [$0105: push de]
+			
+									| [$0106: push hl]
+	* save exchanged registers                      	| [$0107: ex   af,af']
 	jbsr	exx                               	| [$0108: exx]
 	move.w	d0,-(sp)                        	| [$0109: push af]
 	movem.w	d1/d2,-(sp)                    	| [$010a: push bc]
@@ -748,17 +760,18 @@ l_0192:
 	move.l	(sp)+,a4                        	| [$019b: pop  bc]
 	movem.w	(sp)+,d1/d2                    	| [$019b: pop  bc]
 	move.w	(sp)+,d0                        	| [$019c: pop  af]
+	* restore exchanged registers
 	jbsr	exx                               	| [$019d: exx]
 	                              	| [$019e: ex   af,af']
-	move.l	(sp)+,a0                        	| [$019f: pop  hl]
-	move.l	(sp)+,a1                        	| [$01a0: pop  de]
-	movem.w	(sp)+,d3/d4                    	| [$01a0: pop  de]
-	move.l	(sp)+,a4                        	| [$01a1: pop  bc]
-	movem.w	(sp)+,d1/d2                    	| [$01a1: pop  bc]
+										| [$019f: pop  hl]
+										| [$01a0: pop  de]
+									| [$01a0: pop  de]
+										| [$01a1: pop  bc]
+									| [$01a1: pop  bc]
 	 
 	move.b	#0x01,d0                        	| [$01a2: ld   a,$01]
 	jbsr	osd_interrupt_control               | [$01a4: ld   ($C180),a]
-	move.w	(sp)+,d0                        	| [$01a7: pop  af]
+	                        	| [$01a7: pop  af]
 	rts                                    	| [$01a8: ret]
 
 l_01bb:
@@ -879,6 +892,7 @@ l_0253:
 	rts                                    	    | [$04e9: ret]
 
 gyruss_reset:
+	jbsr	cpu_init
 	*lea		stack_top,a7
 	lea		rom_base,a5
 l_04f0:
@@ -7888,6 +7902,7 @@ l_46a3:
 start_title_screen_tasks_46b6:
 	move.b	#0x01,d0                        	| [$46b6: ld   a,$01]
 	move.b	d0,l_A7FF(a6)                       	| [$46b8: ld   ($A7FF),a]
+	BREAKPOINT	"A7FF set!!"
 	READ_ROM_BYTE	0x25C9,d0                       	| [$46bb: ld   a,($25C9)]
 	move.b	d0,l_960B(a6)                   	| [$46be: ld   ($960B),a]
 	jbsr	l_4cea                            	| [$46c1: call $4CEA]

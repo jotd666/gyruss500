@@ -702,6 +702,14 @@ demo_game:
 	jmp			gyruss_reset					| pass control to the cpu core
 		
 	
+do_both_gyruss_irq:
+	* set base for RAM
+	lea	rom_base,a5
+	GET_Z80_RAM_START_IN_A6
+	jsr			gyruss_irq					| pass control to the cpu core
+	GET_M6809_RAM_BLOCKS_IN_A5A6
+	jmp		gyruss_sub_irq				| initialize the subcpu memory
+
 * just in case some hardware calls nmi
 _nmi:
 	move.w	#0x7FFF,_custom+intreq
@@ -758,9 +766,6 @@ _vblank:
 	jne	23f
 
 
-	* set base for RAM
-	GET_Z80_RAM_START_IN_A6
-	lea		rom_base,a5
 
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
 	st.b	interrupt_mode
@@ -774,7 +779,7 @@ _vblank:
 	addq.b	#1,d0
 	cmp.b	#5,d0
 	bne.b	1f
-	jbsr		gyruss_irq
+	jbsr		do_both_gyruss_irq
 	clr.b	interrupt_mode	
 	clr.b	d0
 1:
@@ -786,7 +791,7 @@ _vblank:
 	
 	subq.w	#1,delay_timer
 		
-	jbsr		gyruss_irq
+	jbsr		do_both_gyruss_irq
 	
 	tst.b	frameskip
 	jeq		0f

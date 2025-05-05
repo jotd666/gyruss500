@@ -1,4 +1,5 @@
-- implement: VBLANK wakes up Z80 irq then 6809 IRQ
+- A700/A701 semaphore system not working, do something else
+  between cpus?
 - check with earth only sprites, 0x4040 subcpu zone vs 0xA000...
 - update sprites: if Y = 0 don't display (spriteram offset 0) ??
 - update sprites: symmetry flags wrong (see player ship)

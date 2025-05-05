@@ -99,12 +99,15 @@
 	move.w	(sp)+,sr
 	.endm
 	
+	* not optimized at all but here
+	* src or dest is (a0) so it's not easy!
 	.macro	MOVE_W_TO_REG	src,dest
 	ror.w	#8,\dest
 	move.b	\src+,\dest
 	ror.w	#8,\dest
 	move.b	\src,\dest
-	subq	#1,\dest
+	tst.b	-\src
+	tst		\dest
 	.endm
 	
 	.macro	MOVE_W_FROM_REG	src,dest
@@ -112,7 +115,8 @@
 	move.b	\src,\dest+
 	ror.w	#8,\src
 	move.b	\src,\dest
-	subq	#1,\dest
+	tst.b	-\dest
+	tst		\src
 	.endm
 	.endif
 
@@ -194,8 +198,8 @@
 	move.l	d3,a0
 	.else
 	lea	\offset,a0
-	.endif
 	add.l	d3,a0
+	.endif
 	jbsr	get_6809_address
 	.endm
 
@@ -236,39 +240,38 @@ cpu_init:
 * < A5: ram start (0x6000, maps to 0xA000 in the other CPU)
 * < A6: ram start (0x4000)
 get_6809_address:
-	sub.w	#0x4000,a0
+	cmp.w	#0x4000,a0
 	.ifndef	RELEASE
-	jpl		0f
+	jcc		0f
 	* should not happen
-	add.w	#0x4000,a0
 	BREAKPOINT	"invalid 6809 address < 0x4000"
 	rts
 0:
-	cmp.w	#0x2000,a0
+	cmp.w	#0x6000,a0
 	jcc		1f
-	cmp.w	#0x800,a0
+	cmp.w	#0x4800,a0
 	jcs		0f
 	BREAKPOINT	"invalid 6809 0x6000 > address > 0x4800"
 	rts
 0:
 	.endif
-	cmp.w	#0x2000,a0
-	jcc		0f
-1:
+	cmp.w	#0x6000,a0
+	jcc		1f
 	* 0x4000-0x4800 area
+	sub.w	#0x4000,a0
 	lea	(a6,a0.w),a0
 	rts
-0:
+1:
 	* 0x6000 area
 	.ifndef	RELEASE
-	cmp.w	#0x2800,a0
+	cmp.w	#0x6800,a0
 	jcs		0f
 	BREAKPOINT	"invalid 6809 address > 0x67FF"
 	rts
 0:
 	.endif
 	
-	sub.w	#0x2000,a0
+	sub.w	#0x6000,a0
 	lea	(a5,a0.w),a0
 	rts
 

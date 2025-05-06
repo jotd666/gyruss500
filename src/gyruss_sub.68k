@@ -18,16 +18,31 @@
 *	map(0x4000, 0x403f).ram();
 *	map(0x4040, 0x40ff).ram().w(FUNC(gyruss_state::spriteram_w)).share(m_spriteram);
 *	map(0x4100, 0x47ff).ram();
-*	map(0x6000, 0x67ff).ram().share("main_cpus");
+*	map(0x6000, sprite_sync_status_67ff).ram().share("main_cpus");
 *	map(0xe000, 0xffff).rom();
 *
 *   to set a breakpoint: bpset $F00F:sub
 
+* offsets original values are keps because 6809 converter
+* uses a translation get_6809_address routine
+
 sprite_ram_4040 = 0x4040
+
 * mapped to A000 on the other CPU, so everything RAM over A000 on the other
 * cpu is visible by this CPU
 shared_memory_6000 = 0x6000
-select_sprite_buffer_flag_6700 = 0x6700
+frame_odd_or_even_6700 = 0x6700
+draw_queued_sprites_flag_6701 = 0x6701
+queue_sprites_flag_6702 = 0x6702
+
+* tell 6809 to perform more or less operations:
+* 0xFF: don't do anything (state not reached in the game)
+* 0x00: just sync the first sprites between 6000 and 4040
+* 0x01: do the full sync & coord transformation
+* as soon as title screen starts and never changes it
+* it may write to that flag at times but always with 1
+
+sprite_sync_status_67ff = 0x67ff
 
 	.global	gyruss_sub_reset
 	.global	gyruss_sub_irq
@@ -79,21 +94,22 @@ gyruss_sub_irq:
 	jbsr	cpu_init
 * the IRQ
 	jbsr	clear_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
-	GET_ADDRESS	0x67ff                     	| [$f0bb: lda    $67ff]
+	GET_ADDRESS	sprite_sync_status_67ff                     	| [$f0bb: lda    $67ff]
 	move.b	(a0),d0                         	| [...]
+	jeq	sync_first_sprites_f54a                             	| [$f0c6: lbeq   $f54a]
 	addq.b	#1,d0                           	| [$f0be: inca]
-	beq	l_f15f                             	| [$f0bf: lbeq   $f15f]
-	GET_ADDRESS	0x67ff                     	| [$f0c3: lda    $67ff]
-	move.b	(a0),d0                         	| [...]
-	beq	l_f54a                             	| [$f0c6: lbeq   $f54a]
+	jeq	get_out_immediately_f15f                             	| [$f0bf: lbeq   $f15f]
+											| [$f0c3: lda    $67ff]
+	jra	get_out_immediately_f15f                             	| [$f0bf: lbeq   $f15f]
+											| [...]
 	* wait for Z80 signal
-	GET_ADDRESS	0x6701                     	| [$f0ca: lda    $6701]
+	GET_ADDRESS	draw_queued_sprites_flag_6701                     	| [$f0ca: lda    $6701]
 l_f0ca:
 	* TODO if zero note that semaphore failed and return
 	* direct check & jump there next time we're interrupted?
 	move.b	(a0),d0                         	| [...]
 	beq	l_f0ca                             	| [$f0cd: beq    $f0ca]
-	GET_ADDRESS	select_sprite_buffer_flag_6700	| [$f0cf: lda    select_sprite_buffer_flag_6700]
+	GET_ADDRESS	frame_odd_or_even_6700	| [$f0cf: lda    frame_odd_or_even_6700]
 	move.b	(a0),d0                         	| [...]
 	bne	l_f1a3                             	| [$f0d2: lbne   $f1a3]
 	jbsr	l_f4e4                            	| [$f0d6: jsr    $f4e4]
@@ -112,7 +128,7 @@ l_f0ca:
 	GET_DP_ADDRESS	0x11                    	| [$f0ed: stu    $11]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 l_f0ef:
-	GET_ADDRESS	0x6702                     	| [$f0ef: lda    $6702]
+	GET_ADDRESS	queue_sprites_flag_6702                     	| [$f0ef: lda    $6702]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f0ef                             	| [$f0f2: beq    $f0ef]
 	GET_ADDRESS	0x67fd                     	| [$f0f4: lda    $67fd]
@@ -170,7 +186,7 @@ l_f159:
 * at this point, A = $29, everytime!
 	GET_ADDRESS	0x6710                     	| [$f15c: sta    $6710]
 	move.b	d0,(a0)                         	| [...]
-l_f15f:
+get_out_immediately_f15f:
 	move.b	#0x01,d0                        	| [$f15f: lda    #$01]
 	jbsr	set_irq_flag_2000              	| [$f161: sta    irq_flag_2000] enable interrupts
 	rts       	| [$f164: rti]
@@ -215,7 +231,7 @@ l_f1a3:
 	GET_DP_ADDRESS	0x11                    	| [$f1ba: stu    $11]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 l_f1bc:
-	GET_ADDRESS	0x6702                     	| [$f1bc: lda    $6702]
+	GET_ADDRESS	queue_sprites_flag_6702                     	| [$f1bc: lda    $6702]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f1bc                             	| [$f1bf: beq    $f1bc]
 	GET_ADDRESS	0x67fd                     	| [$f1c1: lda    $67fd]
@@ -947,7 +963,8 @@ l_f529:
 	addq.b	#1,(a0)                         	| [...]
 	bra	l_f4f6                             	| [$f53b: bra    $f4f6]
 
-l_f54a:
+	* copy first 12 sprites from shared memory with real sprite memory
+sync_first_sprites_f54a:
 	move.w	#shared_memory_6000,d4          	| [$f54a: ldu    #shared_memory_6000]
 	moveq	#0,d2
 	move.w	#sprite_ram_4040,d3             	| [$f54d: ldy    #sprite_ram_4040]

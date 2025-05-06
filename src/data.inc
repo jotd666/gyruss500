@@ -1,3 +1,5 @@
+* offsets are shifted by 0x8000 because Z80 converter
+* uses real offsets from RAM pointer
 l_9000 = 0x1000
 l_9001 = 0x1001
 l_9002 = 0x1002
@@ -243,9 +245,9 @@ l_A118 = 0x2118
 l_A138 = 0x2138
 sprite_ram_a200 = 0x2200
 l_A338 = 0x2338
-l_A700 = 0x2700
-l_A701 = 0x2701
-l_A702 = 0x2702
+frame_odd_or_even_a700 = 0x2700
+draw_queued_sprites_flag_a701 = 0x2701
+queue_sprites_flag_a702 = 0x2702
 l_A7FC = 0x27fc
 l_A7FD = 0x27fd
-l_A7FF = 0x27ff
+sprite_sync_status_a7ff = 0x27ff

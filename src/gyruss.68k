@@ -684,20 +684,20 @@ l_0103:
 	move.l	a2,-(sp)                        	| [$010d: push ix]
 
 	move.l	a3,-(sp)                        	| [$010f: push iy]
-	lea		l_A700(a6),a0                          	| [$0111: ld   hl,$A700]
+	lea		frame_odd_or_even_a700(a6),a0                          	| [$0111: ld   hl,$A700]
 	move.b	(a0),d0                         	| [$0114: ld   a,(hl)]
 	addq.b	#1,d0                           	| [$0115: inc  a]
 	and.b	#0x01,d0                         	| [$0116: and  $01]
 	move.b	d0,(a0)                         	| [$0118: ld   (hl),a]
 	move.b	#0x01,d0                        	| [$0119: ld   a,$01]
-	move.b	d0,l_A701(a6)                       	| [$011b: ld   ($A701),a]
+	move.b	d0,draw_queued_sprites_flag_a701(a6)                       	| [$011b: ld   ($A701),a]
 	clr.b	d0                               	| [$011e: xor  a]
-	move.b	d0,l_A702(a6)                       	| [$011f: ld   ($A702),a]
+	move.b	d0,queue_sprites_flag_a702(a6)                       	| [$011f: ld   ($A702),a]
 	jbsr	update_sprites_0244               	| [$0122: call update_sprites_0244]
 	clr.b	d0                               	| [$0125: xor  a]
-	move.b	d0,l_A701(a6)                       	| [$0126: ld   ($A701),a]
+	move.b	d0,draw_queued_sprites_flag_a701(a6)                       	| [$0126: ld   ($A701),a]
 	move.b	#0x01,d0                        	| [$0129: ld   a,$01]
-	move.b	d0,l_A702(a6)                       	| [$012b: ld   ($A702),a]
+	move.b	d0,queue_sprites_flag_a702(a6)                       	| [$012b: ld   ($A702),a]
 	* disable interrupts
 	clr.b	d0                               	| [$012e: xor  a]
 	jbsr	osd_interrupt_control                       	| [$012f: ld   ($C180),a]
@@ -838,7 +838,7 @@ update_sprites_0244:
 											| [$0247: and  a]
 	lea	sprite_shadow_ram_9800(a6),a0      	| [$0248: ld   hl,sprite_shadow_ram_9800]
 	lea	sprite_ram_a000(a6),a1                          	| [$024b: ld   de,$A000]
-	move.b	l_A700(a6),d0                       	| [$0244: ld   a,($A700)]
+	move.b	frame_odd_or_even_a700(a6),d0                       	| [$0244: ld   a,($A700)]
 	jeq	l_0253                             	| [$024e: jr   z,$0253]
 	lea	sprite_ram_a200(a6),a1                          	| [$0250: ld   de,$A200]
 l_0253:
@@ -926,11 +926,16 @@ l_055c:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$055f: ret  nz] [...]
 0:
+	* why does the game has to read the ROM to get value of 0 ??
 	READ_ROM_BYTE	0x3943,d0                       	| [$0560: ld   a,($3943)]
 	move.b	d0,sub_state_942C(a6)                   	| [$0563: ld   ($942C),a]
-	READ_ROM_BYTE	0x09AD,d0                       	| [$0566: ld   a,($09AD)]
+	* why does the game has to read the ROM to get value of 1 ??
+	* probably to confuse hackers (the routine is set between 2 ROM checks)
+	READ_ROM_BYTE	0x09AD,d0                       	| [$0566: ld   a,($09AD)] value = 1
+	* set global_state_title_screen_0f24
 	move.b	d0,global_state_942B(a6)                   	| [$0569: ld   ($942B),a]
-	move.b	d0,l_A7FF(a6)                       	| [$056c: ld   ($A7FF),a]
+	* enable simple sprite screen state
+	move.b	d0,sprite_sync_status_a7ff(a6)                       	| [$056c: ld   ($A7FF),a]
 	* ROM checksum
 *	move.b	#0x80,d1                        	| [$056f: ld   b,$80]
 *	LEA_ROM	0x3778,a0                          	| [$0571: ld   hl,$3778]
@@ -4703,15 +4708,17 @@ show_title_for_a_while_24c2:
 *	jne	l_24d4                             	| [$24d9: jr   nz,$24D4]
 *	add.b	#0xD3,d0                         	| [$24db: add  a,$D3]
 *	jne	l_07ff                             	| [$24dd: jp   nz,$07FF]
+	* reads 0 from ROM...
 	READ_ROM_BYTE	0x0808,d0                       	| [$24e0: ld   a,($0808)]
 	move.b	d0,d1                           	| [$24e3: ld   b,a]
-	move.b	(0x067B,a6),d0				 	| [$24e4: ld   a,($867B)]
+	* read screen memory
+	move.b	(0x67B,a6),d0				 	| [$24e4: ld   a,($867B)]
 	cmp.b	#0xB1,d0                         	| [$24e7: cp   $B1]
 	jne	l_24ec                             	| [$24e9: jr   nz,$24EC]
 	addq.b	#1,d1                           	| [$24eb: inc  b]
 l_24ec:
 	move.b	d1,d0                           	| [$24ec: ld   a,b]
-	move.b	d0,l_A7FF(a6)                       	| [$24ed: ld   ($A7FF),a]
+	move.b	d0,sprite_sync_status_a7ff(a6)                       	| [$24ed: ld   ($A7FF),a]
 	jbsr	l_4e92                            	| [$24f0: call $4E92]
 	move.w	#0x0302,d3                          	| [$24f3: ld   de,$0302]
 	jbsr	start_task_d3_0038                            	| [$24f6: rst  $38]
@@ -7900,9 +7907,10 @@ l_46a3:
 	rts                                    	| [$46b5: ret]
 
 start_title_screen_tasks_46b6:
+	* enable simple sprite copy (earth in title is partially
+	* made of sprites)
 	move.b	#0x01,d0                        	| [$46b6: ld   a,$01]
-	move.b	d0,l_A7FF(a6)                       	| [$46b8: ld   ($A7FF),a]
-	BREAKPOINT	"A7FF set!!"
+	move.b	d0,sprite_sync_status_a7ff(a6)                       	| [$46b8: ld   ($A7FF),a]
 	READ_ROM_BYTE	0x25C9,d0                       	| [$46bb: ld   a,($25C9)]
 	move.b	d0,l_960B(a6)                   	| [$46be: ld   ($960B),a]
 	jbsr	l_4cea                            	| [$46c1: call $4CEA]
@@ -8521,8 +8529,9 @@ clear_screen_then_init_tasks_4C00:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$4c03: ret  nz] [...]
 0:
+	* simple sprite sync for title screen
 	move.b	#0x01,d0                        	| [$4c04: ld   a,$01]
-	move.b	d0,l_A7FF(a6)                       	| [$4c06: ld   ($A7FF),a]
+	move.b	d0,sprite_sync_status_a7ff(a6)                       	| [$4c06: ld   ($A7FF),a]
 	jbsr	l_1400                            	| [$4c09: call $1400]
 	jbsr	l_3ab8                            	| [$4c0c: call $3AB8]
 	move.w	#0x0104,d3                          	| [$4c0f: ld   de,$0104]

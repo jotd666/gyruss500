@@ -16,7 +16,6 @@
 	.macro	MAKE_D
 	rol.w	#8,d0
 	move.b	d1,d0
-	rol.w	#8,d0
 	.endm
 
 

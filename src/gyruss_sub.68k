@@ -37,8 +37,10 @@ queue_sprites_flag_6702 = 0x6702
 
 * tell 6809 to perform more or less operations:
 * 0xFF: don't do anything (state not reached in the game)
-* 0x00: just sync the first sprites between 6000 and 4040
-* 0x01: do the full sync & coord transformation
+* 0x00: just sync the first sprites between 6000 and 4040. Earth
+* from title appears if we do that, but not the stars (as they probably
+* aren't coord-changed)
+* 0x01: do the full sync & coord transformation (stars appear)
 * as soon as title screen starts and never changes it
 * it may write to that flag at times but always with 1
 
@@ -100,7 +102,7 @@ gyruss_sub_irq:
 	addq.b	#1,d0                           	| [$f0be: inca]
 	jeq	get_out_immediately_f15f                             	| [$f0bf: lbeq   $f15f]
 											| [$f0c3: lda    $67ff]
-	jra	get_out_immediately_f15f                             	| [$f0bf: lbeq   $f15f]
+	jra	sync_first_sprites_f54a    | TEMP!!                           	| [$f0bf: lbeq   $f15f]
 											| [...]
 	* wait for Z80 signal
 	GET_ADDRESS	draw_queued_sprites_flag_6701                     	| [$f0ca: lda    $6701]
@@ -970,6 +972,7 @@ sync_first_sprites_f54a:
 	move.w	#sprite_ram_4040,d3             	| [$f54d: ldy    #sprite_ram_4040]
 	moveq	#0,d2
 	move.w	#0x0030,d2                      	| [$f551: ldx    #$0030]
+	* TODO: optimize this simple copy
 l_f554:
 	GET_U_ADDRESS	0                        	| [$f554: ldd    ,u++]
 	addq.w	#2,d4
@@ -988,7 +991,7 @@ l_f554:
 	addq.w	#2,d3
 	MOVE_W_FROM_REG	d0,(a0)                         	| [...]
 	subq.w	#0x1,d2                         	| [$f55c: leax   -$1,x]
-	bne	l_f554                             	| [$f55e: bne    $f554]
+	jne	l_f554                             	| [$f55e: bne    $f554]
 	move.b	#0x01,d0                        	| [$f560: lda    #$01]
 	jbsr	set_irq_flag_2000              	| [$f562: sta    irq_flag_2000]
 	rts       	| [$f565: rti]

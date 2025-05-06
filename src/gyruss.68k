@@ -4718,7 +4718,7 @@ show_title_for_a_while_24c2:
 	addq.b	#1,d1                           	| [$24eb: inc  b]
 l_24ec:
 	move.b	d1,d0                           	| [$24ec: ld   a,b]
-	move.b	d0,sprite_sync_status_a7ff(a6)                       	| [$24ed: ld   ($A7FF),a]
+	move.b	d0,sprite_sync_status_a7ff(a6)      | [$24ed: ld   ($A7FF),a]
 	jbsr	l_4e92                            	| [$24f0: call $4E92]
 	move.w	#0x0302,d3                          	| [$24f3: ld   de,$0302]
 	jbsr	start_task_d3_0038                            	| [$24f6: rst  $38]

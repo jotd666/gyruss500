@@ -109,14 +109,15 @@ BIT_FIRE = 4
 	move.l		ram_start_8000,a6
 	.endif
 	.endm
-.macro	GET_M6809_RAM_BLOCKS_IN_A5A6	
+.macro	GET_M6809_MEMORY_BLOCKS
+	move.l	m6809_direct_page_pointer,a4
+	lea		sub_rom_base,a3
 	.ifdef	RELEASE
 	lea		m6809_ram_buffer,a6
 	lea		z80_ram_buffer+0x2000,a5
 	.else
 	move.l		ram_start_4000,a6
 	move.l		ram_start_8000,a5
-	lea			0xA4A4A4A4,a4		| invalid DP pointer. Page 0 is not accessed
 	add.w	#0x2000,a5			      | a5 maps to 0xA000 (at 0x6000)
 	.endif
 	.endm
@@ -696,8 +697,10 @@ demo_game:
 	add.l	#0x4000,d0
 	move.l	d0,ram_start_8000		| Z80 memory (some shared with 6809)
 	.endif
-	GET_M6809_RAM_BLOCKS_IN_A5A6
+	GET_M6809_MEMORY_BLOCKS
 	jbsr		gyruss_sub_reset				| initialize the subcpu memory
+	* direct page won't change, let's store it now for irq
+	move.l	a4,m6809_direct_page_pointer
 	GET_Z80_RAM_START_IN_A6
 	jmp			gyruss_reset					| pass control to the cpu core
 		
@@ -707,9 +710,13 @@ do_both_gyruss_irq:
 	lea	rom_base,a5
 	GET_Z80_RAM_START_IN_A6
 	jsr			gyruss_irq					| pass control to the cpu core
-	GET_M6809_RAM_BLOCKS_IN_A5A6
+	tst.b	m6809_interrupts_on
+	jeq		0f
+	GET_M6809_MEMORY_BLOCKS
 	jmp		gyruss_sub_irq				| initialize the subcpu memory
-
+0:
+	rts
+	
 * just in case some hardware calls nmi
 _nmi:
 	move.w	#0x7FFF,_custom+intreq
@@ -1085,7 +1092,7 @@ update_bobs_and_hw_sprites:
 	* draw current BOBs from 6809 sprite memory *
 	*********************************************
 
-	GET_M6809_RAM_BLOCKS_IN_A5A6
+	GET_M6809_MEMORY_BLOCKS
   	lea		(0x40+NB_TARGET_SPRITES*4-4,a6),a0	
 
     lea _custom,A5
@@ -1515,7 +1522,7 @@ bob_previous_positions_2:
 	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE	
 	.endif
 
-	
+		
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 switch_screen_buffers:
 
@@ -2085,6 +2092,7 @@ mirror_flipped_tile:
 2:
 	rts
 	
+
 mirror_jump_table:
 	.long	standard_tile
 
@@ -2467,6 +2475,11 @@ beamdelay:
 
 	
 	MUL_TABLE	NB_BYTES_PER_ROW,NB_LINES*2
+
+* direct page pointer is set by gyruss reset to 0x42
+* then it's never changed
+m6809_direct_page_pointer:
+	.long	0xA4A4A4A4
 
 	.align	4		| leave this long word alignment
 program_args:	ds.l	64,0

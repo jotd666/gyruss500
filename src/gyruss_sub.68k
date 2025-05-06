@@ -50,12 +50,13 @@ sprite_sync_status_67ff = 0x67ff
 	.global	gyruss_sub_irq
 	
 set_irq_flag_2000:
-clear_irq_flag_2000:
+	move.b	d0,m6809_interrupts_on
 	rts
 	
 gyruss_sub_reset:
 	jbsr	cpu_init
-	jbsr	clear_irq_flag_2000              	| [$f000: clr    irq_flag_2000] disable interrupts
+	moveq	#0,d0
+	jbsr	set_irq_flag_2000              	| [$f000: clr    irq_flag_2000] disable interrupts
 	                         	| [...]
 	move.b	#0x00,d0                        	| [$f003: ldd    #$0000] active wait
 	move.b	#0x00,d1                        	| [$f003: ldd    #$0000] active wait
@@ -84,7 +85,7 @@ l_f09e:
 	move.b	#0x42,d0                        	| [$f0a4: lda    #$42]
 	SET_DP_FROM_A                          	| [$f0a6: tfr    a,dp]
 
-	jbsr	clear_irq_flag_2000              	| [$f0a8: clr    irq_flag_2000]
+								| [$f0a8: clr    irq_flag_2000]
 * enable interrupts
 	move.b	#0x01,d0                        	| [$f0b1: lda    #$01]
 	jbsr	set_irq_flag_2000              	| [$f0b3: sta    irq_flag_2000]
@@ -95,14 +96,16 @@ l_f09e:
 gyruss_sub_irq:
 	jbsr	cpu_init
 * the IRQ
-	jbsr	clear_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
+	moveq	#0,d0
+	jbsr	set_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
 	GET_ADDRESS	sprite_sync_status_67ff                     	| [$f0bb: lda    $67ff]
 	move.b	(a0),d0                         	| [...]
 	jeq	sync_first_sprites_f54a                             	| [$f0c6: lbeq   $f54a]
 	addq.b	#1,d0                           	| [$f0be: inca]
 	jeq	get_out_immediately_f15f                             	| [$f0bf: lbeq   $f15f]
 											| [$f0c3: lda    $67ff]
-	jra	sync_first_sprites_f54a    | TEMP!!                           	| [$f0bf: lbeq   $f15f]
+	
+	*jra	sync_first_sprites_f54a    | TEMP!!                           	| [$f0bf: lbeq   $f15f]
 											| [...]
 	* wait for Z80 signal
 	GET_ADDRESS	draw_queued_sprites_flag_6701                     	| [$f0ca: lda    $6701]
@@ -110,7 +113,7 @@ l_f0ca:
 	* TODO if zero note that semaphore failed and return
 	* direct check & jump there next time we're interrupted?
 	move.b	(a0),d0                         	| [...]
-	beq	l_f0ca                             	| [$f0cd: beq    $f0ca]
+	**beq	l_f0ca                             	| [$f0cd: beq    $f0ca]
 	GET_ADDRESS	frame_odd_or_even_6700	| [$f0cf: lda    frame_odd_or_even_6700]
 	move.b	(a0),d0                         	| [...]
 	bne	l_f1a3                             	| [$f0d2: lbne   $f1a3]
@@ -561,7 +564,7 @@ l_f368:
 
 l_f386:
 	moveq	#0,d2
-	move.w	#0xe000,d2                      	| [$f386: ldx    #$e000]
+	move.w	#0xe000,d2                      	| [$f386: ldx    #$e000] ROM start address
 	GET_U_ADDRESS	0                        	| [$f389: ldb    ,u]
 	move.b	(a0),d1                         	| [...]
 	beq	l_f3ea                             	| [$f38b: beq    $f3ea]
@@ -906,16 +909,12 @@ l_f4fc:
 	roxl.b	#1,d0                             	| [$f508: rola]
 	MAKE_D
 	add.w	#0x6200,d0                       	| [$f509: addd   #$6200]
-	PUSH_SR
 	move.w	d0,d2                           	| [$f50c: tfr    d,x]
-	POP_SR
 	GET_X_ADDRESS	0                        	| [$f50e: ldd    ,x++]
 	addq.w	#2,d2
 	move.b	(a0),d0                         	| [...]
 	move.b	(1,a0),d1                       	| [$f50e: ldd    ,x++]
 	MAKE_D                                 	| [$f50e: ldd    ,x++]
-	tst.w	d0                               	| [$f50e: ldd    ,x++]
-	MAKE_D
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
 	addq.w	#2,d4
 	MOVE_W_FROM_REG	d0,(a0)                	| [...]
@@ -923,8 +922,6 @@ l_f4fc:
 	move.b	(a0),d0                         	| [...]
 	move.b	(1,a0),d1                       	| [$f512: ldd    ,x]
 	MAKE_D                                 	| [$f512: ldd    ,x]
-	tst.w	d0                               	| [$f512: ldd    ,x]
-	MAKE_D
 	GET_U_ADDRESS	0                        	| [$f514: std    ,u++]
 	addq.w	#2,d4
 	MOVE_W_FROM_REG	d0,(a0)                	| [...]
@@ -968,30 +965,18 @@ l_f529:
 	* copy first 12 sprites from shared memory with real sprite memory
 sync_first_sprites_f54a:
 	move.w	#shared_memory_6000,d4          	| [$f54a: ldu    #shared_memory_6000]
-	moveq	#0,d2
 	move.w	#sprite_ram_4040,d3             	| [$f54d: ldy    #sprite_ram_4040]
-	moveq	#0,d2
-	move.w	#0x0030,d2                      	| [$f551: ldx    #$0030]
-	* TODO: optimize this simple copy
-l_f554:
-	GET_U_ADDRESS	0                        	| [$f554: ldd    ,u++]
-	addq.w	#2,d4
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f554: ldd    ,u++]
-	MAKE_D                                 	| [$f554: ldd    ,u++]
+	move.w	#0x0030-1,d2                      	| [$f551: ldx    #$0030]
 	GET_Y_ADDRESS	0                        	| [$f556: std    ,y++]
-	addq.w	#2,d3
-	MOVE_W_FROM_REG	d0,(a0)                         	| [...]
-	GET_U_ADDRESS	0                        	| [$f558: ldd    ,u++]
-	addq.w	#2,d4
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f558: ldd    ,u++]
-	MAKE_D                                 	| [$f558: ldd    ,u++]
-	GET_Y_ADDRESS	0                        	| [$f55a: std    ,y++]
-	addq.w	#2,d3
-	MOVE_W_FROM_REG	d0,(a0)                         	| [...]
-	subq.w	#0x1,d2                         	| [$f55c: leax   -$1,x]
-	jne	l_f554                             	| [$f55e: bne    $f554]
+	move.l	a0,a1
+	GET_U_ADDRESS	0                        	| [$f554: ldd    ,u++]
+l_f554:
+	move.l	(a0)+,(a1)+							| [$f554: ldd    ,u++]
+								| [$f554: ldd    ,u++]
+								| [$f558: ldd    ,u++]
+								| [$f55a: std    ,y++]
+	                         	| [$f55c: leax   -$1,x]
+	dbf		d2,l_f554                             	| [$f55e: bne    $f554]
 	move.b	#0x01,d0                        	| [$f560: lda    #$01]
 	jbsr	set_irq_flag_2000              	| [$f562: sta    irq_flag_2000]
 	rts       	| [$f565: rti]
@@ -1012,7 +997,7 @@ l_f569:
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f577: adda   $12]
 	add.b	(a0),d0                          	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f579: sta    $12]
+	                    	| [$f579: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f57b: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
@@ -1067,7 +1052,7 @@ l_f5af:
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f5bf: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
 	add.b	#0x02,d0                         	| [$f5c3: adda   #$02]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f5c5: sta    [$4211]]
+									| [$f5c5: sta    [$4211]]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f5c9: adda   $12]
 	add.b	(a0),d0                          	| [...]

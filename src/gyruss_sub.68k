@@ -54,7 +54,7 @@ set_irq_flag_2000:
 	rts
 	
 gyruss_sub_reset:
-	jbsr	cpu_init
+	jbsr	gyruss_sub_cpu_init
 	moveq	#0,d0
 	jbsr	set_irq_flag_2000              	| [$f000: clr    irq_flag_2000] disable interrupts
 	                         	| [...]
@@ -94,7 +94,7 @@ l_f09e:
                                	| [$f0b6: bra    $f0b6]
 
 gyruss_sub_irq:
-	jbsr	cpu_init
+	jbsr	gyruss_sub_cpu_init
 * the IRQ
 	moveq	#0,d0
 	jbsr	set_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
@@ -636,11 +636,11 @@ l_f3ca:
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f3d2: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f3d6: lda    [$4211]]
+	            	| [$f3d6: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f3da: adda   $12]
 	add.b	(a0),d0                          	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f3dc: sta    $12]
+	                    	| [$f3dc: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f3de: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
@@ -740,11 +740,11 @@ l_f43c:
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f44b: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f44f: lda    [$4211]]
+	            	| [$f44f: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f453: adda   $12]
 	add.b	(a0),d0                          	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f455: sta    $12]
+	                    	| [$f455: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f457: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
@@ -762,18 +762,18 @@ l_f43c:
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f46a: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f46e: lda    [$4211]]
+	            	| [$f46e: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f472: adda   $12]
 	add.b	(a0),d0                          	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f474: sta    $12]
+	                    	| [$f474: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f476: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f478: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
-	lsr.b	#1,d1                            	| [$f47a: lsrb]
-	lsr.b	#1,d1                            	| [$f47b: lsrb]
+	lsr.b	#2,d1                            	| [$f47a: lsrb]
+												| [$f47b: lsrb]
 	add.b	#0x48,d1                         	| [$f47c: addb   #$48]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f47e: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
@@ -833,8 +833,6 @@ l_f4a3:
 	move.b	(a0),d0                         	| [...]
 	move.b	(1,a0),d1                       	| [$f4b9: ldd    ,x]
 	MAKE_D                                 	| [$f4b9: ldd    ,x]
-	tst.w	d0                               	| [$f4b9: ldd    ,x]
-	MAKE_D
 	GET_U_ADDRESS	0                        	| [$f4bb: std    ,u++]
 	addq.w	#2,d4
 	MOVE_W_FROM_REG	d0,(a0)                	| [...]
@@ -863,7 +861,7 @@ l_f4d0:
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f4d2: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f4d4: suba   #$40]
-	GET_DP_ADDRESS	0x01                    	| [$f4d6: sta    $01]
+										| [$f4d6: sta    $01]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f4d8: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
@@ -1056,7 +1054,7 @@ l_f5af:
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f5c9: adda   $12]
 	add.b	(a0),d0                          	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f5cb: sta    $12]
+										| [$f5cb: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f5cd: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
@@ -1374,7 +1372,7 @@ l_f72e:
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f730: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f732: suba   #$40]
-	GET_DP_ADDRESS	0x01                    	| [$f734: sta    $01]
+									| [$f734: sta    $01]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f736: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]

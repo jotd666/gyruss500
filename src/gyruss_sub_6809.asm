@@ -108,7 +108,8 @@ F0BE: 4C          INCA
 F0BF: 10 27 22 1E LBEQ   $F15F
 F0C3: B6 45 DD    LDA    $67FF
 F0C6: 10 27 2C A8 LBEQ   $F54A
-F0CA: B6 EF 29    LDA    $6701
+; wait for Z80 signal: draw sprites
+F0CA: B6 EF 29    LDA    draw_queued_sprites_flag_6701
 F0CD: 27 73       BEQ    $F0CA
 F0CF: B6 45 22    LDA    select_sprite_buffer_flag_6700
 F0D2: 10 26 22 EF LBNE   $F1A3
@@ -121,6 +122,7 @@ F0E5: CE E2 82    LDU    #shared_memory_6000
 F0E8: DF 27       STU    $0F
 F0EA: CE EC 28    LDU    #$6400
 F0ED: DF 99       STU    $11
+; wait for Z80 signal: queue sprites
 F0EF: B6 45 20    LDA    $6702
 F0F2: 27 79       BEQ    $F0EF
 F0F4: B6 45 7F    LDA    $67FD

@@ -224,7 +224,7 @@
 	jbsr	get_6809_address
 	.endm
 
-cpu_init:
+gyruss_sub_cpu_init:
 	moveq	#0,d0
 	moveq	#0,d1
 	moveq	#0,d2

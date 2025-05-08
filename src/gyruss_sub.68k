@@ -138,7 +138,7 @@ l_f0ef:
 	beq	l_f0ef                             	| [$f0f2: beq    $f0ef]
 	GET_ADDRESS	0x67fd                     	| [$f0f4: lda    $67fd]
 	move.b	(a0),d0                         	| [...]
-	bne	l_f165                             	| [$f0f7: bne    $f165]
+	bne	alternate_update_sequence_f165          	| [$f0f7: bne    $f165]
 	jbsr	ship_coordinate_transform_f566                            	| [$f0f9: jsr    $f566]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f0fc: jsr    $f6ee]
 	jbsr	enemies_coordinate_transform_f626                            	| [$f0ff: jsr    $f626]
@@ -153,13 +153,13 @@ l_f0ef:
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f11a: jsr    $f6ee]
 	jbsr	coordinate_transform_four_f60b                            	| [$f11d: jsr    $f60b]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f120: jsr    $f6ee]
-	jbsr	l_f617                            	| [$f123: jsr    $f617]
+	jbsr	coordinate_transform_eight_f617                            	| [$f123: jsr    $f617]  different from other update sequence
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f126: jsr    $f6ee]
-	jbsr	l_f636                            	| [$f129: jsr    $f636]
+	jbsr	coordinate_transform_six_f636                            	| [$f129: jsr    $f636]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f12c: jsr    $f6ee]
-	jbsr	l_f645                            	| [$f12f: jsr    $f645]
+	jbsr	coordinate_transform_seven_f645                            	| [$f12f: jsr    $f645]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f132: jsr    $f6ee]
-l_f135:
+continue_f135:
 	move.b	#0x29,d0                        	| [$f135: lda    #$29]
 	move.b	#0x17,d1                        	| [$f137: ldb    #$17]
 	GET_ADDRESS	0x6400                     	| [$f139: cmpb   $6400]
@@ -196,10 +196,10 @@ get_out_immediately_f15f:
 	jbsr	set_irq_flag_2000              	| [$f161: sta    irq_flag_2000] enable interrupts
 	rts       	| [$f164: rti]
 
-l_f165:
+alternate_update_sequence_f165:
 	jbsr	ship_coordinate_transform_f566                            	| [$f165: jsr    $f566]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f168: jsr    $f6ee]
-	jbsr	l_f660                            	| [$f16b: jsr    $f660]
+	jbsr	coordinate_transform_zero_f660                            	| [$f16b: jsr    $f660]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f16e: jsr    $f6ee]
 	jbsr	enemies_coordinate_transform_f589                            	| [$f171: jsr    $f589]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f174: jsr    $f6ee]
@@ -211,13 +211,13 @@ l_f165:
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f186: jsr    $f6ee]
 	jbsr	coordinate_transform_four_f60b                            	| [$f189: jsr    $f60b]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f18c: jsr    $f6ee]
-	jbsr	l_f651                            	| [$f18f: jsr    $f651]
+	jbsr	coordinate_transform_five_f651                            	| [$f18f: jsr    $f651]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f192: jsr    $f6ee]
-	jbsr	l_f636                            	| [$f195: jsr    $f636]
+	jbsr	coordinate_transform_six_f636                            	| [$f195: jsr    $f636]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f198: jsr    $f6ee]
-	jbsr	l_f645                            	| [$f19b: jsr    $f645]
+	jbsr	coordinate_transform_seven_f645                            	| [$f19b: jsr    $f645]
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f19e: jsr    $f6ee]
-	bra	l_f135                             	| [$f1a1: bra    $f135]
+	bra	continue_f135                             	| [$f1a1: bra    $f135]
 
 l_f1a3:
 	jbsr	l_f48b                            	| [$f1a3: jsr    $f48b]
@@ -265,13 +265,13 @@ l_f1bc:
 	jbsr	race_beam_update_sprites_f695                            	| [$f1e7: jsr    $f695]
 	jbsr	coordinate_transform_four_f60b                            	| [$f1ea: jsr    $f60b]
 	jbsr	race_beam_update_sprites_f695                            	| [$f1ed: jsr    $f695]
-	jbsr	l_f617                            	| [$f1f0: jsr    $f617]
+	jbsr	coordinate_transform_eight_f617                            	| [$f1f0: jsr    $f617]
 	jbsr	race_beam_update_sprites_f695                            	| [$f1f3: jsr    $f695]
-	jbsr	l_f636                            	| [$f1f6: jsr    $f636]
+	jbsr	coordinate_transform_six_f636                            	| [$f1f6: jsr    $f636]
 	jbsr	race_beam_update_sprites_f695                            	| [$f1f9: jsr    $f695]
-	jbsr	l_f645                            	| [$f1fc: jsr    $f645]
+	jbsr	coordinate_transform_seven_f645                            	| [$f1fc: jsr    $f645]
 	jbsr	race_beam_update_sprites_f695                            	| [$f1ff: jsr    $f695]
-l_f202:
+continue_f202:
 	move.b	#0x29,d0                        	| [$f202: lda    #$29]
 	move.b	#0x17,d1                        	| [$f204: ldb    #$17]
 	GET_ADDRESS	0x6500                     	| [$f206: cmpb   $6500]
@@ -311,7 +311,7 @@ l_f226:
 l_f232:
 	jbsr	ship_coordinate_transform_f566                            	| [$f232: jsr    $f566]
 	jbsr	race_beam_update_sprites_f695                            	| [$f235: jsr    $f695]
-	jbsr	l_f660                            	| [$f238: jsr    $f660]
+	jbsr	coordinate_transform_zero_f660                            	| [$f238: jsr    $f660]
 	jbsr	race_beam_update_sprites_f695                            	| [$f23b: jsr    $f695]
 	jbsr	enemies_coordinate_transform_f589                            	| [$f23e: jsr    $f589]
 	jbsr	race_beam_update_sprites_f695                            	| [$f241: jsr    $f695]
@@ -323,13 +323,13 @@ l_f232:
 	jbsr	race_beam_update_sprites_f695                            	| [$f253: jsr    $f695]
 	jbsr	coordinate_transform_four_f60b                            	| [$f256: jsr    $f60b]
 	jbsr	race_beam_update_sprites_f695                            	| [$f259: jsr    $f695]
-	jbsr	l_f651                            	| [$f25c: jsr    $f651]
+	jbsr	coordinate_transform_five_f651                            	| [$f25c: jsr    $f651]
 	jbsr	race_beam_update_sprites_f695                            	| [$f25f: jsr    $f695]
-	jbsr	l_f636                            	| [$f262: jsr    $f636]
+	jbsr	coordinate_transform_six_f636                            	| [$f262: jsr    $f636]
 	jbsr	race_beam_update_sprites_f695                            	| [$f265: jsr    $f695]
-	jbsr	l_f645                            	| [$f268: jsr    $f645]
+	jbsr	coordinate_transform_seven_f645                            	| [$f268: jsr    $f645]
 	jbsr	race_beam_update_sprites_f695                            	| [$f26b: jsr    $f695]
-	bra	l_f202                             	| [$f26e: bra    $f202]
+	jra	continue_f202                             	| [$f26e: bra    $f202]
 
 l_f273:
 	moveq	#0,d2
@@ -415,8 +415,8 @@ l_f2b7:
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f2cd: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
-	lsr.b	#1,d1                            	| [$f2cf: lsrb]
-	lsr.b	#1,d1                            	| [$f2d0: lsrb]
+	lsr.b	#2,d1                            	| [$f2cf: lsrb]
+	                            	| [$f2d0: lsrb]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f2d1: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 l_f2d5:
@@ -1130,7 +1130,7 @@ coordinate_transform_four_f60b:
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	rts                                    	| [$f616: rts]
 
-l_f617:
+coordinate_transform_eight_f617:
 	GET_DP_ADDRESS	0x0f                    	| [$f617: ldu    $0f]
 	MOVE_W_TO_REG	(a0),d4                         	| [...]
 	add.w	#0x10,d4                         	| [$f619: leau   $10,u]
@@ -1154,7 +1154,7 @@ enemies_coordinate_transform_f626:
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	rts                                    	| [$f635: rts]
 
-l_f636:
+coordinate_transform_six_f636:
 	GET_DP_ADDRESS	0x0f                    	| [$f636: ldu    $0f]
 	MOVE_W_TO_REG	(a0),d4                         	| [...]
 	add.w	#0x20,d4                         	| [$f638: leau   $20,u]
@@ -1166,7 +1166,7 @@ l_f636:
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	rts                                    	| [$f644: rts]
 
-l_f645:
+coordinate_transform_seven_f645:
 	GET_DP_ADDRESS	0x0f                    	| [$f645: ldu    $0f]
 	MOVE_W_TO_REG	(a0),d4                         	| [...]
 	move.b	#0x04,d0                        	| [$f647: lda    #$04]
@@ -1177,7 +1177,7 @@ l_f645:
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	rts                                    	| [$f650: rts]
 
-l_f651:
+coordinate_transform_five_f651:
 	GET_DP_ADDRESS	0x0f                    	| [$f651: ldu    $0f]
 	MOVE_W_TO_REG	(a0),d4                         	| [...]
 	add.w	#0x10,d4                         	| [$f653: leau   $10,u]
@@ -1189,7 +1189,7 @@ l_f651:
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	rts                                    	| [$f65f: rts]
 
-l_f660:
+coordinate_transform_zero_f660:
 	GET_DP_ADDRESS	0x0f                    	| [$f660: ldu    $0f]
 	MOVE_W_TO_REG	(a0),d4                         	| [...]
 	add.w	#0x0108,d4                       	| [$f662: leau   $0108,u]

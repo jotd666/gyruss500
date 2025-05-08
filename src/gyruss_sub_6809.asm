@@ -103,11 +103,11 @@ F0B6: 20 7C       BRA    $F0B6
 
 ; the IRQ
 F0B8: 7F 08 88    CLR    irq_flag_2000		; ack IRQ
-F0BB: B6 4F D7    LDA    $67FF
+F0BB: B6 4F D7    LDA    sprite_sync_status_67ff
 F0BE: 4C          INCA
-F0BF: 10 27 22 1E LBEQ   $F15F
-F0C3: B6 45 DD    LDA    $67FF
-F0C6: 10 27 2C A8 LBEQ   $F54A
+F0BF: 10 27 22 1E LBEQ   get_out_immediately_f15f
+F0C3: B6 45 DD    LDA    sprite_sync_status_67ff
+F0C6: 10 27 2C A8 LBEQ   sync_first_sprites_f54a
 ; wait for Z80 signal: draw sprites
 F0CA: B6 EF 29    LDA    draw_queued_sprites_flag_6701
 F0CD: 27 73       BEQ    $F0CA
@@ -123,30 +123,31 @@ F0E8: DF 27       STU    $0F
 F0EA: CE EC 28    LDU    #$6400
 F0ED: DF 99       STU    $11
 ; wait for Z80 signal: queue sprites
-F0EF: B6 45 20    LDA    $6702
+F0EF: B6 45 20    LDA    queue_sprites_flag_6702
 F0F2: 27 79       BEQ    $F0EF
-F0F4: B6 45 7F    LDA    $67FD
-F0F7: 26 44       BNE    $F165
-F0F9: BD 7D EE    JSR    $F566
-F0FC: BD DE 66    JSR    $F6EE
-F0FF: BD D4 04    JSR    $F626
-F102: BD 74 CC    JSR    $F6EE
-F105: BD 77 0B    JSR    $F589
-F108: BD DE 66    JSR    $F6EE
-F10B: BD DD CF    JSR    $F5E7
-F10E: BD 7E CC    JSR    $F6EE
-F111: BD 77 71    JSR    $F5F3
-F114: BD D4 6C    JSR    $F6EE
-F117: BD DD D7    JSR    $F5FF
-F11A: BD 7E C6    JSR    $F6EE
-F11D: BD 7E 83    JSR    $F60B
-F120: BD D4 6C    JSR    $F6EE
-F123: BD D4 35    JSR    $F617
-F126: BD 74 C6    JSR    $F6EE
-F129: BD 7E BE    JSR    $F636
-F12C: BD DE 66    JSR    $F6EE
-F12F: BD D4 67    JSR    $F645
-F132: BD 74 CC    JSR    $F6EE
+F0F4: B6 45 7F    LDA    update_sequence_control_flag_67fd
+F0F7: 26 44       BNE    alternate_update_sequence_f165
+F0F9: BD 7D EE    JSR    ship_coordinate_transform_f566
+F0FC: BD DE 66    JSR    race_beam_update_sprites_f6ee
+F0FF: BD D4 04    JSR    enemies_coordinate_transform_f626
+F102: BD 74 CC    JSR    race_beam_update_sprites_f6ee
+F105: BD 77 0B    JSR    enemies_coordinate_transform_f589
+F108: BD DE 66    JSR    race_beam_update_sprites_f6ee
+F10B: BD DD CF    JSR    coordinate_transform_one_f5e7
+F10E: BD 7E CC    JSR    race_beam_update_sprites_f6ee
+F111: BD 77 71    JSR    coordinate_transform_two_f5f3
+F114: BD D4 6C    JSR    race_beam_update_sprites_f6ee
+F117: BD DD D7    JSR    coordinate_transform_three_f5ff
+F11A: BD 7E C6    JSR    race_beam_update_sprites_f6ee
+F11D: BD 7E 83    JSR    coordinate_transform_four_f60b
+F120: BD D4 6C    JSR    race_beam_update_sprites_f6ee
+F123: BD D4 35    JSR    coordinate_transform_eight_f617
+F126: BD 74 C6    JSR    race_beam_update_sprites_f6ee
+F129: BD 7E BE    JSR    coordinate_transform_six_f636
+F12C: BD DE 66    JSR    race_beam_update_sprites_f6ee
+F12F: BD D4 67    JSR    coordinate_transform_seven_f645
+F132: BD 74 CC    JSR    race_beam_update_sprites_f6ee
+continue_f135:
 F135: 86 AB       LDA    #$29
 F137: C6 3F       LDB    #$17
 F139: F1 EC 88    CMPB   $6400
@@ -164,31 +165,33 @@ F156: F7 E6 E8    STB    $64C0    ; [uncovered]
 F159: B6 88 88    LDA    >$0000
 ; at this point, A = $29, everytime!
 F15C: B7 4F 98    STA    $6710
+get_out_immediately_f15f:
 F15F: 86 23       LDA    #$01
 F161: B7 A2 82    STA    irq_flag_2000	; enable interrupts
 F164: 3B          RTI
 
-F165: BD 77 E4    JSR    $F566
-F168: BD DE 66    JSR    $F6EE
-F16B: BD DE 48    JSR    $F660
-F16E: BD 7E CC    JSR    $F6EE
-F171: BD 77 0B    JSR    $F589
-F174: BD D4 6C    JSR    $F6EE
-F177: BD DD CF    JSR    $F5E7
-F17A: BD 7E C6    JSR    $F6EE
-F17D: BD 7D 7B    JSR    $F5F3
-F180: BD D4 6C    JSR    $F6EE
-F183: BD D7 DD    JSR    $F5FF
-F186: BD 74 C6    JSR    $F6EE
-F189: BD 7E 83    JSR    $F60B
-F18C: BD DE 66    JSR    $F6EE
-F18F: BD D4 73    JSR    $F651
-F192: BD 74 CC    JSR    $F6EE
-F195: BD 74 B4    JSR    $F636
-F198: BD DE 66    JSR    $F6EE
-F19B: BD DE 6D    JSR    $F645
-F19E: BD 7E CC    JSR    $F6EE
-F1A1: 20 10       BRA    $F135
+alternate_update_sequence_f165:
+F165: BD 77 E4    JSR    ship_coordinate_transform_f566
+F168: BD DE 66    JSR    race_beam_update_sprites_f6ee
+F16B: BD DE 48    JSR    coordinate_transform_zero_f660
+F16E: BD 7E CC    JSR    race_beam_update_sprites_f6ee
+F171: BD 77 0B    JSR    enemies_coordinate_transform_f589
+F174: BD D4 6C    JSR    race_beam_update_sprites_f6ee
+F177: BD DD CF    JSR    coordinate_transform_one_f5e7
+F17A: BD 7E C6    JSR    race_beam_update_sprites_f6ee
+F17D: BD 7D 7B    JSR    coordinate_transform_two_f5f3
+F180: BD D4 6C    JSR    race_beam_update_sprites_f6ee
+F183: BD D7 DD    JSR    coordinate_transform_three_f5ff
+F186: BD 74 C6    JSR    race_beam_update_sprites_f6ee
+F189: BD 7E 83    JSR    coordinate_transform_four_f60b
+F18C: BD DE 66    JSR    race_beam_update_sprites_f6ee
+F18F: BD D4 73    JSR    coordinate_transform_five_f651
+F192: BD 74 CC    JSR    race_beam_update_sprites_f6ee
+F195: BD 74 B4    JSR    coordinate_transform_six_f636
+F198: BD DE 66    JSR    race_beam_update_sprites_f6ee
+F19B: BD DE 6D    JSR    coordinate_transform_seven_f645
+F19E: BD 7E CC    JSR    race_beam_update_sprites_f6ee
+F1A1: 20 10       BRA    continue_f135
 
 F1A3: BD D6 A9    JSR    $F48B
 F1A6: 7F E7 28    CLR    $6500
@@ -199,30 +202,31 @@ F1B2: CE E0 22    LDU    #$6200
 F1B5: DF 8D       STU    $0F
 F1B7: CE 4D 28    LDU    #$6500
 F1BA: DF 99       STU    $11
-F1BC: B6 4F 8A    LDA    $6702
+F1BC: B6 4F 8A    LDA    queue_sprites_flag_6702
 F1BF: 27 D9       BEQ    $F1BC
-F1C1: B6 E5 7F    LDA    $67FD
+F1C1: B6 E5 7F    LDA    update_sequence_control_flag_67fd
 F1C4: 26 4E       BNE    $F232
-F1C6: BD 77 4E    JSR    $F566
-F1C9: BD 7E 1D    JSR    $F695
-F1CC: BD DE AE    JSR    $F626
-F1CF: BD D4 B7    JSR    $F695
-F1D2: BD 77 AB    JSR    $F589
-F1D5: BD 74 17    JSR    $F695
-F1D8: BD DD 6F    JSR    $F5E7
-F1DB: BD DE BD    JSR    $F695
-F1DE: BD 7D D1    JSR    $F5F3
-F1E1: BD 74 17    JSR    $F695
-F1E4: BD D7 7D    JSR    $F5FF
-F1E7: BD DE BD    JSR    $F695
-F1EA: BD 7E 23    JSR    $F60B
-F1ED: BD 7E 1D    JSR    $F695
-F1F0: BD D4 95    JSR    $F617
-F1F3: BD D4 B7    JSR    $F695
-F1F6: BD 74 1E    JSR    $F636
-F1F9: BD 7E 1D    JSR    $F695
-F1FC: BD DE CD    JSR    $F645
-F1FF: BD D4 B7    JSR    $F695
+F1C6: BD 77 4E    JSR    ship_coordinate_transform_f566
+F1C9: BD 7E 1D    JSR    race_beam_update_sprites_f695
+F1CC: BD DE AE    JSR    enemies_coordinate_transform_f626
+F1CF: BD D4 B7    JSR    race_beam_update_sprites_f695
+F1D2: BD 77 AB    JSR    enemies_coordinate_transform_f589
+F1D5: BD 74 17    JSR    race_beam_update_sprites_f695
+F1D8: BD DD 6F    JSR    coordinate_transform_one_f5e7
+F1DB: BD DE BD    JSR    race_beam_update_sprites_f695
+F1DE: BD 7D D1    JSR    coordinate_transform_two_f5f3
+F1E1: BD 74 17    JSR    race_beam_update_sprites_f695
+F1E4: BD D7 7D    JSR    coordinate_transform_three_f5ff
+F1E7: BD DE BD    JSR    race_beam_update_sprites_f695
+F1EA: BD 7E 23    JSR    coordinate_transform_four_f60b
+F1ED: BD 7E 1D    JSR    race_beam_update_sprites_f695
+F1F0: BD D4 95    JSR    coordinate_transform_eight_f617
+F1F3: BD D4 B7    JSR    race_beam_update_sprites_f695
+F1F6: BD 74 1E    JSR    coordinate_transform_six_f636
+F1F9: BD 7E 1D    JSR    race_beam_update_sprites_f695
+F1FC: BD DE CD    JSR    coordinate_transform_seven_f645
+F1FF: BD D4 B7    JSR    race_beam_update_sprites_f695
+continue_f202:
 F202: 86 AB       LDA    #$29
 F204: C6 35       LDB    #$17
 F206: F1 E7 28    CMPB   $6500
@@ -244,27 +248,27 @@ F22B: B6 28 28    LDA    >$0000
 F22E: B7 EF 32    STA    $6710
 F231: 3B          RTI
 
-F232: BD 77 44    JSR    $F566
-F235: BD 74 17    JSR    $F695
-F238: BD DE E8    JSR    $F660
-F23B: BD DE BD    JSR    $F695
-F23E: BD 7D AB    JSR    $F589
-F241: BD 74 17    JSR    $F695
-F244: BD D7 65    JSR    $F5E7
-F247: BD DE BD    JSR    $F695
-F24A: BD 7D DB    JSR    $F5F3
-F24D: BD 7E 1D    JSR    $F695
-F250: BD D7 7D    JSR    $F5FF
-F253: BD D4 B7    JSR    $F695
-F256: BD 74 23    JSR    $F60B
-F259: BD 7E 1D    JSR    $F695
-F25C: BD DE D9    JSR    $F651
-F25F: BD D4 B7    JSR    $F695
-F262: BD 74 14    JSR    $F636
-F265: BD 74 17    JSR    $F695
-F268: BD DE CD    JSR    $F645
-F26B: BD DE BD    JSR    $F695
-F26E: 20 1A       BRA    $F202
+F232: BD 77 44    JSR    ship_coordinate_transform_f566
+F235: BD 74 17    JSR    race_beam_update_sprites_f695
+F238: BD DE E8    JSR    coordinate_transform_zero_f660
+F23B: BD DE BD    JSR    race_beam_update_sprites_f695
+F23E: BD 7D AB    JSR    enemies_coordinate_transform_f589
+F241: BD 74 17    JSR    race_beam_update_sprites_f695
+F244: BD D7 65    JSR    coordinate_transform_one_f5e7
+F247: BD DE BD    JSR    race_beam_update_sprites_f695
+F24A: BD 7D DB    JSR    coordinate_transform_two_f5f3
+F24D: BD 7E 1D    JSR    race_beam_update_sprites_f695
+F250: BD D7 7D    JSR    coordinate_transform_three_f5ff
+F253: BD D4 B7    JSR    race_beam_update_sprites_f695
+F256: BD 74 23    JSR    coordinate_transform_four_f60b
+F259: BD 7E 1D    JSR    race_beam_update_sprites_f695
+F25C: BD DE D9    JSR    coordinate_transform_five_f651
+F25F: BD D4 B7    JSR    race_beam_update_sprites_f695
+F262: BD 74 14    JSR    coordinate_transform_six_f636
+F265: BD 74 17    JSR    race_beam_update_sprites_f695
+F268: BD DE CD    JSR    coordinate_transform_seven_f645
+F26B: BD DE BD    JSR    race_beam_update_sprites_f695
+F26E: 20 1A       BRA    continue_f202
 
 F273: 8E C2 22    LDX    #$E000
 F276: E6 46       LDB    ,U
@@ -645,6 +649,7 @@ F537: 0C 29       INC    $01
 F539: 0C 83       INC    $0B
 F53B: 20 91       BRA    $F4F6
 
+sync_first_sprites_f54a:
 F54A: CE E8 28    LDU    #shared_memory_6000
 F54D: 10 8E C8 62 LDY    #sprite_ram_4040
 F551: 8E 82 B2    LDX    #$0030
@@ -657,6 +662,7 @@ F55E: 26 7C       BNE    $F554
 F560: 86 23       LDA    #$01
 F562: B7 A2 22    STA    irq_flag_2000
 F565: 3B          RTI
+ship_coordinate_transform_f566:
 F566: DE 8D       LDU    $0F
 F568: 5F          CLRB
 F569: A6 CB       LDA    $3,U
@@ -674,7 +680,8 @@ F584: 25 C1       BCS    $F569
 F586: DF 8D       STU    $0F
 F588: 39          RTS
 
-F589: B6 EF 74    LDA    $67FC
+enemies_coordinate_transform_f589:
+F589: B6 EF 74    LDA    update_sequence_control_flag_67fc
 F58C: 26 38       BNE    $F59E
 F58E: DE 87       LDU    $0F
 F590: 33 EB 7C 5A LEAU   -$0128,U
@@ -718,6 +725,7 @@ F5E2: 26 49       BNE    $F5AF
 F5E4: DF 2D       STU    $0F
 F5E6: 39          RTS
 
+coordinate_transform_one_f5e7:
 F5E7: DE 27       LDU    $0F
 F5E9: 86 82       LDA    #$0A
 F5EB: 97 24       STA    $0C
@@ -725,6 +733,7 @@ F5ED: BD 7A FB    JSR    $F273
 F5F0: DF 2D       STU    $0F
 F5F2: 39          RTS
 
+coordinate_transform_two_f5f3:
 F5F3: DE 2D       LDU    $0F
 F5F5: 86 8A       LDA    #$08
 F5F7: 97 24       STA    $0C
@@ -732,6 +741,7 @@ F5F9: BD 7A FB    JSR    $F273
 F5FC: DF 27       STU    $0F
 F5FE: 39          RTS
 
+coordinate_transform_three_f5ff:
 F5FF: DE 2D       LDU    $0F
 F601: 86 88       LDA    #$0A
 F603: 97 2E       STA    $0C
@@ -739,6 +749,7 @@ F605: BD 70 F1    JSR    $F273
 F608: DF 27       STU    $0F
 F60A: 39          RTS
 
+coordinate_transform_four_f60b:
 F60B: DE 27       LDU    $0F
 F60D: 86 80       LDA    #$08
 F60F: 97 2E       STA    $0C
@@ -746,6 +757,7 @@ F611: BD 70 F1    JSR    $F273
 F614: DF 2D       STU    $0F
 F616: 39          RTS
 
+coordinate_transform_eight_f617:
 F617: DE 27       LDU    $0F
 F619: 33 40 98    LEAU   $10,U
 F61C: 86 2E       LDA    #$06
@@ -754,6 +766,7 @@ F620: BD D1 04    JSR    $F386
 F623: DF 2D       STU    $0F
 F625: 39          RTS
 
+enemies_coordinate_transform_f626:
 F626: DE 8D       LDU    $0F
 F628: 33 E1 89 80 LEAU   $0108,U
 F62C: 86 20       LDA    #$08
@@ -762,6 +775,7 @@ F630: BD D1 04    JSR    $F386
 F633: DF 2D       STU    $0F
 F635: 39          RTS
 
+coordinate_transform_six_f636:
 F636: DE 8D       LDU    $0F
 F638: 33 E0 A8    LEAU   $20,U
 F63B: 86 2C       LDA    #$04
@@ -770,6 +784,7 @@ F63F: BD D1 D3    JSR    $F3F1
 F642: DF 8D       STU    $0F
 F644: 39          RTS
 
+coordinate_transform_seven_f645:
 F645: DE 8D       LDU    $0F
 F647: 86 2C       LDA    #$04
 F649: 97 84       STA    $0C
@@ -777,6 +792,7 @@ F64B: BD DB D9    JSR    $F3F1
 F64E: DF 87       STU    $0F
 F650: 39          RTS
 
+coordinate_transform_five_f651:
 F651: DE 8D       LDU    $0F
 F653: 33 EA 32    LEAU   $10,U
 F656: 86 84       LDA    #$06
@@ -785,6 +801,7 @@ F65A: BD 7E 58    JSR    $F670
 F65D: DF 87       STU    $0F
 F65F: 39          RTS
 
+coordinate_transform_zero_f660:
 F660: DE 2D       LDU    $0F
 F662: 33 4B 23 2A LEAU   $0108,U
 F666: 86 8A       LDA    #$08
@@ -811,6 +828,7 @@ F690: 0A 2E       DEC    $0C
 F692: 26 5E       BNE    $F670
 F694: 39          RTS
 
+race_beam_update_sprites_f695:
 F695: 96 89       LDA    $0B
 F697: 81 2C       CMPA   #$04
 F699: 24 B1       BCC    $F6D4
@@ -859,6 +877,7 @@ F6E9: 81 8C       CMPA   #$04
 F6EB: 24 ED       BCC    $F6B2
 F6ED: 39          RTS
 
+race_beam_update_sprites_f6ee:
 F6EE: 96 83       LDA    $0B
 F6F0: 81 26       CMPA   #$04
 F6F2: 24 BB       BCC    $F72D

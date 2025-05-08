@@ -104,7 +104,7 @@ print("reading MAME trace file...")
 with open(r"K:\Emulation\MAME\mame.tr","r") as f:
     l = len("A=01, B=00, C=3F, D=93, E=81, H=93, L=01, IX=XXXX, IY=XXXX, I=XX ")
     for line in f:
-        m = re.match("A=(..), B=(..), C=(..), D=(..), E=(..), H=(..), L=(..), IX=(....), IY=(....)",line)
+        m = re.match("A=(..), B=(..), C=(..), D=(..), E=(..), H=(..), L=(..), IX=(....), IY=(....) ",line)
         if m:
             pc = line[l:l+4]
             regs = dict()

@@ -1328,7 +1328,7 @@ dump_logs:
 	addq	#8,d0
 	lea		cpu_log_name(pc),a0
 	jbsr	resload_SaveFile(a2)
-	
+0:	
 	lea		sub_log_buffer,a1
 	move.l	sub_log_ptr,d0
 	sub.l	a1,d0

@@ -7001,6 +7001,7 @@ update_starfield_3A37:
 48F9: 3A 00 90    ld   a,($9000)
 ; game jumps here in the middle of the prev instruction ???
 ;48FA: ??????????? nop
+; since b = 0 it has no effect...
 ;48FB: ??????????? sub  b
 48FC: 3C          inc  a
 48FD: CC 04 5D    call z,$5D04

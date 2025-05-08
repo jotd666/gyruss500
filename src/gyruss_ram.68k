@@ -89,8 +89,14 @@ sub_log_ptr:
 	.long	sub_log_buffer
 log_buffer:
 	.skip	LOG_BUFFER_SIZE
+	.rept	20
+	.long	0xCAFECAFE
+	.endr
 sub_log_buffer:
 	.skip	LOG_BUFFER_SIZE
+	.rept	20
+	.long	0xCAFECAFE
+	.endr
 	.endif
 	
 highscore_needs_saving_flag:

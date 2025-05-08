@@ -14,15 +14,12 @@
 
 
 	.macro	MAKE_D
-	rol.w	#8,d0
-	move.b	d1,d0
-	.endm
-
-
-	.macro	MAKE_B
-	move.w	d0,d1
+	rol.w	#8,d1
+	move.b	d0,d1
 	rol.w	#8,d1
 	.endm
+
+
 
 	.macro INVERT_XC_FLAGS
 	PUSH_SR

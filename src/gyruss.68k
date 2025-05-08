@@ -8153,12 +8153,9 @@ l_48ba:
 	and.b	#0x07,d0                         	| [$48f5: and  $07]
 	jne	l_4900                             	| [$48f7: jr   nz,$4900]
 	move.b	l_9000(a6),d0                   	| [$48f9: ld   a,($9000)]
-	jra		0f
 * game jumps here in the middle of the prev instruction ???
+* but d1 = 0 so it has no effect
 l_48fa:
-	BREAKPOINT	"d1???"
-	sub.b	d1,d0
-0:
 	addq.b	#1,d0                           	| [$48fc: inc  a]
 	bne.b	0f                               	| [...]
 	jbsr	l_5d04                            	| [$48fd: call z,$5D04]

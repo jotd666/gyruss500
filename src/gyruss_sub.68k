@@ -24,6 +24,10 @@
 	move.w	d2,(a6)+
 	move.w	d3,(a6)+
 	move.w	d4,(a6)+
+	cmp.w	#0xCAFE,(a6)  | hitting the protection buffer
+	jne		444f
+	BREAKPOINT	"sub cpu log buffer full!"
+444:
 	move.w	#0xDEAD,(a6)+
 	move.l	a6,sub_log_ptr
 	move.l	(a7)+,a6
@@ -80,10 +84,9 @@ gyruss_sub_reset:
 	jbsr	gyruss_sub_cpu_init
 	moveq	#0,d0
 	jbsr	set_irq_flag_2000              	| [$f000: clr    irq_flag_2000] disable interrupts
-	                         	| [...]
+	                         	          | [...]
 	move.b	#0x00,d0                        	| [$f003: ldd    #$0000] active wait
-	move.b	#0x00,d1                        	| [$f003: ldd    #$0000] active wait
-	MAKE_D                                 	| [$f003: ldd    #$0000] active wait
+	move.w	#0x0000,d1                        	| [$f003: ldd    #$0000] active wait
 	GET_ADDRESS	0x67f5                     	| [$f006: sta    $67f5]
 	move.b	d0,(a0)                         	| [...]
 	* we completely skip the code there. It contains some
@@ -905,16 +908,19 @@ l_f4d0:
 	bra	l_f49d                             	| [$f4e2: bra    $f49d]
 
 l_f4e4:
+	LOG_REGS	f4e4
 	moveq	#0,d2
 	move.w	#0x65c0,d2                      	| [$f4e4: ldx    #$65c0]
 	GET_X_ADDRESS	0                        	| [$f4e7: lda    ,x+]
 	addq.w	#1,d2
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS	f4e9
 	GET_DP_ADDRESS	0x09                    	| [$f4e9: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x00                    	| [$f4eb: stx    $00]
 	move.w	d2,(a0)                         	| [...]
 	move.w	#sprite_ram_4040,d4             	| [$f4ed: ldu    #sprite_ram_4040]
+	LOG_REGS	f4f0
 	GET_DP_ADDRESS	0x0b                    	| [$f4f0: clr    $0b]
 	move.b	#0,(a0)                         	| [...]
 	move.b	#0x30,d0                        	| [$f4f2: lda    #$30]
@@ -923,6 +929,7 @@ l_f4e4:
 l_f4f6:
 	GET_DP_ADDRESS	0x0b                    	| [$f4f6: lda    $0b]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS	f4f8
 	cmp.b	#0x04,d0                         	| [$f4f8: cmpa   #$04]
 	bcc	l_f51f                             	| [$f4fa: bcc    $f51f]
 l_f4fc:
@@ -931,26 +938,28 @@ l_f4fc:
 	beq	l_f529                             	| [$f4fe: beq    $f529]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f500: ldb    [$4200]]
 	move.b	(a0),d1                         	| [...]
+	LOG_REGS	f504
 	moveq	#0,d0                            	| [$f504: clra]
 	asl.b	#1,d1                            	| [$f505: aslb]
 	roxl.b	#1,d0                             	| [$f506: rola]
 	asl.b	#1,d1                            	| [$f507: aslb]
 	roxl.b	#1,d0                             	| [$f508: rola]
 	MAKE_D
+	LOG_REGS	f509
 	add.w	#0x6200,d0                       	| [$f509: addd   #$6200]
 	move.w	d0,d2                           	| [$f50c: tfr    d,x]
+	LOG_REGS	f50e
 	GET_X_ADDRESS	0                        	| [$f50e: ldd    ,x++]
 	addq.w	#2,d2
 	move.b	(a0),d0                         	| [...]
 	move.b	(1,a0),d1                       	| [$f50e: ldd    ,x++]
 	MAKE_D                                 	| [$f50e: ldd    ,x++]
+	LOG_REGS	f510
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
 	addq.w	#2,d4
 	MOVE_W_FROM_REG	d0,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f512: ldd    ,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f512: ldd    ,x]
-	MAKE_D                                 	| [$f512: ldd    ,x]
+	LDD                       				| [$f512: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f514: std    ,u++]
 	addq.w	#2,d4
 	MOVE_W_FROM_REG	d0,(a0)                	| [...]

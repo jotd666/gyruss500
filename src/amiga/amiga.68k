@@ -1317,7 +1317,7 @@ dump_logs:
 	move.l	#0x200,d0
 	jbsr	resload_SaveFile(a2)
 	
-	lea		LOG_PTR_START,a1
+	lea		log_buffer,a1
 	move.l	log_ptr,d0
 	sub.l	a1,d0
 	jeq		0f
@@ -1327,6 +1327,13 @@ dump_logs:
 	move.l	#rom_base,(a0)+
 	addq	#8,d0
 	lea		cpu_log_name(pc),a0
+	jbsr	resload_SaveFile(a2)
+	
+	lea		sub_log_buffer,a1
+	move.l	sub_log_ptr,d0
+	sub.l	a1,d0
+	jeq		0f
+	lea		sub_cpu_log_name(pc),a0
 	jbsr	resload_SaveFile(a2)
 	
 0:
@@ -1341,6 +1348,8 @@ sprite_log_name:
 	.asciz	"used_sprites"
 cpu_log_name:
 	.asciz	"cpu_log"
+sub_cpu_log_name:
+	.asciz	"sub_cpu_log"
 	.align	2
 	.endif	
 	

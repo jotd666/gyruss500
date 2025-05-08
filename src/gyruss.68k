@@ -1464,7 +1464,7 @@ l_0904:
 l_0910:
 	clr.b	d0                               	| [$0910: xor  a]
 	move.b	d0,double_fire_930E(a6)         	| [$0911: ld   (double_fire_930E),a]
-	move.b	d0,l_A7FD(a6)                    	| [$0914: ld   ($A7FD),a]
+	move.b	d0,update_sequence_control_flag_a7fd(a6)                    	| [$0914: ld   ($A7FD),a]
 	move.b	d0,l_919E(a6)                   	| [$0917: ld   ($919E),a]
 	lea	l_961D(a6),a0                      	| [$091a: ld   hl,$961D]
 	addq.b	#1,(a0)                         	| [$091d: inc  (hl)]
@@ -2308,8 +2308,9 @@ l_0ee6:
 	add.w	d3,a0                            	| [$0ee7: add  hl,de]
 	subq.b	#1,d1                           	| [...]
 	jne	l_0ee6                             	| [$0ee8: djnz $0EE6]
-	move.b	d0,l_A7FD(a6)                       	| [$0eea: ld   ($A7FD),a]
-	move.b	d0,l_A7FC(a6)                       	| [$0eed: ld   ($A7FC),a]
+	* clear the variables
+	move.b	d0,update_sequence_control_flag_a7fd(a6)                       	| [$0eea: ld   ($A7FD),a]
+	move.b	d0,update_sequence_control_flag_a7fc(a6)                       	| [$0eed: ld   ($A7FC),a]
 	lea	l_9000(a6),a0                      	| [$0ef0: ld   hl,$9000]
 	move.w	#0x0010,d3                      	| [$0ef3: ld   de,$0010]
 	move.b	#0x3B,d1                        	| [$0ef6: ld   b,$3B]
@@ -2743,7 +2744,7 @@ l_12a4:
 l_12a6:
 	CLEAR_XC_FLAGS                         	| [$12a6: xor  a]
 	clr.b	d0                               	| [$12a6: xor  a]
-	move.b	d0,l_A7FD(a6)                      	| [$12a7: ld   ($A7FD),a]
+	move.b	d0,update_sequence_control_flag_a7fd(a6)                      	| [$12a7: ld   ($A7FD),a]
 	rts                                    	| [$12aa: ret]
 
 l_12e6:
@@ -3320,7 +3321,7 @@ l_1756:
 	jne	l_1756                             	| [$175c: djnz $1756]
 	move.b	#0x32,d0                       	| [$175e: ld   a,($011B)]
 	move.b	d0,ship_materializing_timer_943F(a6)         | [$1761: ld   ($943F),a]
-	move.b	d0,l_A7FD(a6)                    	| [$1764: ld   ($A7FD),a]
+	move.b	d0,update_sequence_control_flag_a7fd(a6)                    	| [$1764: ld   ($A7FD),a]
 	move.b	l_9669(a6),d0                   	| [$1767: ld   a,($9669)]
 	                               	| [$176a: and  a]
 	jne	l_1790                             	| [$176b: jr   nz,$1790]
@@ -3787,7 +3788,7 @@ l_1b0b:
 	jne	l_1b0b                             	| [$1b2e: djnz $1B0B]
 	move.b	#0x50,d0                        	| [$1b30: ld   a,$50]
 	move.b	d0,l_91CE(a6)                   	| [$1b32: ld   ($91CE),a]
-	move.b	d0,l_A7FD(a6)                       	| [$1b35: ld   ($A7FD),a]
+	move.b	d0,update_sequence_control_flag_a7fd(a6)                       	| [$1b35: ld   ($A7FD),a]
 	lea	sprite_shadow_ram_9800(a6),a3      	| [$1b38: ld   iy,sprite_shadow_ram_9800]
 	clr.b	(0x03,a3)                        	| [$1b3c: ld   (iy+$03),$00]
 	clr.b	(0x07,a3)                        	| [$1b40: ld   (iy+$07),$00]
@@ -4027,7 +4028,7 @@ l_1d1a:
 	rts                                    	| [$1d1e: ret]
 
 l_1f30:
-	move.b	l_A7FD(a6),d0                       	| [$1f30: ld   a,($A7FD)]
+	move.b	update_sequence_control_flag_a7fd(a6),d0                       	| [$1f30: ld   a,($A7FD)]
 	                               	| [$1f33: and  a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$1f34: ret  nz] [...]
@@ -4276,7 +4277,7 @@ l_2181:
 	jra	l_20c7                             	| [$218d: jp   $20C7]
 
 l_2190:
-	move.b	l_A7FD(a6),d0                       	| [$2190: ld   a,($A7FD)]
+	move.b	update_sequence_control_flag_a7fd(a6),d0                       	| [$2190: ld   a,($A7FD)]
 	                               	| [$2193: and  a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$2194: ret  nz] [...]
@@ -6134,7 +6135,7 @@ new_demo_game_start_2e8f:
 	move.b	d0,l_960B(a6)                   	| [$2ee7: ld   ($960B),a]
 	clr.b	d0                               	| [$2eea: xor  a]
 	move.b	d0,l_9476(a6)                   	| [$2eeb: ld   ($9476),a]
-	move.b	d0,l_A7FD(a6)                       	| [$2eee: ld   ($A7FD),a]
+	move.b	d0,update_sequence_control_flag_a7fd(a6)                       	| [$2eee: ld   ($A7FD),a]
 	move.b	#0x03,d0                        	| [$2ef1: ld   a,$03]
 	move.b	d0,l_9444(a6)                   	| [$2ef3: ld   ($9444),a]
 	jbsr	l_4171                            	| [$2ef6: call $4171]
@@ -7668,7 +7669,7 @@ l_4301:
 
 l_43f4:
 	clr.b	d0                               	| [$43f4: xor  a]
-	move.b	d0,l_A7FD(a6)                       	| [$43f5: ld   ($A7FD),a]
+	move.b	d0,update_sequence_control_flag_a7fd(a6)                       	| [$43f5: ld   ($A7FD),a]
 	jbsr	l_0ecb                            	| [$43f8: call $0ECB]
 	jbsr	l_5c88                            	| [$43fb: call $5C88]
 	jbsr	l_5dd4                            	| [$43fe: call $5DD4]
@@ -8672,7 +8673,7 @@ l_4cea:
 	move.b	d0,d1                           	| [$4d03: ld   b,a]
 l_4d04:
 	move.b	#0x01,d0                        	| [$4d04: ld   a,$01]
-	move.b	d0,l_A7FC(a6)                       	| [$4d06: ld   ($A7FC),a]
+	move.b	d0,update_sequence_control_flag_a7fc(a6)                       	| [$4d06: ld   ($A7FC),a]
 	move.b	l_9407(a6),d0                   	| [$4d09: ld   a,($9407)]
 	                               	| [$4d0c: and  a]
 	jne	l_4d22                             	| [$4d0d: jr   nz,$4D22]
@@ -8794,7 +8795,7 @@ l_4e79:
 
 l_4e92:
 	clr.b	d0                               	| [$4e92: xor  a]
-	move.b	d0,l_A7FC(a6)                       	| [$4e93: ld   ($A7FC),a]
+	move.b	d0,update_sequence_control_flag_a7fc(a6)                       	| [$4e93: ld   ($A7FC),a]
 	lea	0x85AD,a0                          	| [$4e96: ld   hl,$85AD]
 	move.w	#0x001A,d3                      	| [$4e99: ld   de,$001A]
 	move.b	#0x06,d2                        	| [$4e9c: ld   c,$06]

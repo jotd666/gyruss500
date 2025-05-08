@@ -2,7 +2,7 @@
 	.macro	BREAKPOINT comment
 	.endm
 	.else
-LOG_PTR_START = 0x100
+LOG_BUFFER_SIZE = 0x10000
 	* amiga specific
 	.macro	BREAKPOINT comment
 	move.l	a0,-(a7)

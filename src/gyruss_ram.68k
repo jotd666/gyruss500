@@ -4,7 +4,6 @@
 	.global vb_ticks_count
 	.global break_at_startup_flag
 	.global skip_intro_flag
-	.global log_ptr
 	.global	i_reg
 	.global highscore_needs_saving_flag
 	.global sprite_ram_9000
@@ -21,6 +20,10 @@
 	.global	dev_ram_buffer
 	.global ram_start_4000
 	.global ram_start_8000
+	.global log_ptr
+	.global sub_log_ptr
+	.global	log_buffer
+	.global	sub_log_buffer
 	.endif
 	
 	.include	"gyruss.inc"
@@ -81,7 +84,13 @@ m6809_interrupts_on:
 	
 	.ifndef	RELEASE
 log_ptr:
-	.long	LOG_PTR_START
+	.long	log_buffer
+sub_log_ptr:
+	.long	sub_log_buffer
+log_buffer:
+	.skip	LOG_BUFFER_SIZE
+sub_log_buffer:
+	.skip	LOG_BUFFER_SIZE
 	.endif
 	
 highscore_needs_saving_flag:

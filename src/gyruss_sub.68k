@@ -10,6 +10,27 @@
 	.include "gyruss.inc"
 	.include "gyruss_sub.inc"
 
+
+	* to trace at some virtual PCs, insert this macro
+	
+	.ifndef	RELEASE
+	.macro	LOG_REGS	m6809pc
+	move.w	sr,-(a7)
+	move.l	a6,-(a7)
+	move.l	sub_log_ptr,a6
+	move.w	#0x\m6809pc,(a6)+
+	move.w	d0,(a6)+
+	move.w	d1,(a6)+
+	move.w	d2,(a6)+
+	move.w	d3,(a6)+
+	move.w	d4,(a6)+
+	move.w	#0xDEAD,(a6)+
+	move.l	a6,sub_log_ptr
+	move.l	(a7)+,a6
+	move.w	(a7)+,sr
+	.endm
+	.endif
+	
 * this code is mainly used to convert Z80-handled coordinates to polar
 * displayable coordinates for enemy ships (not all sprites are concerned)
 *
@@ -34,6 +55,8 @@ shared_memory_6000 = 0x6000
 frame_odd_or_even_6700 = 0x6700
 draw_queued_sprites_flag_6701 = 0x6701
 queue_sprites_flag_6702 = 0x6702
+update_sequence_control_flag_67fc = 0x67fc
+update_sequence_control_flag_67fd = 0x67fd
 
 * tell 6809 to perform more or less operations:
 * 0xFF: don't do anything (state not reached in the game)
@@ -136,7 +159,7 @@ l_f0ef:
 	GET_ADDRESS	queue_sprites_flag_6702                     	| [$f0ef: lda    $6702]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f0ef                             	| [$f0f2: beq    $f0ef]
-	GET_ADDRESS	0x67fd                     	| [$f0f4: lda    $67fd]
+	GET_ADDRESS	update_sequence_control_flag_67fd                     	| [$f0f4: lda    $67fd]
 	move.b	(a0),d0                         	| [...]
 	bne	alternate_update_sequence_f165          	| [$f0f7: bne    $f165]
 	jbsr	ship_coordinate_transform_f566                            	| [$f0f9: jsr    $f566]
@@ -240,7 +263,7 @@ l_f1bc:
 	move.b	(a0),d0                         	| [...]
 	beq	l_f1bc                             	| [$f1bf: beq    $f1bc]
 	* if non-zero, seems that enemy shots are not moving
-	GET_ADDRESS	0x67fd                     	| [$f1c1: lda    $67fd]
+	GET_ADDRESS	update_sequence_control_flag_67fd                     	| [$f1c1: lda    $67fd]
 	move.b	(a0),d0                         	| [...]
 	bne	l_f232                             	| [$f1c4: bne    $f232]
 	* the game performs calculations and tries to update
@@ -1016,7 +1039,7 @@ l_f569:
 	rts                                    	| [$f588: rts]
 
 enemies_coordinate_transform_f589:
-	GET_ADDRESS	0x67fc                     	| [$f589: lda    $67fc]
+	GET_ADDRESS	update_sequence_control_flag_67fc   | [$f589: lda    $67fc]
 	move.b	(a0),d0                         	| [...]
 	bne	l_f59e                             	| [$f58c: bne    $f59e]
 	GET_DP_ADDRESS	0x0f                    	| [$f58e: ldu    $0f]

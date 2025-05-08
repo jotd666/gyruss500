@@ -12,11 +12,15 @@
 
 
 	* to trace at some virtual PCs, insert this macro
+	.macro	LOG_REGS	m6809pc
+	.endm
 	
 	.ifndef	RELEASE
-	.macro	LOG_REGS	m6809pc
+	.macro	pLOG_REGS	m6809pc
 	move.w	sr,-(a7)
 	move.l	a6,-(a7)
+	move.l	d1,-(a7)
+	MAKE_D		| make sure that not too many diffs
 	move.l	sub_log_ptr,a6
 	move.w	#0x\m6809pc,(a6)+
 	move.w	d0,(a6)+
@@ -30,6 +34,7 @@
 444:
 	move.w	#0xDEAD,(a6)+
 	move.l	a6,sub_log_ptr
+	move.l	(a7)+,d1
 	move.l	(a7)+,a6
 	move.w	(a7)+,sr
 	.endm
@@ -105,7 +110,7 @@ gyruss_sub_reset:
 l_f09e:
 	GET_U_ADDRESS	0                        	| [$f09e: std    ,u++]
 	addq.w	#2,d4
-	move.w	d0,(a0)                         	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	subq.w	#0x1,d2                         	| [$f0a0: leax   -$1,x]
 	bne	l_f09e                             	| [$f0a2: bne    $f09e]
 	move.b	#0x42,d0                        	| [$f0a4: lda    #$42]
@@ -377,12 +382,9 @@ l_f273:
 	asl.b	#1,d1                            	| [$f285: aslb]
 	roxl.b	#1,d0                             	| [$f286: rola]
 	MAKE_D
-	add.w	d0,d2                            	| [$f287: leax   d,x]
+	add.w	d1,d2                            	| [$f287: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f289: ldd    $0200,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f289: ldd    $0200,x]
-	MAKE_D                                 	| [$f289: ldd    $0200,x]
-	tst.w	d0                               	| [$f289: ldd    $0200,x]
+	LOAD_D                                 	| [$f289: ldd    $0200,x]
 	bpl	l_f299                             	| [$f28d: bpl    $f299]
 	GET_DP_ADDRESS	0x08                    	| [$f28f: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -403,10 +405,7 @@ l_f29f:
 	GET_U_ADDRESS	0                        	| [$f2a1: sta    ,u]
 	move.b	d0,(a0)                         	| [...]
 	GET_X_ADDRESS	0                        	| [$f2a3: ldd    ,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f2a3: ldd    ,x]
-	MAKE_D                                 	| [$f2a3: ldd    ,x]
-	tst.w	d0                               	| [$f2a3: ldd    ,x]
+	LOAD_D                                 	| [$f2a3: ldd    ,x]
 	bpl	l_f2b1                             	| [$f2a5: bpl    $f2b1]
 	GET_DP_ADDRESS	0x08                    	| [$f2a7: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -459,7 +458,7 @@ l_f2dc:
 	beq	l_f35f                             	| [$f2e1: beq    $f35f]
 	moveq	#0,d0                            	| [$f2e3: clra]
 	MAKE_D
-	GET_X_ADDRESS_FROM_REG	d0              	| [$f2e4: lda    d,x]
+	GET_X_ADDRESS_FROM_REG	d1              	| [$f2e4: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f2e6: sta    $08]
 	move.b	d0,(a0)                         	| [...]
@@ -471,12 +470,9 @@ l_f2dc:
 	asl.b	#1,d1                            	| [$f2ee: aslb]
 	roxl.b	#1,d0                             	| [$f2ef: rola]
 	MAKE_D
-	add.w	d0,d2                            	| [$f2f0: leax   d,x]
+	add.w	d1,d2                            	| [$f2f0: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f2f2: ldd    $0200,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f2f2: ldd    $0200,x]
-	MAKE_D                                 	| [$f2f2: ldd    $0200,x]
-	tst.w	d0                               	| [$f2f2: ldd    $0200,x]
+	LOAD_D                                 	| [$f2f2: ldd    $0200,x]
 	bpl	l_f302                             	| [$f2f6: bpl    $f302]
 	GET_DP_ADDRESS	0x08                    	| [$f2f8: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -509,10 +505,7 @@ l_f314:
 	GET_U_ADDRESS	0x4                      	| [$f318: sta    $4,u]
 	move.b	d0,(a0)                         	| [...]
 	GET_X_ADDRESS	0                        	| [$f31a: ldd    ,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f31a: ldd    ,x]
-	MAKE_D                                 	| [$f31a: ldd    ,x]
-	tst.w	d0                               	| [$f31a: ldd    ,x]
+	LOAD_D                                 	| [$f31a: ldd    ,x]
 	bpl	l_f328                             	| [$f31c: bpl    $f328]
 	GET_DP_ADDRESS	0x08                    	| [$f31e: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -604,7 +597,7 @@ l_f386:
 	beq	l_f3ea                             	| [$f38b: beq    $f3ea]
 	moveq	#0,d0                            	| [$f38d: clra]
 	MAKE_D
-	GET_X_ADDRESS_FROM_REG	d0              	| [$f38e: lda    d,x]
+	GET_X_ADDRESS_FROM_REG	d1              	| [$f38e: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f390: sta    $08]
 	move.b	d0,(a0)                         	| [...]
@@ -616,12 +609,9 @@ l_f386:
 	asl.b	#1,d1                            	| [$f398: aslb]
 	roxl.b	#1,d0                             	| [$f399: rola]
 	MAKE_D
-	add.w	d0,d2                            	| [$f39a: leax   d,x]
+	add.w	d1,d2                            	| [$f39a: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f39c: ldd    $0200,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f39c: ldd    $0200,x]
-	MAKE_D                                 	| [$f39c: ldd    $0200,x]
-	tst.w	d0                               	| [$f39c: ldd    $0200,x]
+	LOAD_D                                 	| [$f39c: ldd    $0200,x]
 	bpl	l_f3ac                             	| [$f3a0: bpl    $f3ac]
 	GET_DP_ADDRESS	0x08                    	| [$f3a2: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -642,10 +632,8 @@ l_f3b2:
 	GET_U_ADDRESS	0                        	| [$f3b4: sta    ,u]
 	move.b	d0,(a0)                         	| [...]
 	GET_X_ADDRESS	0                        	| [$f3b6: ldd    ,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f3b6: ldd    ,x]
-	MAKE_D                                 	| [$f3b6: ldd    ,x]
-	tst.w	d0                               	| [$f3b6: ldd    ,x]
+
+	LOAD_D                                 	| [$f3b6: ldd    ,x]
 	bpl	l_f3c4                             	| [$f3b8: bpl    $f3c4]
 	GET_DP_ADDRESS	0x08                    	| [$f3ba: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -700,7 +688,7 @@ l_f3f1:
 	beq	l_f482                             	| [$f3f6: lbeq   $f482]
 	moveq	#0,d0                            	| [$f3fa: clra]
 	MAKE_D
-	GET_X_ADDRESS_FROM_REG	d0              	| [$f3fb: lda    d,x]
+	GET_X_ADDRESS_FROM_REG	d1              	| [$f3fb: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f3fd: sta    $08]
 	move.b	d0,(a0)                         	| [...]
@@ -712,12 +700,9 @@ l_f3f1:
 	asl.b	#1,d1                            	| [$f405: aslb]
 	roxl.b	#1,d0                             	| [$f406: rola]
 	MAKE_D
-	add.w	d0,d2                            	| [$f407: leax   d,x]
+	add.w	d1,d2                            	| [$f407: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f409: ldd    $0200,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f409: ldd    $0200,x]
-	MAKE_D                                 	| [$f409: ldd    $0200,x]
-	tst.w	d0                               	| [$f409: ldd    $0200,x]
+	LOAD_D                                 	| [$f409: ldd    $0200,x]
 	bpl	l_f419                             	| [$f40d: bpl    $f419]
 	GET_DP_ADDRESS	0x08                    	| [$f40f: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -741,10 +726,7 @@ l_f41f:
 	GET_U_ADDRESS	0x23                     	| [$f425: sta    $23,u]
 	move.b	d0,(a0)                         	| [...]
 	GET_X_ADDRESS	0                        	| [$f428: ldd    ,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f428: ldd    ,x]
-	MAKE_D                                 	| [$f428: ldd    ,x]
-	tst.w	d0                               	| [$f428: ldd    ,x]
+	LOAD_D                                 	| [$f428: ldd    ,x]
 	bpl	l_f436                             	| [$f42a: bpl    $f436]
 	GET_DP_ADDRESS	0x08                    	| [$f42c: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -851,25 +833,21 @@ l_f4a3:
 	asl.b	#1,d1                            	| [$f4ae: aslb]
 	roxl.b	#1,d0                             	| [$f4af: rola]
 	MAKE_D
-	add.w	#shared_memory_6000,d0           	| [$f4b0: addd   #shared_memory_6000]
-	move.w	d0,d2                           	| [$f4b3: tfr    d,x]
+	add.w	#shared_memory_6000,d1           	| [$f4b0: addd   #shared_memory_6000]
+	move.w	d1,d2                           	| [$f4b3: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f4b5: ldd    ,x++]
 	addq.w	#2,d2
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f4b5: ldd    ,x++]
-	MAKE_D                                 	| [$f4b5: ldd    ,x++]
-	tst.w	d0                               	| [$f4b5: ldd    ,x++]
+	LOAD_D                                 	| [$f4b5: ldd    ,x++]
 	MAKE_D
 	GET_U_ADDRESS	0                        	| [$f4b7: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d0,(a0)                	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f4b9: ldd    ,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f4b9: ldd    ,x]
-	MAKE_D                                 	| [$f4b9: ldd    ,x]
+
+	LOAD_D                                 	| [$f4b9: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f4bb: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d0,(a0)                	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f4bd: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x09                    	| [$f4bf: dec    $09]
@@ -899,6 +877,7 @@ l_f4d0:
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f4d8: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS	f4dc
 	GET_DP_ADDRESS	0x09                    	| [$f4dc: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f4de: inc    $01]
@@ -932,6 +911,7 @@ l_f4f6:
 	LOG_REGS	f4f8
 	cmp.b	#0x04,d0                         	| [$f4f8: cmpa   #$04]
 	bcc	l_f51f                             	| [$f4fa: bcc    $f51f]
+	LOG_REGS	f4fc
 l_f4fc:
 	GET_DP_ADDRESS	0x09                    	| [$f4fc: lda    $09]
 	move.b	(a0),d0                         	| [...]
@@ -946,23 +926,21 @@ l_f4fc:
 	roxl.b	#1,d0                             	| [$f508: rola]
 	MAKE_D
 	LOG_REGS	f509
-	add.w	#0x6200,d0                       	| [$f509: addd   #$6200]
-	move.w	d0,d2                           	| [$f50c: tfr    d,x]
+	add.w	#0x6200,d1                       	| [$f509: addd   #$6200]
+	move.w	d1,d2                           	| [$f50c: tfr    d,x]
 	LOG_REGS	f50e
 	GET_X_ADDRESS	0                        	| [$f50e: ldd    ,x++]
 	addq.w	#2,d2
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f50e: ldd    ,x++]
-	MAKE_D                                 	| [$f50e: ldd    ,x++]
+	LOAD_D                                 	| [$f50e: ldd    ,x++]
 	LOG_REGS	f510
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d0,(a0)                	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f512: ldd    ,x]
-	LDD                       				| [$f512: ldd    ,x]
+	LOAD_D                                 	| [$f512: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f514: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d0,(a0)                	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f516: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x09                    	| [$f518: dec    $09]
@@ -1298,23 +1276,20 @@ l_f6b2:
 	asl.b	#1,d1                            	| [$f6bd: aslb]
 	roxl.b	#1,d0                             	| [$f6be: rola]
 	MAKE_D
-	add.w	#shared_memory_6000,d0           	| [$f6bf: addd   #shared_memory_6000]
-	move.w	d0,d2                           	| [$f6c2: tfr    d,x]
+	add.w	#shared_memory_6000,d1           	| [$f6bf: addd   #shared_memory_6000]
+	move.w	d1,d2                           	| [$f6c2: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f6c4: ldd    ,x++]
 	addq.w	#2,d2
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f6c4: ldd    ,x++]
-	MAKE_D                                 	| [$f6c4: ldd    ,x++]
+	LOAD_D                                 	| [$f6c4: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f6c6: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d0,(a0)                	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f6c8: ldd    ,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f6c8: ldd    ,x]
-	MAKE_D                                 	| [$f6c8: ldd    ,x]
+
+	LOAD_D                                 	| [$f6c8: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f6ca: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d0,(a0)                	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f6cc: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x09                    	| [$f6ce: dec    $09]
@@ -1381,23 +1356,20 @@ l_f70b:
 	asl.b	#1,d1                            	| [$f716: aslb]
 	roxl.b	#1,d0                             	| [$f717: rola]
 	MAKE_D
-	add.w	#0x6200,d0                       	| [$f718: addd   #$6200]
-	move.w	d0,d2                           	| [$f71b: tfr    d,x]
+	add.w	#0x6200,d1                       	| [$f718: addd   #$6200]
+	move.w	d1,d2                           	| [$f71b: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f71d: ldd    ,x++]
 	addq.w	#2,d2
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f71d: ldd    ,x++]
-	MAKE_D                                 	| [$f71d: ldd    ,x++]
+
+	LOAD_D                                 	| [$f71d: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f71f: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d0,(a0)                	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f721: ldd    ,x]
-	move.b	(a0),d0                         	| [...]
-	move.b	(1,a0),d1                       	| [$f721: ldd    ,x]
-	MAKE_D                                 	| [$f721: ldd    ,x]
+	LOAD_D                                 	| [$f721: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f723: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d0,(a0)                	| [...]
+	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f725: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x09                    	| [$f727: dec    $09]

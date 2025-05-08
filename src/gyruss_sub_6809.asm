@@ -20,7 +20,7 @@ sprite_ram_4040 = 0x4040
 ; mapped to A000 on the other CPU, so everything RAM over A000 on the other
 ; cpu is visible by this CPU
 shared_memory_6000 = 0x6000
-select_sprite_buffer_flag_6700 = 0x6700
+frame_odd_or_even_6700 = 0x6700
 
 m6809_reset:
 F000: 7F 02 82    CLR    irq_flag_2000          ; disable interrupts                              
@@ -111,7 +111,7 @@ F0C6: 10 27 2C A8 LBEQ   sync_first_sprites_f54a
 ; wait for Z80 signal: draw sprites
 F0CA: B6 EF 29    LDA    draw_queued_sprites_flag_6701
 F0CD: 27 73       BEQ    $F0CA
-F0CF: B6 45 22    LDA    select_sprite_buffer_flag_6700
+F0CF: B6 45 22    LDA    frame_odd_or_even_6700
 F0D2: 10 26 22 EF LBNE   $F1A3
 F0D6: BD 76 CC    JSR    $F4E4
 F0D9: 7F EC 88    CLR    $6400

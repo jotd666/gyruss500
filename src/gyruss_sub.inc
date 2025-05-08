@@ -13,12 +13,18 @@
 
 
 
+
 	.macro	MAKE_D
 	rol.w	#8,d1
 	move.b	d0,d1
 	rol.w	#8,d1
 	.endm
 
+	.macro	LOAD_D
+	move.b	(a0),d0
+	move.b	(1,a0),d1
+	MAKE_D
+	.endm
 
 
 	.macro INVERT_XC_FLAGS

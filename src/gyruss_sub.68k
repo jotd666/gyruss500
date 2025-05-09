@@ -166,13 +166,13 @@ l_f0ef:
 	move.b	(a0),d0                         	| [...]
 	bne	alternate_update_sequence_f165          	| [$f0f7: bne    $f165]
 
-	ENABLE_REGS_LOG
+	*ENABLE_REGS_LOG
 	LOG_REGS	F0F9
 
 	lea		gysub_before_4000,a0
 	move.l	#0x4000,d6
 	moveq	#1,d7
-	jbsr	osd_read_file
+	*jbsr	osd_read_file
 	jra		0f
 gysub_before_4000:
 	.asciz	"gysub_before_4000"
@@ -181,7 +181,7 @@ gysub_before_4000:
 	lea		gysub_before_6000,a0
 	move.l	#0x6000,d6
 	moveq	#1,d7
-	jbsr	osd_read_file
+	*jbsr	osd_read_file
 	jra		0f
 gysub_before_6000:
 	.asciz	"gysub_before_6000"
@@ -230,8 +230,8 @@ gysub_after_6000:
 	.asciz	"gysub_after_6000_amiga"
 	.align 	2
 0:
-	jbsr	osd_dump_logs
-	illegal
+	*jbsr	osd_dump_logs
+	*illegal
 	
 continue_f135:
 	move.b	#0x29,d0                        	| [$f135: lda    #$29]
@@ -405,7 +405,7 @@ l_f232:
 	jbsr	race_beam_update_sprites_f695                            	| [$f26b: jsr    $f695]
 	jra	continue_f202                             	| [$f26e: bra    $f202]
 
-l_f273:
+compute_coords_f273:
 	moveq	#0,d2
 	move.w	#0xe000,d2                      	| [$f273: ldx    #$e000]
 	GET_U_ADDRESS	0                        	| [$f276: ldb    ,u]
@@ -413,26 +413,30 @@ l_f273:
 	beq	l_f2d5                             	| [$f278: beq    $f2d5]
 	moveq	#0,d0                            	| [$f27a: clra]
 	MAKE_D
-	GET_X_ADDRESS_FROM_REG	d0              	| [$f27b: lda    d,x]
+	LOG_REGS		f27b
+	GET_X_ADDRESS_FROM_REG	d1              	| [$f27b: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f27d: sta    $08]
 	move.b	d0,(a0)                         	| [...]
-	moveq	#0,d2
-	move.w	#0xe400,d2                      	| [$f27f: ldx    #$e400]
+	move.l	#0xe400,d2                      	| [$f27f: ldx    #$e400]
+	LOG_REGS		f282
 	GET_U_ADDRESS	0x3                      	| [$f282: ldb    $3,u]
 	move.b	(a0),d1                         	| [...]
 	moveq	#0,d0                            	| [$f284: clra]
 	asl.b	#1,d1                            	| [$f285: aslb]
 	roxl.b	#1,d0                             	| [$f286: rola]
 	MAKE_D
+	LOG_REGS		f287
 	add.w	d1,d2                            	| [$f287: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f289: ldd    $0200,x]
 	LOAD_D                                 	| [$f289: ldd    $0200,x]
 	bpl	l_f299                             	| [$f28d: bpl    $f299]
 	GET_DP_ADDRESS	0x08                    	| [$f28f: lda    $08]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS		f291
 	jbsr	multiply_ab                       	| [$f291: mul]
 	neg.b	d0                               	| [$f292: nega]
+	LOG_REGS		f293
 	bmi	l_f29f                             	| [$f293: bmi    $f29f]
 	beq	l_f29f                             	| [$f295: beq    $f29f]
 	bra	l_f2d5                             	| [$f297: bra    $f2d5] [uncovered]
@@ -440,6 +444,7 @@ l_f273:
 l_f299:
 	GET_DP_ADDRESS	0x08                    	| [$f299: lda    $08]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS		f29b
 	jbsr	multiply_ab                       	| [$f29b: mul]
 	tst.b	d0                               	| [$f29c: tsta]
 	bmi	l_f2d5                             	| [$f29d: bmi    $f2d5]
@@ -449,6 +454,7 @@ l_f29f:
 	move.b	d0,(a0)                         	| [...]
 	GET_X_ADDRESS	0                        	| [$f2a3: ldd    ,x]
 	LOAD_D                                 	| [$f2a3: ldd    ,x]
+	LOG_REGS		f2a5
 	bpl	l_f2b1                             	| [$f2a5: bpl    $f2b1]
 	GET_DP_ADDRESS	0x08                    	| [$f2a7: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -462,6 +468,7 @@ l_f2b1:
 	GET_DP_ADDRESS	0x08                    	| [$f2b1: lda    $08]
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f2b3: mul]
+	LOG_REGS		f2b4
 	tst.b	d0                               	| [$f2b4: tsta]
 	bmi	l_f2d5                             	| [$f2b5: bmi    $f2d5]
 l_f2b7:
@@ -481,32 +488,35 @@ l_f2b7:
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f2cb: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	LOG_REGS		f2cd
 	GET_DP_ADDRESS	0x0e                    	| [$f2cd: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f2cf: lsrb]
 	                            	| [$f2d0: lsrb]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f2d1: stb    [$4211]]
+	LOG_REGS		f2d1
 	move.b	d1,(a0)                         	| [...]
 l_f2d5:
 	addq.w	#0x4,d4                         	| [$f2d5: leau   $4,u]
+	LOG_REGS		f2d7
 	GET_DP_ADDRESS	0x0c                    	| [$f2d7: dec    $0c]
 	subq.b	#1,(a0)                         	| [...]
-	bne	l_f273                             	| [$f2d9: bne    $f273]
+	bne	compute_coords_f273                             	| [$f2d9: bne    $f273]
 	rts                                    	| [$f2db: rts]
 
 l_f2dc:
-	move.w	#0xe000,d2                      	| [$f2dc: ldx    #$e000]
+	move.l	#0xe000,d2                      	| [$f2dc: ldx    #$e000]
 	GET_U_ADDRESS	0                        	| [$f2df: ldb    ,u]
 	move.b	(a0),d1                         	| [...]
 	beq	l_f35f                             	| [$f2e1: beq    $f35f]
 	moveq	#0,d0                            	| [$f2e3: clra]
 	MAKE_D
+	LOG_REGS		f2e4
 	GET_X_ADDRESS_FROM_REG	d1              	| [$f2e4: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f2e6: sta    $08]
 	move.b	d0,(a0)                         	| [...]
-	moveq	#0,d2
-	move.w	#0xe400,d2                      	| [$f2e8: ldx    #$e400]
+	move.l	#0xe400,d2                      	| [$f2e8: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f2eb: ldb    $3,u]
 	move.b	(a0),d1                         	| [...]
 	moveq	#0,d0                            	| [$f2ed: clra]
@@ -519,6 +529,7 @@ l_f2dc:
 	bpl	l_f302                             	| [$f2f6: bpl    $f302]
 	GET_DP_ADDRESS	0x08                    	| [$f2f8: lda    $08]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS		f2fa
 	jbsr	multiply_ab                       	| [$f2fa: mul]
 	neg.b	d0                               	| [$f2fb: nega]
 	bmi	l_f308                             	| [$f2fc: bmi    $f308]
@@ -529,12 +540,14 @@ l_f302:
 	GET_DP_ADDRESS	0x08                    	| [$f302: lda    $08]
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f304: mul]
+	LOG_REGS		f305
 	tst.b	d0                               	| [$f305: tsta]
 	bmi	l_f35f                             	| [$f306: bmi    $f35f]
 l_f308:
 	GET_U_ADDRESS	0x2                      	| [$f308: ldb    $2,u]
 	move.b	(a0),d1                         	| [...]
 	and.b	#0x10,d1                         	| [$f30a: andb   #$10]
+	LOG_REGS		f30c
 	bne	l_f312                             	| [$f30c: bne    $f312]
 	add.b	#0x7c,d0                         	| [$f30e: adda   #$7c]
 	bra	l_f314                             	| [$f310: bra    $f314]
@@ -542,6 +555,7 @@ l_f308:
 l_f312:
 	add.b	#0x78,d0                         	| [$f312: adda   #$78]
 l_f314:
+	LOG_REGS	f314
 	GET_U_ADDRESS	0                        	| [$f314: sta    ,u]
 	move.b	d0,(a0)                         	| [...]
 	add.b	#0x08,d0                         	| [$f316: adda   #$08]
@@ -549,11 +563,14 @@ l_f314:
 	move.b	d0,(a0)                         	| [...]
 	GET_X_ADDRESS	0                        	| [$f31a: ldd    ,x]
 	LOAD_D                                 	| [$f31a: ldd    ,x]
+	LOG_REGS		f31c
 	bpl	l_f328                             	| [$f31c: bpl    $f328]
+	LOG_REGS		f31e
 	GET_DP_ADDRESS	0x08                    	| [$f31e: lda    $08]
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f320: mul]
 	neg.b	d0                               	| [$f321: nega]
+	LOG_REGS		f322
 	bmi	l_f32e                             	| [$f322: bmi    $f32e]
 	beq	l_f32e                             	| [$f324: beq    $f32e]
 	bra	l_f35f                             	| [$f326: bra    $f35f]
@@ -663,7 +680,6 @@ compute_coords_f386:
 	GET_DP_ADDRESS	0x08                    	| [$f3a2: lda    $08]
 	move.b	(a0),d0                         	| [...]
 	LOG_REGS	f3a4
-	jbsr	osd_break
 	jbsr	multiply_ab                       	| [$f3a4: mul]
 	neg.b	d0                               	| [$f3a5: nega]
 	LOG_REGS	f3a6
@@ -720,6 +736,7 @@ l_f3ca:
 	add.b	(a0),d0                          	| [...]
 	                    	| [$f3dc: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	LOG_REGS	F3DE
 	GET_DP_ADDRESS	0x0d                    	| [$f3de: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f3e0: ldb    $0e]
@@ -733,6 +750,7 @@ l_f3ea:
 	addq.w	#0x4,d4                         	| [$f3ea: leau   $4,u]
 	GET_DP_ADDRESS	0x0c                    	| [$f3ec: dec    $0c]
 	subq.b	#1,(a0)                         	| [...]
+	LOG_REGS	f3ee
 	bne	compute_coords_f386                             	| [$f3ee: bne    $f386]
 	rts                                    	| [$f3f0: rts]
 
@@ -1051,6 +1069,7 @@ l_f569:
 	GET_U_ADDRESS	0x3                      	| [$f569: lda    $3,u]
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f56b: anda   #$c0]
+	LOG_REGS	f56d
 	GET_DP_ADDRESS	0x12                    	| [$f56d: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f56f: inc    [$4211]]
@@ -1061,6 +1080,7 @@ l_f569:
 	add.b	(a0),d0                          	| [...]
 	                    	| [$f579: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	LOG_REGS	f56d
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f57b: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	addq.w	#0x4,d4                         	| [$f57f: leau   $4,u]
@@ -1148,7 +1168,7 @@ coordinate_transform_one_f5e7:
 	move.b	#0x0a,d0                        	| [$f5e9: lda    #$0a]
 	GET_DP_ADDRESS	0x0c                    	| [$f5eb: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
-	jbsr	l_f273                            	| [$f5ed: jsr    $f273]
+	jbsr	compute_coords_f273                            	| [$f5ed: jsr    $f273]
 	GET_DP_ADDRESS	0x0f                    	| [$f5f0: stu    $0f]
 	MOVE_W_FROM_REG	d4,(a0)                	| [...]
 	rts                                    	| [$f5f2: rts]
@@ -1159,7 +1179,7 @@ coordinate_transform_two_f5f3:
 	move.b	#0x08,d0                        	| [$f5f5: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f5f7: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
-	jbsr	l_f273                            	| [$f5f9: jsr    $f273]
+	jbsr	compute_coords_f273                            	| [$f5f9: jsr    $f273]
 	GET_DP_ADDRESS	0x0f                    	| [$f5fc: stu    $0f]
 	MOVE_W_FROM_REG	d4,(a0)                	| [...]
 	rts                                    	| [$f5fe: rts]
@@ -1170,7 +1190,7 @@ coordinate_transform_three_f5ff:
 	move.b	#0x0a,d0                        	| [$f601: lda    #$0a]
 	GET_DP_ADDRESS	0x0c                    	| [$f603: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
-	jbsr	l_f273                            	| [$f605: jsr    $f273]
+	jbsr	compute_coords_f273                            	| [$f605: jsr    $f273]
 	GET_DP_ADDRESS	0x0f                    	| [$f608: stu    $0f]
 	MOVE_W_FROM_REG	d4,(a0)                	| [...]
 	rts                                    	| [$f60a: rts]
@@ -1179,20 +1199,23 @@ coordinate_transform_four_f60b:
 	GET_DP_ADDRESS	0x0f                    	| [$f60b: ldu    $0f]
 	MOVE_W_TO_REG	(a0),d4                         	| [...]
 	move.b	#0x08,d0                        	| [$f60d: lda    #$08]
+	LOG_REGS		f60f
 	GET_DP_ADDRESS	0x0c                    	| [$f60f: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
-	jbsr	l_f273                            	| [$f611: jsr    $f273]
+	jbsr	compute_coords_f273                            	| [$f611: jsr    $f273]
 	GET_DP_ADDRESS	0x0f                    	| [$f614: stu    $0f]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	rts                                    	| [$f616: rts]
 
 coordinate_transform_eight_f617:
 	GET_DP_ADDRESS	0x0f                    	| [$f617: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_TO_REG	(a0),d4                    	| [...]
 	add.w	#0x10,d4                         	| [$f619: leau   $10,u]
 	move.b	#0x06,d0                        	| [$f61c: lda    #$06]
+	LOG_REGS		F61E
 	GET_DP_ADDRESS	0x0c                    	| [$f61e: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
+	LOG_REGS	f620
 	jbsr	compute_coords_f386                            	| [$f620: jsr    $f386]
 	GET_DP_ADDRESS	0x0f                    	| [$f623: stu    $0f]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
@@ -1205,6 +1228,7 @@ enemies_coordinate_transform_f626:
 	move.b	#0x08,d0                        	| [$f62c: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f62e: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
+	LOG_REGS	f630
 	jbsr	compute_coords_f386                            	| [$f630: jsr    $f386]
 	GET_DP_ADDRESS	0x0f                    	| [$f633: stu    $0f]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]

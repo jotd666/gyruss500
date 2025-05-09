@@ -1,8 +1,4 @@
-- multiply_ab test ??
-- figure out 42xx memory counters?
-- maybe do a before/after with memory block on real 6809 and on simulated
-  for coords transform
-- A700/A701 semaphore system leading to lockup.
+- still small diffs amiga vs mame on memory blocks investigate
 - what do they do? A7FD & A7FC
 
 - check with earth only sprites, 0x4040 subcpu zone vs 0xA000...

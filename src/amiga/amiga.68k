@@ -194,6 +194,7 @@ start:
 		.global	osd_log_cpu
 		.global	osd_read_file
 		.global	osd_write_file
+		.global	osd_dump_logs
 		.global	osd_cpu_logging_control
 		.endif
 
@@ -1424,7 +1425,7 @@ update_one_hw_sprite:
 	rts
 
 	.ifne	OPT_ENABLE_LOGGING
-dump_logs:
+osd_dump_logs:
 	move.w	sr,-(a7)
 	move.w	#0x2700,SR
 	movem.l	d0-a6,-(a7)
@@ -2543,7 +2544,7 @@ handle_keyboard:
 	cmp.b	#34,d0
 	bne		0f
 	* 'D': dump all logging buffers to data dir
-	jbsr	dump_logs
+	jbsr	osd_dump_logs
 0:
 	.endif
 	

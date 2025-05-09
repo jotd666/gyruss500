@@ -214,7 +214,7 @@ gysub_before_6000:
 	move.l	#0x4000,d6
 	move.l	#0x800,d5
 	moveq	#1,d7
-	jbsr	osd_write_file
+	*jbsr	osd_write_file
 	jra		0f
 gysub_after_4000:
 	.asciz	"gysub_after_4000_amiga"
@@ -224,14 +224,15 @@ gysub_after_4000:
 	move.l	#0x6000,d6
 	move.l	#0x2800,d5
 	moveq	#1,d7
-	jbsr	osd_write_file
+	*jbsr	osd_write_file
 	jra		0f
 gysub_after_6000:
 	.asciz	"gysub_after_6000_amiga"
 	.align 	2
 0:
-	jbsr	osd_break
-
+	jbsr	osd_dump_logs
+	illegal
+	
 continue_f135:
 	move.b	#0x29,d0                        	| [$f135: lda    #$29]
 	move.b	#0x17,d1                        	| [$f137: ldb    #$17]
@@ -632,14 +633,17 @@ l_f368:
 	bra	l_f35f                             	| [$f384: bra    $f35f]
 
 compute_coords_f386:
+	LOG_REGS	f386
 	move.l	#0xe000,d2                      	| [$f386: ldx    #$e000] ROM start address
 	GET_U_ADDRESS	0                        	| [$f389: ldb    ,u]
 	move.b	(a0),d1                         	| [...]
+	LOG_REGS	f38b
 	beq	l_f3ea                             	| [$f38b: beq    $f3ea]
 	moveq	#0,d0                            	| [$f38d: clra]
 	MAKE_D
 	GET_X_ADDRESS_FROM_REG	d1              	| [$f38e: lda    d,x]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS	f390
 	GET_DP_ADDRESS	0x08                    	| [$f390: sta    $08]
 	move.b	d0,(a0)                         	| [...]
 	moveq	#0,d2
@@ -650,14 +654,19 @@ compute_coords_f386:
 	asl.b	#1,d1                            	| [$f398: aslb]
 	roxl.b	#1,d0                             	| [$f399: rola]
 	MAKE_D
+	LOG_REGS	f39a
 	add.w	d1,d2                            	| [$f39a: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f39c: ldd    $0200,x]
 	LOAD_D                                 	| [$f39c: ldd    $0200,x]
+	LOG_REGS	f3a0
 	bpl	l_f3ac                             	| [$f3a0: bpl    $f3ac]
 	GET_DP_ADDRESS	0x08                    	| [$f3a2: lda    $08]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS	f3a4
+	jbsr	osd_break
 	jbsr	multiply_ab                       	| [$f3a4: mul]
 	neg.b	d0                               	| [$f3a5: nega]
+	LOG_REGS	f3a6
 	bmi	l_f3b2                             	| [$f3a6: bmi    $f3b2]
 	beq	l_f3b2                             	| [$f3a8: beq    $f3b2]
 	bra	l_f3ea                             	| [$f3aa: bra    $f3ea]
@@ -675,11 +684,14 @@ l_f3b2:
 	GET_X_ADDRESS	0                        	| [$f3b6: ldd    ,x]
 
 	LOAD_D                                 	| [$f3b6: ldd    ,x]
+	LOG_REGS	f3b8
 	bpl	l_f3c4                             	| [$f3b8: bpl    $f3c4]
 	GET_DP_ADDRESS	0x08                    	| [$f3ba: lda    $08]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS	f3bc
 	jbsr	multiply_ab                       	| [$f3bc: mul]
 	neg.b	d0                               	| [$f3bd: nega]
+	LOG_REGS	f3be
 	bmi	l_f3ca                             	| [$f3be: bmi    $f3ca]
 	beq	l_f3ca                             	| [$f3c0: beq    $f3ca]
 	bra	l_f3ea                             	| [$f3c2: bra    $f3ea]
@@ -687,7 +699,9 @@ l_f3b2:
 l_f3c4:
 	GET_DP_ADDRESS	0x08                    	| [$f3c4: lda    $08]
 	move.b	(a0),d0                         	| [...]
+	LOG_REGS	f3c6
 	jbsr	multiply_ab                       	| [$f3c6: mul]
+	LOG_REGS	f3c7
 	tst.b	d0                               	| [$f3c7: tsta]
 	bmi	l_f3ea                             	| [$f3c8: bmi    $f3ea]
 l_f3ca:
@@ -695,6 +709,7 @@ l_f3ca:
 	GET_U_ADDRESS	0x3                      	| [$f3cc: sta    $3,u]
 	move.b	d0,(a0)                         	| [...]
 	and.b	#0xc0,d0                         	| [$f3ce: anda   #$c0]
+	LOG_REGS	f3d0
 	GET_DP_ADDRESS	0x12                    	| [$f3d0: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4211            	| [$f3d2: inc    [$4211]]
@@ -1432,9 +1447,3 @@ l_f72e:
 	bcc	l_f70b                             	| [$f744: bcc    $f70b]
 	rts                                    	| [$f746: rts]
 
-
-multiply_ab:
-	and.w	#0xFF,d0
-	and.w	#0xFF,d1
-	mulu	d1,d0
-	rts

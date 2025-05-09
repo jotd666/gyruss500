@@ -84,5 +84,5 @@ def process(the_dump,offset=0):
 
 process(r"gysub_before_6000",offset=0)
 process(r"gysub_before_6000",offset=0x200)
-process(r"gysub_after_6000",offset=0)
+process(r"gysub_after_6000_amiga",offset=0)
 process(r"gysub_after_6000",offset=0x200)

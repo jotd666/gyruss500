@@ -12,30 +12,25 @@
 
 
 	* to trace at some virtual PCs, insert this macro
-	.macro	LOG_REGS	m6809pc
-	.endm
 	
 	.ifndef	RELEASE
-	.macro	pLOG_REGS	m6809pc
+	.macro	ENABLE_REGS_LOG
+	moveq	#1,d6
+	moveq	#1,d7
+	jbsr	osd_cpu_logging_control	
+	.endm
+	.macro	DISABLE_REGS_LOG
+	moveq	#1,d6
+	moveq	#0,d7
+	jbsr	osd_cpu_logging_control	
+	.endm
+	
+	.macro	LOG_REGS	m6809pc
 	move.w	sr,-(a7)
-	move.l	a6,-(a7)
-	move.l	d1,-(a7)
-	MAKE_D		| make sure that not too many diffs
-	move.l	sub_log_ptr,a6
-	move.w	#0x\m6809pc,(a6)+
-	move.w	d0,(a6)+
-	move.w	d1,(a6)+
-	move.w	d2,(a6)+
-	move.w	d3,(a6)+
-	move.w	d4,(a6)+
-	cmp.w	#0xCAFE,(a6)  | hitting the protection buffer
-	jne		444f
-	BREAKPOINT	"sub cpu log buffer full!"
-444:
-	move.w	#0xDEAD,(a6)+
-	move.l	a6,sub_log_ptr
-	move.l	(a7)+,d1
-	move.l	(a7)+,a6
+	move.w	#0x\m6809pc,-(a7)
+	move.w	#1,-(a7)   | subcpu
+	jbsr	osd_log_cpu
+	addq.w	#4,a7
 	move.w	(a7)+,sr
 	.endm
 	.endif
@@ -170,26 +165,73 @@ l_f0ef:
 	GET_ADDRESS	update_sequence_control_flag_67fd                     	| [$f0f4: lda    $67fd]
 	move.b	(a0),d0                         	| [...]
 	bne	alternate_update_sequence_f165          	| [$f0f7: bne    $f165]
-	jbsr	ship_coordinate_transform_f566                            	| [$f0f9: jsr    $f566]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f0fc: jsr    $f6ee]
-	jbsr	enemies_coordinate_transform_f626                            	| [$f0ff: jsr    $f626]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f102: jsr    $f6ee]
-	jbsr	enemies_coordinate_transform_f589                            	| [$f105: jsr    $f589]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f108: jsr    $f6ee]
-	jbsr	coordinate_transform_one_f5e7                            	| [$f10b: jsr    $f5e7]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f10e: jsr    $f6ee]
-	jbsr	coordinate_transform_two_f5f3                            	| [$f111: jsr    $f5f3]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f114: jsr    $f6ee]
-	jbsr	coordinate_transform_three_f5ff                            	| [$f117: jsr    $f5ff]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f11a: jsr    $f6ee]
-	jbsr	coordinate_transform_four_f60b                            	| [$f11d: jsr    $f60b]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f120: jsr    $f6ee]
-	jbsr	coordinate_transform_eight_f617                            	| [$f123: jsr    $f617]  different from other update sequence
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f126: jsr    $f6ee]
-	jbsr	coordinate_transform_six_f636                            	| [$f129: jsr    $f636]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f12c: jsr    $f6ee]
-	jbsr	coordinate_transform_seven_f645                            	| [$f12f: jsr    $f645]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f132: jsr    $f6ee]
+
+	ENABLE_REGS_LOG
+	LOG_REGS	F0F9
+
+	lea		gysub_before_4000,a0
+	move.l	#0x4000,d6
+	moveq	#1,d7
+	jbsr	osd_read_file
+	jra		0f
+gysub_before_4000:
+	.asciz	"gysub_before_4000"
+	.align 	2
+0:
+	lea		gysub_before_6000,a0
+	move.l	#0x6000,d6
+	moveq	#1,d7
+	jbsr	osd_read_file
+	jra		0f
+gysub_before_6000:
+	.asciz	"gysub_before_6000"
+	.align 	2
+0:
+
+	jbsr	ship_coordinate_transform_f566          | [$f0f9: jsr    $f566]
+	jbsr	race_beam_update_sprites_f6ee           | [$f0fc: jsr    $f6ee]
+	jbsr	enemies_coordinate_transform_f626        	| [$f0ff: jsr    $f626]
+	jbsr	race_beam_update_sprites_f6ee           | [$f102: jsr    $f6ee]
+	jbsr	enemies_coordinate_transform_f589        	| [$f105: jsr    $f589]
+	jbsr	race_beam_update_sprites_f6ee           | [$f108: jsr    $f6ee]
+	jbsr	coordinate_transform_one_f5e7           | [$f10b: jsr    $f5e7]
+	jbsr	race_beam_update_sprites_f6ee           | [$f10e: jsr    $f6ee]
+	jbsr	coordinate_transform_two_f5f3           | [$f111: jsr    $f5f3]
+	jbsr	race_beam_update_sprites_f6ee           | [$f114: jsr    $f6ee]
+	jbsr	coordinate_transform_three_f5ff         | [$f117: jsr    $f5ff]
+	jbsr	race_beam_update_sprites_f6ee           | [$f11a: jsr    $f6ee]
+	jbsr	coordinate_transform_four_f60b          | [$f11d: jsr    $f60b]
+	jbsr	race_beam_update_sprites_f6ee           | [$f120: jsr    $f6ee]
+	jbsr	coordinate_transform_eight_f617         | [$f123: jsr    $f617]  different from other update sequence
+	jbsr	race_beam_update_sprites_f6ee           | [$f126: jsr    $f6ee]
+	jbsr	coordinate_transform_six_f636           | [$f129: jsr    $f636]
+	jbsr	race_beam_update_sprites_f6ee           | [$f12c: jsr    $f6ee]
+	jbsr	coordinate_transform_seven_f645         | [$f12f: jsr    $f645]
+	jbsr	race_beam_update_sprites_f6ee           | [$f132: jsr    $f6ee]
+
+	DISABLE_REGS_LOG
+	lea		gysub_after_4000,a0
+	move.l	#0x4000,d6
+	move.l	#0x800,d5
+	moveq	#1,d7
+	jbsr	osd_write_file
+	jra		0f
+gysub_after_4000:
+	.asciz	"gysub_after_4000_amiga"
+	.align 	2
+0:
+	lea		gysub_after_6000,a0
+	move.l	#0x6000,d6
+	move.l	#0x2800,d5
+	moveq	#1,d7
+	jbsr	osd_write_file
+	jra		0f
+gysub_after_6000:
+	.asciz	"gysub_after_6000_amiga"
+	.align 	2
+0:
+	jbsr	osd_break
+
 continue_f135:
 	move.b	#0x29,d0                        	| [$f135: lda    #$29]
 	move.b	#0x17,d1                        	| [$f137: ldb    #$17]
@@ -589,9 +631,8 @@ l_f368:
 	move.b	d1,(a0)                         	| [...]
 	bra	l_f35f                             	| [$f384: bra    $f35f]
 
-l_f386:
-	moveq	#0,d2
-	move.w	#0xe000,d2                      	| [$f386: ldx    #$e000] ROM start address
+compute_coords_f386:
+	move.l	#0xe000,d2                      	| [$f386: ldx    #$e000] ROM start address
 	GET_U_ADDRESS	0                        	| [$f389: ldb    ,u]
 	move.b	(a0),d1                         	| [...]
 	beq	l_f3ea                             	| [$f38b: beq    $f3ea]
@@ -677,7 +718,7 @@ l_f3ea:
 	addq.w	#0x4,d4                         	| [$f3ea: leau   $4,u]
 	GET_DP_ADDRESS	0x0c                    	| [$f3ec: dec    $0c]
 	subq.b	#1,(a0)                         	| [...]
-	bne	l_f386                             	| [$f3ee: bne    $f386]
+	bne	compute_coords_f386                             	| [$f3ee: bne    $f386]
 	rts                                    	| [$f3f0: rts]
 
 l_f3f1:
@@ -877,7 +918,6 @@ l_f4d0:
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f4d8: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
-	LOG_REGS	f4dc
 	GET_DP_ADDRESS	0x09                    	| [$f4dc: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f4de: inc    $01]
@@ -887,19 +927,16 @@ l_f4d0:
 	bra	l_f49d                             	| [$f4e2: bra    $f49d]
 
 l_f4e4:
-	LOG_REGS	f4e4
 	moveq	#0,d2
 	move.w	#0x65c0,d2                      	| [$f4e4: ldx    #$65c0]
 	GET_X_ADDRESS	0                        	| [$f4e7: lda    ,x+]
 	addq.w	#1,d2
 	move.b	(a0),d0                         	| [...]
-	LOG_REGS	f4e9
 	GET_DP_ADDRESS	0x09                    	| [$f4e9: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x00                    	| [$f4eb: stx    $00]
 	move.w	d2,(a0)                         	| [...]
 	move.w	#sprite_ram_4040,d4             	| [$f4ed: ldu    #sprite_ram_4040]
-	LOG_REGS	f4f0
 	GET_DP_ADDRESS	0x0b                    	| [$f4f0: clr    $0b]
 	move.b	#0,(a0)                         	| [...]
 	move.b	#0x30,d0                        	| [$f4f2: lda    #$30]
@@ -908,31 +945,25 @@ l_f4e4:
 l_f4f6:
 	GET_DP_ADDRESS	0x0b                    	| [$f4f6: lda    $0b]
 	move.b	(a0),d0                         	| [...]
-	LOG_REGS	f4f8
 	cmp.b	#0x04,d0                         	| [$f4f8: cmpa   #$04]
 	bcc	l_f51f                             	| [$f4fa: bcc    $f51f]
-	LOG_REGS	f4fc
 l_f4fc:
 	GET_DP_ADDRESS	0x09                    	| [$f4fc: lda    $09]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f529                             	| [$f4fe: beq    $f529]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f500: ldb    [$4200]]
 	move.b	(a0),d1                         	| [...]
-	LOG_REGS	f504
 	moveq	#0,d0                            	| [$f504: clra]
 	asl.b	#1,d1                            	| [$f505: aslb]
 	roxl.b	#1,d0                             	| [$f506: rola]
 	asl.b	#1,d1                            	| [$f507: aslb]
 	roxl.b	#1,d0                             	| [$f508: rola]
 	MAKE_D
-	LOG_REGS	f509
 	add.w	#0x6200,d1                       	| [$f509: addd   #$6200]
 	move.w	d1,d2                           	| [$f50c: tfr    d,x]
-	LOG_REGS	f50e
 	GET_X_ADDRESS	0                        	| [$f50e: ldd    ,x++]
 	addq.w	#2,d2
 	LOAD_D                                 	| [$f50e: ldd    ,x++]
-	LOG_REGS	f510
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
 	addq.w	#2,d4
 	MOVE_W_FROM_REG	d1,(a0)                	| [...]
@@ -1147,7 +1178,7 @@ coordinate_transform_eight_f617:
 	move.b	#0x06,d0                        	| [$f61c: lda    #$06]
 	GET_DP_ADDRESS	0x0c                    	| [$f61e: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
-	jbsr	l_f386                            	| [$f620: jsr    $f386]
+	jbsr	compute_coords_f386                            	| [$f620: jsr    $f386]
 	GET_DP_ADDRESS	0x0f                    	| [$f623: stu    $0f]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	rts                                    	| [$f625: rts]
@@ -1159,7 +1190,7 @@ enemies_coordinate_transform_f626:
 	move.b	#0x08,d0                        	| [$f62c: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f62e: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
-	jbsr	l_f386                            	| [$f630: jsr    $f386]
+	jbsr	compute_coords_f386                            	| [$f630: jsr    $f386]
 	GET_DP_ADDRESS	0x0f                    	| [$f633: stu    $0f]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	rts                                    	| [$f635: rts]

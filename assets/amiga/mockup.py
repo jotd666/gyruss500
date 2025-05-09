@@ -3,7 +3,6 @@ import os,pathlib
 
 from shared import *
 
-the_dump = this_dir/"sprite_ram_mame_A000_2"
 
 sprite_names = get_sprite_names()
 
@@ -42,11 +41,12 @@ tile_sets_0 = [loadtiles(i,"set_0") for i in range(16)]
 tile_sets_1 = [loadtiles(i,"set_1") for i in range(16)]
 tile_set = [tile_sets_0,tile_sets_1]
 
-def process(the_dump):
+def process(the_dump,offset=0):
     the_dump = pathlib.Path(the_dump)
     # in input, we use a MAME memory dump: save sprites,$A000,$400
     # (0x200 are read, but there's a kind of double buffering
     with open(the_dump,"rb") as f:
+        f.read(offset)
         m_spriteram = f.read(0x200)
 
 
@@ -80,6 +80,9 @@ def process(the_dump):
 
             result.paste(im,(y,x))
 
-    result.save(f"{the_dump.stem}.png")
+    result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-process(r"../../sprite_ram_A000")
+process(r"gysub_before_6000",offset=0)
+process(r"gysub_before_6000",offset=0x200)
+process(r"gysub_after_6000",offset=0)
+process(r"gysub_after_6000",offset=0x200)

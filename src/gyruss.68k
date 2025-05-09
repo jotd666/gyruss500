@@ -394,28 +394,25 @@
 	
 	.macro	LOG_REGS	z80pc
 	move.w	sr,-(a7)
-	move.l	a6,-(a7)
-	move.l	log_ptr,a6
-	move.w	#0x\z80pc,(a6)+
-	move.b	d0,(a6)+
-	move.b	d1,(a6)+
-	move.b	d2,(a6)+
-	move.b	d3,(a6)+
-	move.b	d4,(a6)+
-	move.b	d5,(a6)+
-	move.b	d6,(a6)+
-	move.b	d7,(a6)+
-	move.l	a0,(a6)+
-	move.l	a1,(a6)+
-	move.l	a2,(a6)+
-	move.l	a3,(a6)+
-	move.w	#0xDEAD,(a6)+
-	move.l	a6,log_ptr
-	move.l	(a7)+,a6
+	move.w	#0x\z80pc,-(a7)
+	move.w	#0,-(a7)
+	jbsr	osd_log_cpu
+	addq.w	#4,a7
 	move.w	(a7)+,sr
 	.endm
+	
+	.macro	ENABLE_REGS_LOG
+	moveq	#0,d6
+	moveq	#1,d7
+	jbsr	osd_cpu_logging_control	
+	.endm
+	.macro	DISABLE_REGS_LOG
+	moveq	#0,d6
+	moveq	#0,d7
+	jbsr	osd_cpu_logging_control	
+	.endm	
 	.endif
-
+	
 read_videoram_a0:
 	move.l	a0,-(a7)
 	sub.l	#0x8000,a0

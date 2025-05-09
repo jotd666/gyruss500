@@ -20,10 +20,6 @@
 	.global	dev_ram_buffer
 	.global ram_start_4000
 	.global ram_start_8000
-	.global log_ptr
-	.global sub_log_ptr
-	.global	log_buffer
-	.global	sub_log_buffer
 	.endif
 	
 	.include	"gyruss.inc"
@@ -82,22 +78,6 @@ music_off_flag:
 m6809_interrupts_on:
 	.byte	0
 	
-	.ifndef	RELEASE
-log_ptr:
-	.long	log_buffer
-sub_log_ptr:
-	.long	sub_log_buffer
-log_buffer:
-	.skip	LOG_BUFFER_SIZE
-	.rept	20
-	.long	0xCAFECAFE
-	.endr
-sub_log_buffer:
-	.skip	LOG_BUFFER_SIZE
-	.rept	20
-	.long	0xCAFECAFE
-	.endr
-	.endif
 	
 highscore_needs_saving_flag:
 	.byte	0

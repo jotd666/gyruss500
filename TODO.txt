@@ -1,23 +1,25 @@
 - still small diffs amiga vs mame on memory blocks investigate
    47F2 ??
    6400, 6415, 6488, 64FF
-- symmetry/flip issue on ship?
+- enemies don't attack (should call 32ee)
+- implement difficulty
+- end of level: locks up, ship doesn't go to the center either
+- stars during title: not enough of them: find out why?
 - log sprites/flash when missing
 
 - what do they do? A7FD & A7FC
 
 - update sprites: if Y = 0 don't display (spriteram offset 0) ??
 - update sprites: symmetry flags wrong (see player ship)
-- ship materailization not visible/logged
+
 
 - game state reverse: 082f jump table & other jump tables
-- blank tile doesn't always erase
 - 32 colors => 16 + attached sprites?
-- sprite erase doesn't work all the time? (earth??)
-- star effect how? sprites??
+- star effect: hack with pixel placement when detected in the sprite update
+  (takes too much blitter time!)
 - restore buffer to get rid of but then tiles would need
   redrawing when crossing paths with sprites
-  OR hack something for title only
+  OR hack something for title only / in-game: redraw parts of screen with non-blank
 
 6809 converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
 remove the second one

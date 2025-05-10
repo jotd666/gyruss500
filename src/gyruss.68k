@@ -263,6 +263,13 @@
 	LOAD_D5D6_FROM_D5_16 | dispatch in D5/D6
 	.endm
 	
+	.macro	LOAD_D1D2_FROM_A2_RAM
+	move.l	a2,d1		| read pointer in data reg
+	sub.l	a6,d1		| subtract ram base
+	bset	#15,d1		| add 8000
+	LOAD_D1D2_FROM_D1_16
+	.endm
+	
 	.macro	READ_ROM_BYTE		offset,dest
 	move.b	(a5,\offset),\dest
 	.endm
@@ -699,33 +706,33 @@ l_0103:
 	clr.b	d0                               	| [$012e: xor  a]
 	jbsr	osd_interrupt_control                       	| [$012f: ld   ($C180),a]
                        	| [$0132: ld   (watchdog_C000),a]
-	move.b	d0,l_9407(a6)                   	| [$0135: ld   ($9407),a]
+	move.b	d0,is_screen_flipped_9407(a6)                   	| [$0135: ld   ($9407),a]
 	move.b	current_player_9662(a6),d0                   	| [$0138: ld   a,($9662)]
 	                               	| [$013b: and  a]
 	jeq	l_0149                             	| [$013c: jr   z,$0149]
-	move.b	l_9442(a6),d0                   	| [$013e: ld   a,($9442)] [uncovered]
+	move.b	cabinet_upright_9442(a6),d0                   	| [$013e: ld   a,($9442)] [uncovered]
 	                               	| [$0141: and  a] [uncovered]
 	jne	l_0149                             	| [$0142: jr   nz,$0149] [uncovered]
 	move.b	#0x01,d0                        	| [$0144: ld   a,$01] [uncovered]
-	move.b	d0,l_9407(a6)                   	| [$0146: ld   ($9407),a] [uncovered]
+	move.b	d0,is_screen_flipped_9407(a6)                   	| [$0146: ld   ($9407),a] [uncovered]
 l_0149:
-	move.b	l_9407(a6),d0                   	| [$0149: ld   a,($9407)]
-	                       	| [$014c: ld   ($C185),a]
+	                   	| [$0149: ld   a,($9407)]
+	                       	| [$014c: ld   ($C185),a] flip screen
 	jbsr	osd_read_dsw_2                     	| [$014f: ld   a,($C000)]
 	not.b	d0                               	| [$0152: cpl]
-	move.b	d0,l_942D(a6)                   	| [$0153: ld   ($942D),a]
+	move.b	d0,copy_of_dsw2_942d(a6)                   	| [$0153: ld   ($942D),a]
 	jbsr	osd_read_system_inputs            	| [$0156: ld   a,($C080)]
 	not.b	d0                               	| [$0159: cpl]
-	move.b	d0,l_942E(a6)                   	| [$015a: ld   ($942E),a]
+	move.b	d0,copy_of_system_inputs_942E(a6)                   	| [$015a: ld   ($942E),a]
 	jbsr	osd_read_inputs_1                       	| [$015d: ld   a,($C0A0)]
 	not.b	d0                               	| [$0160: cpl]
-	move.b	d0,l_942F(a6)                   	| [$0161: ld   ($942F),a]
+	move.b	d0,copy_of_inputs_1_942F(a6)                   	| [$0161: ld   ($942F),a]
 	jbsr	osd_read_inputs_2                       	| [$0164: ld   a,($C0C0)]
 	not.b	d0                               	| [$0167: cpl]
-	move.b	d0,l_9430(a6)                   	| [$0168: ld   ($9430),a]
+	move.b	d0,copy_of_inputs_2_9430(a6)                   	| [$0168: ld   ($9430),a]
 	jbsr	osd_read_dsw_1                       	| [$016b: ld   a,($C0E0)]
 	not.b	d0                               	| [$016e: cpl]
-	move.b	d0,l_9431(a6)                   	| [$016f: ld   ($9431),a]
+	move.b	d0,copy_of_dsw1_9431(a6)                   	| [$016f: ld   ($9431),a]
 	lea	l_9400(a6),a0                      	| [$0172: ld   hl,$9400]
 	addq.b	#1,(a0)                         	| [$0175: inc  (hl)]
 	lea	l_944E(a6),a0                      	| [$0176: ld   hl,$944E]
@@ -1616,7 +1623,7 @@ l_0a1a:
 	move.b	l_9400(a6),d0                   	| [$0a22: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$0a25: and  $01]
 	jne	l_0aed                             	| [$0a27: jp   nz,$0AED]
-	jbsr	l_1720                            	| [$0a2a: call $1720]
+	jbsr	read_player_controls_1720                            	| [$0a2a: call $1720]
 	lea	l_9415(a6),a0                      	| [$0a2d: ld   hl,$9415]
 	ror.b	#1,d0                            	| [$0a30: rrca]
 	ROXL_A0_PLUS	                         	| [$0a31: rl   (hl)]
@@ -1759,7 +1766,7 @@ l_0b03:
 	rts                                    	| [$0b16: ret  c] [...]
 0:
 	jeq	l_0b26                             	| [$0b17: jr   z,$0B26]
-	move.b	l_942E(a6),d0                   	| [$0b19: ld   a,($942E)] [uncovered]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$0b19: ld   a,($942E)] [uncovered]
 	and.b	#0x18,d0                         	| [$0b1c: and  $18] [uncovered]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$0b1e: ret  z] [uncovered] [...]
@@ -1769,7 +1776,7 @@ l_0b03:
 	jra	l_108a                             	| [$0b23: jp   $108A] [uncovered]
 
 l_0b26:
-	move.b	l_942E(a6),d0                   	| [$0b26: ld   a,($942E)]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$0b26: ld   a,($942E)]
 	and.b	#0x18,d0                         	| [$0b29: and  $18]
 	cmp.b	#0x08,d0                         	| [$0b2b: cp   $08]
 	beq.b	0f                               	| [...]
@@ -1780,7 +1787,7 @@ l_0b2e:
 
 
 l_0b31:
-	move.b	l_942E(a6),d0                   	| [$0b31: ld   a,($942E)] [uncovered]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$0b31: ld   a,($942E)] [uncovered]
 	and.b	#0x18,d0                         	| [$0b34: and  $18] [uncovered]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$0b36: ret  z] [uncovered] [...]
@@ -1873,7 +1880,7 @@ l_0bb9:
 	READ_ROM_BYTE	0x10FE,d0                       	| [$0bd2: ld   a,($10FE)]
 	move.b	d0,l_9000(a6)                   	| [$0bd5: ld   ($9000),a]
 	move.b	#0x40,d1                        	| [$0bd8: ld   b,$40]
-	move.b	l_9407(a6),d0                   	| [$0bda: ld   a,($9407)]
+	move.b	is_screen_flipped_9407(a6),d0                   	| [$0bda: ld   a,($9407)]
 	ror.b	#1,d0                            	| [$0bdd: rrca]
 	and.b	#0x80,d0                         	| [$0bde: and  $80]
 	add.b	d1,d0                            	| [$0be0: add  a,b]
@@ -2386,7 +2393,7 @@ l_0f67:
 	bne.b	0f                               	| [...]
 	rts                                    	| [$0f6b: ret  z] [...]
 0:
-	move.b	l_942E(a6),d0                   	| [$0f6c: ld   a,($942E)] [uncovered]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$0f6c: ld   a,($942E)] [uncovered]
 	and.b	#0x18,d0                         	| [$0f6f: and  $18] [uncovered]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$0f71: ret  z] [uncovered] [...]
@@ -2395,7 +2402,7 @@ l_0f67:
 	jbsr	l_5c88                            	| [$0f75: call $5C88] [uncovered]
 	jbsr	l_5dd4                            	| [$0f78: call $5DD4] [uncovered]
 l_0f7b:
-	move.b	l_942E(a6),d0                   	| [$0f7b: ld   a,($942E)] [uncovered]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$0f7b: ld   a,($942E)] [uncovered]
 	btst.b	#4,d0                           	| [$0f7e: bit  4,a] [uncovered]
 	jne	l_0f87                             	| [$0f80: jr   nz,$0F87] [uncovered]
 	btst.b	#3,d0                           	| [$0f82: bit  3,a] [uncovered]
@@ -2457,7 +2464,7 @@ global_state_push_start_101f:
 
 l_1043:
 	jbsr	l_0cb6                            	| [$1043: call $0CB6]
-	move.b	l_942E(a6),d0                   	| [$1046: ld   a,($942E)]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$1046: ld   a,($942E)]
 	btst.b	#3,d0                           	| [$1049: bit  3,a]
 	jne	l_10a0                             	| [$104b: jp   nz,$10A0]
 	move.b	nb_credits_9406(a6),d0          	| [$104e: ld   a,(nb_credits_9406)]
@@ -2471,7 +2478,7 @@ l_1043:
 
 l_105a:
 	jbsr	l_0cb6                            	| [$105a: call $0CB6]
-	move.b	l_942E(a6),d0                   	| [$105d: ld   a,($942E)]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$105d: ld   a,($942E)]
 	btst.b	#4,d0                           	| [$1060: bit  4,a]
 	jne	l_108a                             	| [$1062: jp   nz,$108A]
 	btst.b	#3,d0                           	| [$1065: bit  3,a]
@@ -2523,7 +2530,7 @@ l_10bc:
 	rts                                    	| [$10cb: ret]
 
 l_114f:
-	move.b	l_942E(a6),d0                   	| [$114f: ld   a,($942E)]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$114f: ld   a,($942E)]
 	CLEAR_XC_FLAGS			| jotd: ror => roxr
 	roxr.b	#3,d0                            	| [$1152: rrca] * 3
 	lea	l_9403(a6),a0                      	| [$1155: ld   hl,$9403]
@@ -2539,7 +2546,7 @@ l_114f:
 	jra	l_11f6                             	| [$1165: jp   $11F6] [uncovered]
 
 l_1188:
-	move.b	l_942E(a6),d0                   	| [$1188: ld   a,($942E)]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$1188: ld   a,($942E)]
 	lea	l_944A(a6),a0                      	| [$118b: ld   hl,$944A]
 	CLEAR_XC_FLAGS			| jotd: ror => roxr
 	roxr.b	#2,d0                            	| [$118e: rrca] * 2
@@ -2577,7 +2584,7 @@ l_1188:
 	jra	l_11f6                             	| [$11b6: jr   $11F6] [uncovered]
 
 l_11c9:
-	move.b	l_942E(a6),d0                   	| [$11c9: ld   a,($942E)]
+	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$11c9: ld   a,($942E)]
 	lea	l_9447(a6),a0                      	| [$11cc: ld   hl,$9447]
 	CLEAR_XC_FLAGS		| jotd ror => roxr
 	roxr.b	#1,d0                            	| [$11cf: rrca]
@@ -2785,7 +2792,7 @@ l_130a:
 	rts                                    	| [$130e: ret]
 
 l_130f:
-	move.b	l_9431(a6),d0                   	| [$130f: ld   a,($9431)]
+	move.b	copy_of_dsw1_9431(a6),d0                   	| [$130f: ld   a,($9431)]
 	and.b	#0x0F,d0                         	| [$1312: and  $0F]
 	cmp.b	#0x0F,d0                         	| [$1314: cp   $0F]
 	jne	l_131d                             	| [$1316: jr   nz,$131D]
@@ -2795,7 +2802,7 @@ l_131d:
 	LEA_ROM	0x133E,a0                          	| [$131d: ld   hl,$133E]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$1320: rst  $08]
 	move.b	d0,l_9449(a6)                   	| [$1321: ld   ($9449),a]
-	move.b	l_9431(a6),d0                   	| [$1324: ld   a,($9431)]
+	move.b	copy_of_dsw1_9431(a6),d0                   	| [$1324: ld   a,($9431)]
 	ror.b	#4,d0                            	| [$1327: rrca] * 4
 	and.b	#0x0F,d0                         	| [$132b: and  $0F]
 	cmp.b	#0x0F,d0                         	| [$132d: cp   $0F]
@@ -3283,12 +3290,12 @@ l_171d:
 	BSET_A1	10                           	| [$171d: set  2,d]
 	rts                                    	| [$171f: ret]
 
-l_1720:
-	move.b	l_9407(a6),d0                   	| [$1720: ld   a,($9407)]
-	                               	| [$1723: and  a]
-	lea	l_9430(a6),a0                      	| [$1724: ld   hl,$9430]
-	jne	l_172c                             	| [$1727: jr   nz,$172C]
-	lea	l_942F(a6),a0                      	| [$1729: ld   hl,$942F]
+read_player_controls_1720:
+*	lea	copy_of_inputs_2_9430(a6),a0                      	| [$1724: ld   hl,$9430]
+*	move.b	is_screen_flipped_9407(a6),d0                   	| [$1720: ld   a,($9407)]
+*	                               	| [$1723: and  a]
+*	jne	l_172c                             	| [$1727: jr   nz,$172C]
+	lea	copy_of_inputs_1_942F(a6),a0                      	| [$1729: ld   hl,$942F]
 l_172c:
 	move.b	(a0),d0                         	| [$172c: ld   a,(hl)]
 	rts                                    	| [$172d: ret]
@@ -3297,7 +3304,7 @@ l_172e:
 	lea	sprite_shadow_ram_9800(a6),a3      	| [$172e: ld   iy,sprite_shadow_ram_9800]
 	lea	l_9000(a6),a2                      	| [$1732: ld   ix,$9000]
 	move.b	#0x40,d1                        	| [$1736: ld   b,$40]
-	move.b	l_9407(a6),d0                   	| [$1738: ld   a,($9407)]
+	move.b	is_screen_flipped_9407(a6),d0                   	| [$1738: ld   a,($9407)]
 	                               	| [$173b: and  a]
 	jeq	l_1740                             	| [$173c: jr   z,$1740]
 	move.b	#0xC0,d1                        	| [$173e: ld   b,$C0] [uncovered]
@@ -3349,7 +3356,7 @@ l_1790:
 	move.b	#0x0B,d1                        	| [$179b: ld   b,$0B]
 	move.w	#0x0004,d3                      	| [$179d: ld   de,$0004]
 l_17a0:
-	move.b	l_9407(a6),d0                   	| [$17a0: ld   a,($9407)]
+	move.b	is_screen_flipped_9407(a6),d0                   	| [$17a0: ld   a,($9407)]
 	                               	| [$17a3: and  a]
 	jeq	l_17bf                             	| [$17a4: jr   z,$17BF]
 	move.b	(a0)+,d0                         	| [$17a6: ld   a,(hl)] [uncovered]
@@ -3373,7 +3380,7 @@ l_17c8:
 	addq.w	#1,a0                           	| [$17c8: inc  hl]
 	clr.b	(0x01,a3)                        	| [$17c9: ld   (iy+$01),$00]
 	clr.b	(0x02,a3)                        	| [$17cd: ld   (iy+$02),$00]
-	move.b	l_9407(a6),d0                   	| [$17d1: ld   a,($9407)]
+	move.b	is_screen_flipped_9407(a6),d0                   	| [$17d1: ld   a,($9407)]
 	ror.b	#1,d0                            	| [$17d4: rrca]
 	and.b	#0x80,d0                         	| [$17d5: and  $80]
 	add.b	(a0)+,d0                          	| [$17d7: add  a,(hl)]
@@ -3427,9 +3434,9 @@ l_183b:
 l_184a:
 	move.b	d1,d0                           	| [$184a: ld   a,b]
 	btst.b	#7,d0                           	| [$184b: bit  7,a]
-	jne	l_18cc                             	| [$184d: jp   nz,$18CC]
+	jne	move_ship_counter_clockwise_18cc                             	| [$184d: jp   nz,$18CC]
 	btst.b	#6,d0                           	| [$1850: bit  6,a]
-	jne	l_1898                             	| [$1852: jr   nz,$1898]
+	jne	move_ship_clockwise_1898                             	| [$1852: jr   nz,$1898]
 	jra	l_1910                             	| [$1854: jp   $1910]
 
 l_1857:
@@ -3445,19 +3452,20 @@ l_1857:
 	move.b	l_9669(a6),d0                   	| [$1868: ld   a,($9669)]
 	                               	| [$186b: and  a]
 	jeq	l_182b                             	| [$186c: jp   z,$182B]
-	jbsr	l_1720                            	| [$186f: call $1720]
+	jbsr	read_player_controls_1720                            	| [$186f: call $1720]
 	and.b	#0x0F,d0                         	| [$1872: and  $0F]
 	jeq	l_1910                             	| [$1874: jp   z,$1910]
+	* non-zero inputs
 	LEA_ROM	0x1D1F,a0                          	| [$1877: ld   hl,$1D1F]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$187a: rst  $08]
 	move.b	d0,d1                           	| [$187b: ld   b,a]
-	move.b	l_9407(a6),d0                   	| [$187c: ld   a,($9407)]
-	                               	| [$187f: and  a]
-	jeq	l_1886                             	| [$1880: jr   z,$1886]
-	move.b	d1,d0                           	| [$1882: ld   a,b] [uncovered]
-	add.b	#0x80,d0                         	| [$1883: add  a,$80] [uncovered]
-	move.b	d0,d1                           	| [$1885: ld   b,a] [uncovered]
-l_1886:
+*	move.b	is_screen_flipped_9407(a6),d0                   	| [$187c: ld   a,($9407)]
+*	                               	| [$187f: and  a]
+*	jeq	l_1886                             	| [$1880: jr   z,$1886]
+*	move.b	d1,d0                           	| [$1882: ld   a,b] [uncovered]
+*	add.b	#0x80,d0                         	| [$1883: add  a,$80] [uncovered]
+*	move.b	d0,d1                           	| [$1885: ld   b,a] [uncovered]
+*l_1886:
 	move.b	(0x01,a2),d0                    	| [$1886: ld   a,(ix+$01)]
 	sub.b	d1,d0                            	| [$1889: sub  b]
 	jeq	l_1910                             	| [$188a: jp   z,$1910]
@@ -3465,8 +3473,8 @@ l_1886:
 	cmp.b	#0x05,d0                         	| [$188f: cp   $05]
 	jcs	l_1909                             	| [$1891: jp   c,$1909]
 	cmp.b	#0x80,d0                         	| [$1894: cp   $80]
-	jcc	l_18cc                             	| [$1896: jr   nc,$18CC]
-l_1898:
+	jcc	move_ship_counter_clockwise_18cc                             	| [$1896: jr   nc,$18CC]
+move_ship_clockwise_1898:
 	move.b	l_943C(a6),d0                   	| [$1898: ld   a,($943C)]
 	btst.b	#7,d0                           	| [$189b: bit  7,a]
 	jne	l_18a1                             	| [$189d: jr   nz,$18A1]
@@ -3475,7 +3483,7 @@ l_18a1:
 	addq.b	#1,d0                           	| [$18a1: inc  a]
 	cmp.b	#0x90,d0                         	| [$18a2: cp   $90]
 	jcs	l_18a9                             	| [$18a4: jr   c,$18A9]
-	READ_ROM_BYTE	0x4B74,d0                       	| [$18a6: ld   a,($4B74)]
+	READ_ROM_BYTE	0x4B74,d0               | [$18a6: ld   a,($4B74)]
 l_18a9:
 	move.b	d0,l_943C(a6)                   	| [$18a9: ld   ($943C),a]
 	and.b	#0x0F,d0                         	| [$18ac: and  $0F]
@@ -3495,7 +3503,8 @@ l_18a9:
 	move.b	d0,l_900C(a6)                   	| [$18c7: ld   ($900C),a]
 	jra	l_191f                             	| [$18ca: jr   $191F]
 
-l_18cc:
+move_ship_counter_clockwise_18cc:
+	* counter-clockwise rotation
 	move.b	l_943C(a6),d0                   	| [$18cc: ld   a,($943C)]
 	btst.b	#6,d0                           	| [$18cf: bit  6,a]
 	jne	l_18d6                             	| [$18d1: jr   nz,$18D6]
@@ -3514,6 +3523,7 @@ l_18de:
 	move.b	(0x05,a2),d6                    	| [$18ea: ld   l,(ix+$05)]
 	LOAD_D5_16_FROM_D5D6
 	add.w	d3,d5                            	| [$18ed: add  hl,de]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x01,a2)                    	| [$18ee: ld   (ix+$01),h]
 	move.b	d6,(0x05,a2)                    	| [$18f1: ld   (ix+$05),l]
 	move.b	d5,d0                           	| [$18f4: ld   a,h]
@@ -3971,14 +3981,14 @@ l_1cb7:
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x00,a3)                    	| [$1cbe: ld   (iy+$00),h]
 	move.b	d6,(0x03,a2)                    	| [$1cc1: ld   (ix+$03),l]
-	jbsr	l_1720                            	| [$1cc4: call $1720]
+	jbsr	read_player_controls_1720                            	| [$1cc4: call $1720]
 	and.b	#0x0F,d0                         	| [$1cc7: and  $0F]
 	jeq	l_1d14                             	| [$1cc9: jr   z,$1D14]
 	move.b	#0x80,d1                        	| [$1ccb: ld   b,$80]
 	LEA_ROM	0x1D1F,a0                          	| [$1ccd: ld   hl,$1D1F]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$1cd0: rst  $08]
 	move.b	d0,d1                           	| [$1cd1: ld   b,a]
-	move.b	l_9407(a6),d0                   	| [$1cd2: ld   a,($9407)]
+	move.b	is_screen_flipped_9407(a6),d0                   	| [$1cd2: ld   a,($9407)]
 	                               	| [$1cd5: and  a]
 	jeq	l_1cdd                             	| [$1cd6: jr   z,$1CDD]
 	READ_ROM_BYTE	0x006D,d0                       	| [$1cd8: ld   a,($006D)] [uncovered]
@@ -4033,7 +4043,7 @@ l_1f30:
 	move.b	l_9669(a6),d0                   	| [$1f35: ld   a,($9669)]
 	                               	| [$1f38: and  a]
 	jeq	l_1fc2                             	| [$1f39: jp   z,$1FC2]
-	jbsr	l_1720                            	| [$1f3c: call $1720]
+	jbsr	read_player_controls_1720                            	| [$1f3c: call $1720]
 	CLEAR_XC_FLAGS
 	roxl.b	#4,d0                            	| [$1f3f: rlca] * 4
 	lea	l_90CE(a6),a0                      	| [$1f43: ld   hl,$90CE]
@@ -4654,9 +4664,9 @@ l_249b:
 	bcs.b	0f                               	| [...]
 	rts                                    	| [$24a7: ret  nc] [...]
 0:
-	BREAKPOINT	"a2 decomposed to D1/D2"
-	move.l	a2,-(sp)                        	| [$24a8: push ix]
-	movem.w	(sp)+,d1/d2                    	| [$24aa: pop  bc]
+	
+	LOAD_D1D2_FROM_A2_RAM                   | [$24a8: push ix]
+											| [$24aa: pop  bc]
 
 	move.l	a3,a1                        	| [$24ab: push iy]
 	                        	            | [$24ad: pop  de]
@@ -4668,7 +4678,7 @@ l_24ae:
 	addq.b	#1,(a0)                         	| [$24b2: inc  (hl)]
 	add.b	d0,d0                            	| [$24b3: add  a,a]
 	add.b	d0,d0                            	| [$24b4: add  a,a]
-	lea	ram_pointer_9611(a6),a0                      	| [$24b5: ld   hl,$9611]
+	lea	ram_pointer_9611(a6),a0                 | [$24b5: ld   hl,$9611]
 	add.w	d0,a0                            	| [$24b8: add  a,l]
 	                           	| [$24b9: ld   l,a]
 	move.b	d2,(a0)+                         	| [$24ba: ld   (hl),c]
@@ -5583,7 +5593,7 @@ l_2b12:
 l_2b2c:
 	move.b	#0x20,(0x00,a2)                 	| [$2b2c: ld   (ix+$00),$20]
 	jbsr	start_task_d3_0038                            	| [$2b30: rst  $38]
-	move.b	l_9407(a6),d0                   	| [$2b31: ld   a,($9407)]
+	move.b	is_screen_flipped_9407(a6),d0                   	| [$2b31: ld   a,($9407)]
 	                               	| [$2b34: and  a]
 	jne	l_2b3c                             	| [$2b35: jr   nz,$2B3C]
 	move.b	#0x48,(0x02,a3)                 	| [$2b37: ld   (iy+$02),$48]
@@ -6462,7 +6472,7 @@ l_3280:
 	move.b	(a0)+,d4                         	| [$328d: ld   e,(hl)]
 	                           	| [$328e: inc  hl]
 	move.b	(a0),d3                         	| [$328f: ld   d,(hl)]
-	movem.w	d3/d4,-(sp)                    	| [$3290: push de]
+	LOAD_A1_FROM_D3D4_RAM
 	move.l	a1,-(sp)                        	| [$3290: push de]
 	addq.w	#1,a0                           	| [$3291: inc  hl]
 	move.b	(a0)+,d4                         	| [$3292: ld   e,(hl)]
@@ -6529,16 +6539,18 @@ l_32e2:
 	jne	l_32e2                             	| [$32eb: djnz $32E2]
 	rts                                    	| [$32ed: ret] [uncovered]
 
+
 l_32ee:
 
 	move.l	a0,a3                        	| [$32ee: push hl]
 	                        	| [$32ef: pop  iy]
 	LOAD_RAM_POINTER	l_946B(a6),a2         	| [$32f1: ld   ix,($946B)]
-	subq.b	#1,(0x00,a3)                    	| [$32f5: dec  (iy+$00)]
+	subq.b	#1,(enemy_active_00,a3)                    	| [$32f5: dec  (iy+$00)]
 	move.b	#0xC0,(0x01,a3)                 	| [$32f8: ld   (iy+$01),$C0]
 	clr.b	(0x06,a3)                        	| [$32fc: ld   (iy+$06),$00]
 	clr.b	(0x07,a3)                        	| [$3300: ld   (iy+$07),$00]
-	move.b	#0x03,(0x0a,a3)                 	| [$3304: ld   (iy+$0a),$03]
+	* set enemy to "attack" mode
+	move.b	#0x03,(enemy_state_0a,a3)           | [$3304: ld   (iy+$0a),$03]
 	move.b	(0x09,a2),d0                    	| [$3308: ld   a,(ix+$09)]
 	move.b	d0,(0x09,a3)                    	| [$330b: ld   (iy+$09),a]
 	move.b	(0x0c,a2),d0                    	| [$330e: ld   a,(ix+$0c)]
@@ -6553,8 +6565,8 @@ l_32ee:
 	move.b	(a0),d0                         	| [$3323: ld   a,(hl)]
 	move.b	d0,(a1)+                         	| [$3324: ld   (de),a]
 	clr.b	(a0)+                             	| [$3325: ld   (hl),$00]
-	addq.w	#1,a0                           	| [$3327: inc  l]
-	addq.w	#1,a1                           	| [$3328: inc  e]
+												| [$3327: inc  l]
+												| [$3328: inc  e]
 	jbsr	ldi                               	| [$3329: ldi]
 	jbsr	ldi                               	| [$332b: ldi]
 	jbsr	ldi                               	| [$332d: ldi]
@@ -6693,7 +6705,7 @@ l_3567:
 	jra	l_5ca6                             	| [$357e: jp   $5CA6]
 
 l_3581:
-	move.b	l_9407(a6),d0                   	| [$3581: ld   a,($9407)]
+	move.b	is_screen_flipped_9407(a6),d0                   	| [$3581: ld   a,($9407)]
 	ror.b	#1,d0                            	| [$3584: rrca]
 	and.b	#0x80,d0                         	| [$3585: and  $80]
 	add.b	(a0),d0                          	| [$3587: add  a,(hl)]
@@ -7005,7 +7017,7 @@ l_3826:
 	rts                                    	| [$3829: ret  z] [...]
 0:
 	move.b	#0x83,d0                        	| [$382a: ld   a,$83]
-	move.b	d0,(a1)                         	| [$382c: ld   (de),a]
+	jbsr	write_videoram_a1                  	| [$382c: ld   (de),a]
 	addq.w	#1,a0                           	| [$382d: inc  hl]
 	jbsr	sub_20_to_a1_0020                            	| [$382e: rst  $20]
 	jra	l_3826                             	| [$382f: jr   $3826]
@@ -8668,7 +8680,7 @@ l_4cea:
 l_4d04:
 	move.b	#0x01,d0                        	| [$4d04: ld   a,$01]
 	move.b	d0,update_sequence_control_flag_a7fc(a6)                       	| [$4d06: ld   ($A7FC),a]
-	move.b	l_9407(a6),d0                   	| [$4d09: ld   a,($9407)]
+	move.b	is_screen_flipped_9407(a6),d0                   	| [$4d09: ld   a,($9407)]
 	                               	| [$4d0c: and  a]
 	jne	l_4d22                             	| [$4d0d: jr   nz,$4D22]
 l_4d0f:
@@ -8757,7 +8769,7 @@ l_4e35:
 l_4e45:
 	jbsr	osd_read_dsw_1                       	| [$4e45: ld   a,($C0E0)]
 	not.b	d0                               	| [$4e48: cpl]
-	move.b	d0,l_9431(a6)                   	| [$4e49: ld   ($9431),a]
+	move.b	d0,copy_of_dsw1_9431(a6)                   	| [$4e49: ld   ($9431),a]
 	jra	l_1019                             	| [$4e4c: jp   $1019]
 
 write_to_screen_4e77:
@@ -9124,7 +9136,7 @@ l_59ac:
 	ror.b	#2,d0                            	| [$59b0: rrca] * 2
 	move.b	d0,d2                           	| [$59b2: ld   c,a]
 	and.b	#0x01,d0                         	| [$59b3: and  $01]
-	move.b	d0,l_9442(a6)                   	| [$59b5: ld   ($9442),a]
+	move.b	d0,cabinet_upright_9442(a6)                   	| [$59b5: ld   ($9442),a]
 	move.b	d2,d0                           	| [$59b8: ld   a,c]
 	ror.b	#1,d0                            	| [$59b9: rrca]
 	move.b	d0,d2                           	| [$59ba: ld   c,a]
@@ -9270,7 +9282,6 @@ l_5a91:
 l_5a9c:
 	move.b	#0x05,d3                        	| [$5a9c: ld   d,$05]
 	move.b	#0x10,d4                        	| [$5a9e: ld   e,$10]
-	BREAKPOINT	"??? 5aa0"
 	move.b	l_990B(a6),d0                   	| [$5aa0: ld   a,($990B)]
 	move.b	d0,d5                           	| [$5aa3: ld   h,a]
 	move.b	l_9908(a6),d0                   	| [$5aa4: ld   a,($9908)]
@@ -9295,7 +9306,6 @@ l_5ac1:
 	move.b	#0x05,d3                        	| [$5ac1: ld   d,$05]
 	move.b	#0x10,d4                        	| [$5ac3: ld   e,$10]
 	move.b	l_9913(a6),d0                   	| [$5ac5: ld   a,($9913)]
-	illegal
 	move.b	d0,d5                           	| [$5ac8: ld   h,a]
 	move.b	l_9910(a6),d0                   	| [$5ac9: ld   a,($9910)]
 	jbsr	l_5ae6                            	| [$5acc: call $5AE6]

@@ -1,7 +1,11 @@
 - still small diffs amiga vs mame on memory blocks investigate
+   47F2 ??
+   6400, 6415, 6488, 64FF
+- symmetry/flip issue on ship?
+- log sprites/flash when missing
+
 - what do they do? A7FD & A7FC
 
-- check with earth only sprites, 0x4040 subcpu zone vs 0xA000...
 - update sprites: if Y = 0 don't display (spriteram offset 0) ??
 - update sprites: symmetry flags wrong (see player ship)
 - ship materailization not visible/logged

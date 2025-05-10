@@ -6468,7 +6468,7 @@ l_3280:
 	move.b	(a0)+,d4                         	| [$3292: ld   e,(hl)]
 	                           	| [$3293: inc  hl]
 	move.b	(a0),d3                         	| [$3294: ld   d,(hl)]
-	BREAKPOINT	"d3/D4/A1 val 5989"
+	LOAD_A1_FROM_D3D4_RAM
 	exg	a1,a0                              	| [$3295: ex   de,hl]
 	move.w	#0x0010,d3                      	| [$3296: ld   de,$0010]
 	jbsr	exx                               	| [$3299: exx]

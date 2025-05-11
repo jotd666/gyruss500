@@ -3,7 +3,7 @@ port of Gyruss for Amiga
 
 Credits:
 
-- jotd: game reverse engineering, 6502 to 68000 conversion, 
+- jotd: game reverse engineering, M6809/Z80 to 68000 conversion, 
         amiga graphics conversion, amiga sound effects
 
 Controls:

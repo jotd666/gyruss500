@@ -6,7 +6,7 @@ with open(r"..\cpu_log","rb") as f:
     contents = f.read()
     ram_base,rom_base = struct.unpack(">II",contents[-8:])
     dead_marker, = struct.unpack(">H",contents[-10:-8])
-
+    print(hex(ram_base),hex(rom_base))
     contents = contents[:-8]
     if dead_marker != 0xDEAD:
         raise Exception("Corrupt CPU log, should end by 0xDEAD at offset -8")
@@ -76,6 +76,7 @@ for i in range(0,len(contents),len_block):
     pcs.add(regs["pc"])
 
 
+
     rework("hl")
     rework("ix")
     rework("iy")
@@ -104,12 +105,12 @@ print("reading MAME trace file...")
 with open(r"K:\Emulation\MAME\mame.tr","r") as f:
     l = len("A=01, B=00, C=3F, D=93, E=81, H=93, L=01, IX=XXXX, IY=XXXX, I=XX ")
     for line in f:
-        m = re.match("A=(..), B=(..), C=(..), D=(..), E=(..), H=(..), L=(..), IX=(....), IY=(....) ",line)
+        m = re.match("A=(..), B=(..), C=(..), D=(..), E=(..), H=(..), L=(..), IX=(....), IY=(....), I=(..) ",line)
         if m:
             pc = line[l:l+4]
             regs = dict()
             if int(pc,16) in pcs:
-                regs["a"],regs["b"],regs["c"],regs["d"],regs["e"],regs["h"],regs["l"],regs["ix"],regs["iy"] = m.groups()
+                regs["a"],regs["b"],regs["c"],regs["d"],regs["e"],regs["h"],regs["l"],regs["ix"],regs["iy"],_ = m.groups()
                 regs["hl"] = "{:04X}".format((int(regs["h"],16)<<8)+int(regs["l"],16))
                 regs["de"] = "{:04X}".format((int(regs["d"],16)<<8)+int(regs["e"],16))
                 regstr = ["{}={}".format(reg.upper(),regs[reg]) for reg in regslist if reg not in avoid_regs]

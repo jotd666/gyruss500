@@ -854,7 +854,11 @@ osd_log_cpu:
 	move.w	#0xDEAD,(a6)+
 	cmp.w	#0xCAFE,(a6)  | hitting the protection buffer
 	jne		444f
+	* save log before hitting breakpoint
+	move.l	(a7)+,a6
+	jbsr	save_cpu_log
 	BREAKPOINT	"cpu log buffer full!"
+	illegal
 444:
 	move.l	a6,log_ptr
 445:
@@ -1445,6 +1449,22 @@ osd_dump_logs:
 	move.l	#0x200,d0
 	jbsr	resload_SaveFile(a2)
 	
+	jbsr	save_cpu_log
+	
+	lea		sub_log_buffer,a1
+	move.l	sub_log_ptr,d0
+	sub.l	a1,d0
+	jeq		0f
+	lea		sub_cpu_log_name(pc),a0
+	jbsr	resload_SaveFile(a2)
+	
+0:
+    movem.l (a7)+,d0-a6
+	move.w	(a7)+,SR
+	rts
+
+save_cpu_log:
+	move.l	_resload(pc),a2
 	lea		log_buffer,a1
 	move.l	log_ptr,d0
 	sub.l	a1,d0
@@ -1457,17 +1477,8 @@ osd_dump_logs:
 	lea		cpu_log_name(pc),a0
 	jbsr	resload_SaveFile(a2)
 0:	
-	lea		sub_log_buffer,a1
-	move.l	sub_log_ptr,d0
-	sub.l	a1,d0
-	jeq		0f
-	lea		sub_cpu_log_name(pc),a0
-	jbsr	resload_SaveFile(a2)
-	
-0:
-    movem.l (a7)+,d0-a6
-	move.w	(a7)+,SR
 	rts
+	
 sprites_ram_name_A000:
 	.asciz	"sprite_ram_A000"
 sprites_ram_name_A200:

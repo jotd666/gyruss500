@@ -2518,11 +2518,11 @@ handle_keyboard:
 	cmp.b	#0x50,d0	| F1 key: only 1 wolf
 	bne.b	0f
 	move.w	#0x0FF,_custom+color
-
+	st.b 	level_skip_flag
 	st.b	cheat_used
 	
 0:
-	cmp.b	#0x51,d0	| F2 key
+	cmp.b	#0x51,d0	|² F2 key
 	bne.b	0f
 	st.b	cheat_used
 	move.w	#0x0FF,_custom+color

@@ -19,5 +19,5 @@ To start a game (when game not running):
 
 Cheat keys:
 - F1: complete level
-- F3: add 10000 points
+- F3: 
 - F4: toggle invincibility

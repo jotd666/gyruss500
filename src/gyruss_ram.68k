@@ -1,5 +1,6 @@
 	.global infinite_lives_flag
 	.global invincible_flag
+	.global level_skip_flag
 	.global start_level
 	.global vb_ticks_count
 	.global break_at_startup_flag
@@ -67,6 +68,8 @@ i_reg:
 skip_intro_flag:
 	.byte	0
 invincible_flag:
+	.byte	0
+level_skip_flag:
 	.byte	0
 infinite_lives_flag:
 	.byte	0

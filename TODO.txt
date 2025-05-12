@@ -6,8 +6,7 @@
 - enemies attack but keep relatively small (no dashing on player...)
   trace cpu/debug around 282b
 - implement difficulty
-- end of level: locks up, ship doesn't go to the center either: implement
-  level skip like MAME does to test better
+- end of level: ship doesn't go to the center properly / sometimes crashes iLLEGAL
 - stars during title: not enough of them: find out why?
 - implement context switching (test first on startup!)
 - log sprites/flash when missing

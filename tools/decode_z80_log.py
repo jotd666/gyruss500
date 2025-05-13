@@ -1,6 +1,7 @@
 import os,struct,re
 
 # log has the registers, then "DEAD" in hex then ram and rom base addresses
+round_values_mask = 0xFE
 
 with open(r"..\cpu_log","rb") as f:
     contents = f.read()
@@ -84,6 +85,8 @@ for i in range(0,len(contents),len_block):
 
 
 
+    for rn in "abcdehl":
+        regs[rn] &= round_values_mask
 
 
     regstr = ["{}={:02X}".format(reg.upper(),regs[reg]) for reg in regslist if reg not in avoid_regs]
@@ -101,6 +104,7 @@ with open("amiga.tr","w") as f:
 
 # generated using log:     trace mame.tr,,,{tracelog "A=%02X, B=%02X, C=%02X, D=%02X, E=%02X, H=%02X, L=%02X, IX=%04X, IY=%04X, I=%02X ",a,b,c,d,e,h,l,ix,iy,i}
 lst = []
+pc_list = set()
 print("reading MAME trace file...")
 with open(r"K:\Emulation\MAME\mame.tr","r") as f:
     l = len("A=01, B=00, C=3F, D=93, E=81, H=93, L=01, IX=XXXX, IY=XXXX, I=XX ")
@@ -113,12 +117,18 @@ with open(r"K:\Emulation\MAME\mame.tr","r") as f:
                 regs["a"],regs["b"],regs["c"],regs["d"],regs["e"],regs["h"],regs["l"],regs["ix"],regs["iy"],_ = m.groups()
                 regs["hl"] = "{:04X}".format((int(regs["h"],16)<<8)+int(regs["l"],16))
                 regs["de"] = "{:04X}".format((int(regs["d"],16)<<8)+int(regs["e"],16))
+
+                # convert to integer and round it if needed
+                for rn in "abcdehl":
+                    regs[rn] = "{:02X}".format(int(regs[rn],16) & round_values_mask)
+
                 regstr = ["{}={}".format(reg.upper(),regs[reg]) for reg in regslist if reg not in avoid_regs]
                 rest = ", ".join(regstr)
                 lst.append(f"{pc}: {rest}\n")
+                pc_list.add(pc)
 
 if sorted_cmp:
     lst.sort()
-print("writing filtered MAME trace file...")
+print("writing filtered MAME trace file with {} addresses...".format(len(pc_list)))
 with open("mame.tr","w") as fw:
     fw.writelines(lst)

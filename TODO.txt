@@ -3,6 +3,7 @@
    6400, 6415, 6488, 64FF
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
+- check for more checksums (LEA_ROM	0x....,a0
 - enemies attack but keep relatively small (no dashing on player...)
   trace cpu/debug around 282b
 - implement difficulty

@@ -511,6 +511,7 @@ fetch_a0_plus_d0_0008:
 * load_rom_pointer_in_a1_d3_0010: loads address in HL indexed by A
 * as 16 bit address in DE
 * 68000: loads ROM data in A1, offset in D3 
+* < D0.B: index
 load_rom_pointer_in_a1_d3_0010:
 	add.b	d0,d0                            	| [$0010: add  a,a]
 	jbsr	add_d0_to_a0_0018                            	| [$0011: rst  $18]
@@ -602,8 +603,8 @@ l_0050:
 	addq.b	#2,(a0)                         	| [$0053: inc  (hl)] * 2
 	rts                                    	| [$0055: ret]
 
+	* reached when completing the second level
 l_0058:
-	illegal
 *out  ($FF),a
 	jbsr	l_5c88                            	| [$005a: call $5C88]
 	rts                                    	| [$005d: ret]
@@ -1126,19 +1127,19 @@ jump_table_0620:
 	.long	-7
 
 l_066e:
-	lea	l_9465(a6),a0                      	| [$066e: ld   hl,$9465]
-	move.b	#0x06,(a0)                      	| [$0671: ld   (hl),$06]
-l_0673:
-	move.w	#0x0000,d1                      	| [$0673: ld   bc,$0000]
-	move.w	#0x0000,d2                      	| [$0673: ld   bc,$0000]
-l_0676:
-	subq.b	#1,d1                           	| [...]
-	jne	l_0676                             	| [$0676: djnz $0676]
-                       	| [$0678: ld   (watchdog_C000),a]
-	subq.b	#1,d2                           	| [$067b: dec  c]
-	jne	l_0676                             	| [$067c: jr   nz,$0676]
-	subq.b	#1,(a0)                         	| [$067e: dec  (hl)]
-	jne	l_0673                             	| [$067f: jr   nz,$0673]
+*	lea	l_9465(a6),a0                      	| [$066e: ld   hl,$9465]
+*	move.b	#0x06,(a0)                      	| [$0671: ld   (hl),$06]
+*l_0673:
+*	move.w	#0x0000,d1                      	| [$0673: ld   bc,$0000]
+*	move.w	#0x0000,d2                      	| [$0673: ld   bc,$0000]
+*l_0676:
+*	subq.b	#1,d1                           	| [...]
+*	jne	l_0676                             	| [$0676: djnz $0676]
+*                       	| [$0678: ld   (watchdog_C000),a]
+*	subq.b	#1,d2                           	| [$067b: dec  c]
+*	jne	l_0676                             	| [$067c: jr   nz,$0676]
+*	subq.b	#1,(a0)                         	| [$067e: dec  (hl)]
+*	jne	l_0673                             	| [$067f: jr   nz,$0673]
 	clr.b	d0                               	| [$0681: xor  a]
 	jra	l_008b                             	| [$0682: jp   $008B]
 
@@ -1156,12 +1157,13 @@ l_0685:
 	add.w	d1,a0                            	| [$0697: add  hl,bc]
 	add.w	d1,a0                            	| [$0698: add  hl,bc]
 	add.w	d1,a0                            	| [$0699: add  hl,bc]
-	lea	l_9663(a6),a1                      	| [$069a: ld   de,$9663]
+	lea	player_1_score_9663(a6),a1                      	| [$069a: ld   de,$9663]
 	move.b	current_player_9662(a6),d0                   	| [$069d: ld   a,($9662)]
 	                               	| [$06a0: and  a]
 	jeq	l_06a6                             	| [$06a1: jr   z,$06A6]
-	lea	l_9666(a6),a1                      	| [$06a3: ld   de,$9666] [uncovered]
+	lea	player_2_score_9666(a6),a1                      	| [$06a3: ld   de,$9666] [uncovered]
 l_06a6:
+	CLEAR_XC_FLAGS
 	move.b	(a1),d0                         	| [$06a6: ld   a,(de)]
 	move.b	(a0)+,d7                          	| [$06a7: add  a,(hl)]
 	abcd	d0,d7								| daa
@@ -2219,7 +2221,7 @@ l_0e08:
 	move.b	d0,l_9605(a6)                   	| [$0e0d: ld   ($9605),a]
 	clr.b	d0                               	| [$0e10: xor  a]
 	move.b	d0,l_961D(a6)                   	| [$0e11: ld   ($961D),a]
-	move.b	d0,l_915E(a6)                   	| [$0e14: ld   ($915E),a]
+	move.b	d0,iceberg_on_screen_915e(a6)                   	| [$0e14: ld   ($915E),a]
 	move.b	d0,l_9603(a6)                   	| [$0e17: ld   ($9603),a]
 	move.b	d0,l_960D(a6)                   	| [$0e1a: ld   ($960D),a]
 	move.b	d0,at_least_one_active_enemy_902E(a6)                   	| [$0e1d: ld   ($902E),a]
@@ -2279,7 +2281,7 @@ l_0e69:
 	move.b	d0,l_913E(a6)                   	| [$0e81: ld   ($913E),a]
 	move.b	d0,l_9602(a6)                   	| [$0e84: ld   ($9602),a]
 	move.b	d0,l_917E(a6)                   	| [$0e87: ld   ($917E),a]
-	move.b	d0,l_915E(a6)                   	| [$0e8a: ld   ($915E),a]
+	move.b	d0,iceberg_on_screen_915e(a6)                   	| [$0e8a: ld   ($915E),a]
 	move.b	#0x05,d3                        	| [$0e8d: ld   d,$05]
 	LOAD_D3_16_FROM_D3D4
 	jbsr	start_task_d3_0038                            	| [$0e8f: rst  $38]
@@ -2886,17 +2888,18 @@ l_139d:
 	jbsr	l_01d6                            	| [$13a3: call $01D6]
 	jbsr	l_5c88                            	| [$13a6: call $5C88]
 	jbsr	l_5dd4                            	| [$13a9: call $5DD4]
-	LEA_ROM	0x4BC7,a0                          	| [$13ac: ld   hl,$4BC7]
-	CLEAR_XC_FLAGS                         	| [$13af: xor  a]
-	clr.b	d0                               	| [$13af: xor  a]
-	move.b	d0,d1                           	| [$13b0: ld   b,a]
-l_13b1:
-	add.b	(a0),d0                          	| [$13b1: add  a,(hl)]
-	addq.w	#1,a0                           	| [$13b2: inc  hl]
-	subq.b	#1,d1                           	| [...]
-	jne	l_13b1                             	| [$13b3: djnz $13B1]
-	sub.b	#0xC8,d0                         	| [$13b5: sub  $C8]
-	jne	l_0fab                             	| [$13b7: jp   nz,$0FAB]
+* another ROM checksum
+*	LEA_ROM	0x4BC7,a0                          	| [$13ac: ld   hl,$4BC7]
+*	CLEAR_XC_FLAGS                         	| [$13af: xor  a]
+*	clr.b	d0                               	| [$13af: xor  a]
+*	move.b	d0,d1                           	| [$13b0: ld   b,a]
+*l_13b1:
+*	add.b	(a0),d0                          	| [$13b1: add  a,(hl)]
+*	addq.w	#1,a0                           	| [$13b2: inc  hl]
+*	subq.b	#1,d1                           	| [...]
+*	jne	l_13b1                             	| [$13b3: djnz $13B1]
+*	sub.b	#0xC8,d0                         	| [$13b5: sub  $C8]
+*	jne	l_0fab                             	| [$13b7: jp   nz,$0FAB]
 	jra	next_game_state_080b                             	| [$13ba: jp   $080B]
 
 l_13bd:
@@ -3405,20 +3408,20 @@ l_17a0:
 	move.b	(a0)+,d0                         	| [$17a6: ld   a,(hl)] [uncovered]
 	add.b	#0x0D,d0                         	| [$17a7: add  a,$0D] [uncovered]
 	not.b	d0                               	| [$17a9: cpl] [uncovered]
-	move.b	d0,(0x03,a3)                    	| [$17aa: ld   (iy+$03),a] [uncovered]
+	move.b	d0,(displayed_x_03,a3)                    	| [$17aa: ld   (iy+$03),a] [uncovered]
 												| [$17ad: inc  hl] [uncovered]
 	move.b	(a0),d0                         	| [$17ae: ld   a,(hl)] [uncovered]
 	addq.b	#0x07,d0                        	| [$17af: add  a,$07] [uncovered]
 	not.b	d0                               	| [$17b1: cpl] [uncovered]
-	move.b	d0,(0x00,a3)                    	| [$17b2: ld   (iy+$00),a] [uncovered]
+	move.b	d0,(displayed_y_00,a3)                    	| [$17b2: ld   (iy+$00),a] [uncovered]
 	jra	l_17c8                             	| [$17b5: jr   $17C8] [uncovered]
 
 l_17bf:
 	move.b	(a0)+,d0                         	| [$17bf: ld   a,(hl)]
 										| [$17c0: inc  hl]
-	move.b	d0,(0x03,a3)                    	| [$17c1: ld   (iy+$03),a]
+	move.b	d0,(displayed_x_03,a3)                    	| [$17c1: ld   (iy+$03),a]
 	move.b	(a0),d0                         	| [$17c4: ld   a,(hl)]
-	move.b	d0,(0x00,a3)                    	| [$17c5: ld   (iy+$00),a]
+	move.b	d0,(displayed_y_00,a3)                    	| [$17c5: ld   (iy+$00),a]
 l_17c8:
 	addq.w	#1,a0                           	| [$17c8: inc  hl]
 	clr.b	(0x01,a3)                        	| [$17c9: ld   (iy+$01),$00]
@@ -3686,7 +3689,6 @@ l_19be:
 	move.b	#0x68,d0                        	| [$19be: ld   a,$68]
 	btst.b	#6,d1                           	| [$19c0: bit  6,b]
 	jne	l_19b2                             	| [$19c2: jr   nz,$19B2]
-	CLEAR_XC_FLAGS                         	| [$19c4: xor  a]
 	clr.b	d0                               	| [$19c4: xor  a]
 	jra	l_19b2                             	| [$19c5: jr   $19B2]
 
@@ -3847,7 +3849,6 @@ l_1b0b:
 	rts                                    	| [$1b4c: ret]
 
 l_1b4d:
-	CLEAR_XC_FLAGS                         	| [$1b4d: xor  a]
 	clr.b	d0                               	| [$1b4d: xor  a]
 	move.b	d0,level_playing_flag_9000(a6)                   	| [$1b4e: ld   ($9000),a]
 	clr.b	(0x03,a3)                        	| [$1b51: ld   (iy+$03),$00]
@@ -4188,16 +4189,17 @@ l_1fe5:
 	jbsr	ldir                              	| [$1feb: ldir]
 	jbsr	l_172e                            	| [$1fed: call $172E]
 	jbsr	l_3af2                            	| [$1ff0: call $3AF2]
-	LEA_ROM	0x1556,a0                          	| [$1ff3: ld   hl,$1556]
-	move.b	#0x80,d2                        	| [$1ff6: ld   c,$80]
-	move.b	global_state_942B(a6),d0                   	| [$1ff8: ld   a,($942B)]
-l_1ffb:
-	add.b	(a0)+,d0                          	| [$1ffb: add  a,(hl)]
-	                          	| [$1ffc: inc  hl]
-	subq.b	#1,d2                           	| [$1ffd: dec  c]
-	jne	l_1ffb                             	| [$1ffe: jr   nz,$1FFB]
-	add.b	#0x94,d0                         	| [$2000: add  a,$94]
-	move.b	d0,sub_state_942C(a6)                   	| [$2002: ld   ($942C),a]
+	* another ROM checksum that changes sub state if fails
+*	LEA_ROM	0x1556,a0                          	| [$1ff3: ld   hl,$1556]
+*	move.b	#0x80,d2                        	| [$1ff6: ld   c,$80]
+*	move.b	global_state_942B(a6),d0                   	| [$1ff8: ld   a,($942B)]
+*l_1ffb:
+*	add.b	(a0)+,d0                          	| [$1ffb: add  a,(hl)]
+*	                          	| [$1ffc: inc  hl]
+*	subq.b	#1,d2                           	| [$1ffd: dec  c]
+*	jne	l_1ffb                             	| [$1ffe: jr   nz,$1FFB]
+*	add.b	#0x94,d0                         	| [$2000: add  a,$94]
+*	move.b	d0,sub_state_942C(a6)                   	| [$2002: ld   ($942C),a]
 	jra	next_game_state_080b                             	| [$2005: jp   $080B]
 
 l_2008:
@@ -4598,7 +4600,7 @@ handle_enemies_2339:
 	lea	l_9090(a6),a2                      	| [$2395: ld   ix,$9090]
 	lea	l_9850(a6),a3                      	| [$2399: ld   iy,$9850]
 	jbsr	handle_enemy_2518                            	| [$239d: call $2518]
-	move.b	l_915E(a6),d0                   	| [$23a0: ld   a,($915E)]
+	move.b	iceberg_on_screen_915e(a6),d0                   	| [$23a0: ld   a,($915E)]
 	                               	| [$23a3: and  a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$23a4: ret  nz] [...]
@@ -5561,7 +5563,6 @@ l_2a4b:
 	subq.b	#1,d0                           	| [$2a6c: dec  a]
 	jeq	l_2aeb                             	| [$2a6d: jr   z,$2AEB]
 l_2a6f:
-	CLEAR_XC_FLAGS                         	| [$2a6f: xor  a]
 	clr.b	d0                               	| [$2a6f: xor  a]
 	move.b	d0,(0x00,a2)                    	| [$2a70: ld   (ix+$00),a]
 	move.b	d0,(0x00,a3)                    	| [$2a73: ld   (iy+$00),a]
@@ -7642,6 +7643,7 @@ l_4269:
 	rts                                    	| [$4279: ret  nz] [...]
 0:
 	clr.b	d2                               	| [$427a: ld   c,$00]
+	* another ROM check
 	LEA_ROM	0x4683,a0                          	| [$427c: ld   hl,$4683]
 	move.b	global_state_942B(a6),d0                   	| [$427f: ld   a,($942B)]
 l_4282:
@@ -7650,6 +7652,7 @@ l_4282:
 	subq.b	#1,d2                           	| [$4284: dec  c]
 	jne	l_4282                             	| [$4285: jr   nz,$4282]
 	sub.b	#0x0E,d0                         	| [$4287: sub  $0E]
+	BREAKPOINT 	"rom check 4289"
 	move.b	d0,global_state_942B(a6)                   	| [$4289: ld   ($942B),a]
 	jbsr	l_15a0                            	| [$428c: call $15A0]
 	jcc	l_42a3                             	| [$428f: jp   nc,$42A3]
@@ -7729,6 +7732,7 @@ l_43f4:
 	jbsr	l_5c88                            	| [$43fb: call $5C88]
 	jbsr	l_5dd4                            	| [$43fe: call $5DD4]
 	jbsr	l_01d6                            	| [$4401: call $01D6]
+	* another ROM check
 	clr.b	d2                               	| [$4404: ld   c,$00]
 	LEA_ROM	0x4C09,a0                          	| [$4406: ld   hl,$4C09]
 	move.b	sub_state_942C(a6),d0                   	| [$4409: ld   a,($942C)]
@@ -7738,6 +7742,7 @@ l_440c:
 	subq.b	#1,d2                           	| [$440e: dec  c]
 	jne	l_440c                             	| [$440f: jr   nz,$440C]
 	eor.b	#0x02,d0                         	| [$4411: xor  $02]
+	BREAKPOINT	"rOM check 4411"
 	move.b	d0,sub_state_942C(a6)                   	| [$4413: ld   ($942C),a]
 	jra	next_game_state_080b                             	| [$4416: jp   $080B]
 
@@ -7752,7 +7757,7 @@ l_4516:
 	bne.b	0f                               	| [...]
 	rts                                    	| [$451f: ret  z] [...]
 0:
-	lea	l_915E(a6),a0                      	| [$4520: ld   hl,$915E]
+	lea	iceberg_on_screen_915e(a6),a0                      	| [$4520: ld   hl,$915E]
 	move.b	(a0),d0                         	| [$4523: ld   a,(hl)]
 	                               	| [$4524: and  a]
 	jne	l_4579                             	| [$4525: jr   nz,$4579]
@@ -7814,7 +7819,7 @@ l_4579:
 	jbsr	l_5ce6                            	| [$4579: call $5CE6]
 	lea	l_90A0(a6),a2                      	| [$457c: ld   ix,$90A0]
 	lea	l_9858(a6),a3                      	| [$4580: ld   iy,$9858]
-	move.b	#0xFF,(0x00,a2)                 	| [$4584: ld   (ix+$00),$FF]
+	st.b	(0x00,a2)                 	| [$4584: ld   (ix+$00),$FF]
 	move.b	l_960A(a6),d0                   	| [$4588: ld   a,($960A)]
 	and.b	#0x1F,d0                         	| [$458b: and  $1F]
 	READ_ROM_WORD	0x44C6,d3                          	| [$458d: ld   hl,$44C6]
@@ -7851,14 +7856,14 @@ l_45a3:
 	rts                                    	| [$45c4: ret  nz] [...]
 0:
 	move.b	l_9001(a6),d0                   	| [$45c5: ld   a,($9001)]
-	sub.b	(0x03,a3),d0                     	| [$45c8: sub  (iy+$03)]
+	sub.b	(displayed_x_03,a3),d0                     	| [$45c8: sub  (iy+$03)]
 	addq.b	#0x04,d0                        	| [$45cb: add  a,$04]
 	cmp.b	#0x09,d0                         	| [$45cd: cp   $09]
 	bcs.b	0f                               	| [...]
 	rts                                    	| [$45cf: ret  nc] [...]
 0:
 	move.b	#0x28,d0                        	| [$45d0: ld   a,$28]
-	sub.b	(0x00,a3),d0                     	| [$45d2: sub  (iy+$00)]
+	sub.b	(displayed_y_00,a3),d0                     	| [$45d2: sub  (iy+$00)]
 	addq.b	#0x04,d0                        	| [$45d5: add  a,$04]
 	cmp.b	#0x09,d0                         	| [$45d7: cp   $09]
 	bcs.b	0f                               	| [...]
@@ -7879,7 +7884,7 @@ l_45ee:
 	clr.b	(0x00,a2)                        	| [$45ee: ld   (ix+$00),$00]
 	clr.b	(0x00,a3)                        	| [$45f2: ld   (iy+$00),$00]
 	clr.b	d0                               	| [$45f6: xor  a]
-	move.b	d0,l_915E(a6)                   	| [$45f7: ld   ($915E),a]
+	move.b	d0,iceberg_on_screen_915e(a6)                   	| [$45f7: ld   ($915E),a]
 	move.b	l_901E(a6),d0                   	| [$45fa: ld   a,($901E)]
 	move.b	d0,d1                           	| [$45fd: ld   b,a]
 	move.b	l_9444(a6),d0                   	| [$45fe: ld   a,($9444)]
@@ -8018,7 +8023,7 @@ bonus_satellite_appearing_4713:
 	add.b	(0x09,a2),d0                     	| [$471a: add  a,(ix+$09)]
 	add.b	(0x03,a3),d0                     	| [$471d: add  a,(iy+$03)]
 	move.b	d0,(0x03,a3)                    	| [$4720: ld   (iy+$03),a]
-	jbsr	l_473c                            	| [$4723: call $473C]
+	jbsr	update_3_satellites_arrival_473c                            	| [$4723: call $473C]
 	move.b	(0x08,a2),d0                    	| [$4726: ld   a,(ix+$08)]
 	move.b	#0xFC,d1                        	| [$4729: ld   b,$FC]
 	cmp.b	#0x0C,d0                         	| [$472b: cp   $0C]
@@ -8031,13 +8036,13 @@ l_4731:
 	move.b	d0,(0x06,a3)                    	| [$4738: ld   (iy+$06),a]
 	rts                                    	| [$473b: ret]
 
-l_473c:
+update_3_satellites_arrival_473c:
 	move.b	(0x09,a2),d0                    	| [$473c: ld   a,(ix+$09)]
 	subq.b	#1,d0                           	| [$473f: dec  a]
-	jeq	l_4745                             	| [$4740: jr   z,$4745]
+	jeq	deploy_3_satellites_4745                             	| [$4740: jr   z,$4745]
 	jra	l_304b                             	| [$4742: jp   $304B]
 
-l_4745:
+deploy_3_satellites_4745:
 	move.b	double_fire_930E(a6),d0         	| [$4745: ld   a,(double_fire_930E)]
 	                               	| [$4748: and  a]
 	jeq	l_30c4                             	| [$4749: jp   z,$30C4]
@@ -8304,7 +8309,6 @@ l_498a:
 l_49a4:
 	move.b	#0x20,(0x01,a2)                 	| [$49a4: ld   (ix+$01),$20]
 	LOAD_RAM_POINTER	ram_pointer_961B(a6),a0         	| [$49a8: ld   hl,($961B)]
-	BREAKPOINT	"7578 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$49ab: ld   (hl),$00]
 	jra	l_5d22                             	| [$49ad: jp   $5D22]
 
@@ -8384,7 +8388,7 @@ l_4a19:
 	sub.b	(0x00,a3),d0                     	| [$4a1b: sub  (iy+$00)]
 	cmp.b	#0x0C,d0                         	| [$4a1e: cp   $0C]
 	jcc	l_4a35                             	| [$4a20: jr   nc,$4A35]
-	addq.w	#3,a0                           	| [$4a22: inc  l]
+	addq.w	#3,a0                           	| [$4a22: inc  l]*3
 	move.b	(a0),d0                         	| [$4a25: ld   a,(hl)]
 	sub.b	(0x03,a3),d0                     	| [$4a26: sub  (iy+$03)]
 	addq.b	#0x05,d0                        	| [$4a29: add  a,$05]
@@ -8395,7 +8399,6 @@ l_4a19:
 	jra	l_49a4                             	| [$4a32: jp   $49A4]
 
 l_4a35:
-	CLEAR_XC_FLAGS                         	| [$4a35: xor  a]
 	clr.b	d0                               	| [$4a35: xor  a]
 	rts                                    	| [$4a36: ret]
 
@@ -8690,20 +8693,19 @@ l_4cba:
 	jra	write_to_screen_4e77                  	| [$4cc7: jp   write_to_screen_4e77]
 
 l_4cca:
-	* another ROM checksum!!
-	LEA_ROM	0x06E0,a0                          	| [$4cca: ld   hl,$06E0] [uncovered]
-	clr.b	d1                               	| [$4ccd: ld   b,$00]
-	move.b	#0xC0,d0                        	| [$4ccf: ld   a,$C0]
-l_4cd1:
-	add.b	(a0)+,d0                          	| [$4cd1: add  a,(hl)]
-												| [$4cd2: inc  hl]
-	subq.b	#1,d1                           	| [...]
-	jne	l_4cd1                             	| [$4cd3: djnz $4CD1]
-	move.b	d0,d1                           	| [$4cd5: ld   b,a]
-	BREAKPOINT	"ROM checksum lives!!"
-	move.b	lives_9600(a6),d0                   	| [$4cd6: ld   a,($9600)]
-	add.b	d1,d0                            	| [$4cd9: add  a,b]
-	move.b	d0,lives_9600(a6)                   	| [$4cda: ld   ($9600),a]
+	* another ROM checksum that changes number of lives...
+*	LEA_ROM	0x06E0,a0                          	| [$4cca: ld   hl,$06E0] [uncovered]
+*	clr.b	d1                               	| [$4ccd: ld   b,$00]
+*	move.b	#0xC0,d0                        	| [$4ccf: ld   a,$C0]
+*l_4cd1:
+*	add.b	(a0)+,d0                          	| [$4cd1: add  a,(hl)]
+*												| [$4cd2: inc  hl]
+*	subq.b	#1,d1                           	| [...]
+*	jne	l_4cd1                             	| [$4cd3: djnz $4CD1]
+*	move.b	d0,d1                           	| [$4cd5: ld   b,a]
+*	move.b	lives_9600(a6),d0                   	| [$4cd6: ld   a,($9600)]
+*	add.b	d1,d0                            	| [$4cd9: add  a,b]
+*	move.b	d0,lives_9600(a6)                   	| [$4cda: ld   ($9600),a]
 	lea	0x85EF,a0                      	| [$4cdd: ld   hl,$85EF]
 	move.b	#0x02,d0                        	| [$4ce0: ld   a,$02]
 	move.b	d0,d1                           	| [$4ce2: ld   b,a]
@@ -9095,7 +9097,7 @@ l_590e:
 	and.b	#0x01,d0                         	| [$5916: and  $01]
 	jeq	l_59d7                             	| [$5918: jp   z,$59D7]
 	jbsr	l_5921                            	| [$591b: call $5921]
-	jbsr	l_5943                            	| [$591e: call $5943]
+	jbsr	enemies_vs_ship_collisions_5943                            	| [$591e: call $5943]
 l_5921:
 	move.b	l_9001(a6),d0                   	| [$5921: ld   a,($9001)]
 	move.b	d0,d5                           	| [$5924: ld   h,a]
@@ -9108,14 +9110,14 @@ l_5921:
 	move.b	#0x08,d1                        	| [$5932: ld   b,$08]
 	lea	l_9330(a6),a0                      	| [$5934: ld   hl,$9330]
 	lea	l_9918(a6),a3                      	| [$5937: ld   iy,$9918]
-	jbsr	l_5b79                            	| [$593b: call $5B79]
+	jbsr	enemy_vs_ship_collision_5b79                            	| [$593b: call $5B79]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$593e: ret  z] [...]
 0:
 	move.b	d0,level_playing_flag_9000(a6)                   	| [$593f: ld   ($9000),a]
 	rts                                    	| [$5942: ret]
 
-l_5943:
+enemies_vs_ship_collisions_5943:
 	move.b	l_91AE(a6),d0                   	| [$5943: ld   a,($91AE)]
 	                               	| [$5946: and  a]
 	beq.b	0f                               	| [...]
@@ -9124,14 +9126,15 @@ l_5943:
 	lea	enemy_objects_9010(a6),a2                      	| [$5948: ld   ix,$9010]
 	lea	l_9810(a6),a3                      	| [$594c: ld   iy,$9810]
 	move.b	#0x0A,d1                        	| [$5950: ld   b,$0A]
-	move.b	l_915E(a6),d0                   	| [$5952: ld   a,($915E)]
+	move.b	iceberg_on_screen_915e(a6),d0                   	| [$5952: ld   a,($915E)]
 	                               	| [$5955: and  a]
 	jeq	l_595a                             	| [$5956: jr   z,$595A]
 	move.b	#0x09,d1                        	| [$5958: ld   b,$09]
 l_595a:
-	jbsr	exx                               	| [$595a: exx]
-	move.w	#0x0008,d3                      	| [$595b: ld   de,$0008]
-	move.w	#0x0010,d1                      	| [$595e: ld   bc,$0010]
+	                               	| [$595a: exx]
+									| [$595b: ld   de,$0008]
+									| [$595e: ld   bc,$0010]
+	                               	| [$5961: exx]
 	move.b	#0x24,d5                        	| [$5962: ld   h,$24]
 	move.b	#0x0D,d6                        	| [$5964: ld   l,$0D]
 	move.b	l_9001(a6),d0                   	| [$5966: ld   a,($9001)]
@@ -9141,17 +9144,21 @@ l_596c:
 	move.b	(enemy_active_00,a2),d0                    	| [$596c: ld   a,(ix+$00)]
 	addq.b	#1,d0                           	| [$596f: inc  a]
 	jne	l_5994                             	| [$5970: jr   nz,$5994]
+	* enemy active: check its state
 	move.b	(enemy_state_0a,a2),d0                    	| [$5972: ld   a,(ix+$0a)]
 	subq.b	#1,d0                           	| [$5975: dec  a]
 	jeq	l_5994                             	| [$5976: jr   z,$5994]
-	move.b	(0x00,a3),d0                    	| [$5978: ld   a,(iy+$00)]
+	* both protagonists can collide, check bounding boxes
+	move.b	(displayed_y_00,a3),d0                    	| [$5978: ld   a,(iy+$00)]
 	sub.b	d5,d0                            	| [$597b: sub  h]
 	cmp.b	d6,d0                            	| [$597c: cp   l]
 	jcc	l_5994                             	| [$597d: jr   nc,$5994]
 	move.b	(displayed_x_03,a3),d0                    	| [$597f: ld   a,(iy+$03)]
 	sub.b	d3,d0                            	| [$5982: sub  d]
 	cmp.b	d6,d0                            	| [$5983: cp   l]
-	jcc	l_5994                             	| [$5984: jr   nc,$5994]
+	jcc	l_5994                             	| [$5984: jr   nc,$5994] branch: no collision
+
+	* player ship / enemy ship collision
 	move.b	#0xF0,d0                        	| [$5986: ld   a,$F0]
 	move.b	d0,(0x00,a2)                    	| [$5988: ld   (ix+$00),a]
 	move.b	d0,level_playing_flag_9000(a6)                   	| [$598b: ld   ($9000),a]
@@ -9159,10 +9166,11 @@ l_596c:
 	jra	start_task_d3_0038                             	| [$5991: jp   $0038]
 
 l_5994:
-	jbsr	exx                               	| [$5994: exx]
-	add.w	d1,a2                            	| [$5995: add  ix,bc]
-	add.w	d3,a3                            	| [$5997: add  iy,de]
-	jbsr	exx                               	| [$5999: exx]
+	* 68000 can add immediate values, we save a lot of exx shit
+	                               	| [$5994: exx]
+	add.w	#0x0010,a2                            	| [$5995: add  ix,bc]
+	add.w	#0x0008,a3                            	| [$5997: add  iy,de]
+	                               	| [$5999: exx]
 	subq.b	#1,d1                           	| [...]
 	jne	l_596c                             	| [$599a: djnz $596C]
 	rts                                    	| [$599c: ret]
@@ -9240,7 +9248,7 @@ l_5a04:
 	jne	l_5a22                             	| [$5a12: jr   nz,$5A22]
 	move.b	#0x05,d3                        	| [$5a14: ld   d,$05]
 	move.b	#0x0B,d4                        	| [$5a16: ld   e,$0B]
-	jbsr	l_5b53                            	| [$5a18: call $5B53]
+	jbsr	enemy_vs_ships_collisions_5b53                            	| [$5a18: call $5B53]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$5a1b: ret  z] [...]
 0:
@@ -9264,7 +9272,7 @@ l_5a2a:
 	jne	l_5a48                             	| [$5a38: jr   nz,$5A48]
 	move.b	#0x05,d3                        	| [$5a3a: ld   d,$05]
 	move.b	#0x0B,d4                        	| [$5a3c: ld   e,$0B]
-	jbsr	l_5b53                            	| [$5a3e: call $5B53]
+	jbsr	enemy_vs_ships_collisions_5b53                            	| [$5a3e: call $5B53]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$5a41: ret  z] [...]
 0:
@@ -9288,7 +9296,7 @@ l_5a50:
 	jne	l_5a6f                             	| [$5a5e: jp   nz,$5A6F]
 	move.b	#0x05,d3                        	| [$5a61: ld   d,$05]
 	move.b	#0x0B,d4                        	| [$5a63: ld   e,$0B]
-	jbsr	l_5b53                            	| [$5a65: call $5B53]
+	jbsr	enemy_vs_ships_collisions_5b53                            	| [$5a65: call $5B53]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$5a68: ret  z] [...]
 0:
@@ -9403,7 +9411,6 @@ l_5b00:
 	add.b	d3,d0                            	| [$5b13: add  a,d]
 	cmp.b	d4,d0                            	| [$5b14: cp   e]
 	jcs	l_5b40                             	| [$5b15: jp   c,$5B40]
-	CLEAR_XC_FLAGS                         	| [$5b18: xor  a]
 	clr.b	d0                               	| [$5b18: xor  a]
 	rts                                    	| [$5b19: ret]
 
@@ -9434,14 +9441,14 @@ l_5b40:
 	lea	l_98C0(a6),a3                      	| [$5b4c: ld   iy,$98C0]
 	jra	l_5b9e                             	| [$5b50: jp   $5B9E]
 
-l_5b53:
+enemy_vs_ships_collisions_5b53:
 	move.w	#0x0008,d1                      	| [$5b53: ld   bc,$0008]
 	jbsr	exx                               	| [$5b56: exx]
 	move.w	#0x0010,d3                      	| [$5b57: ld   de,$0010]
 	move.b	#0x0A,d1                        	| [$5b5a: ld   b,$0A]
 	lea	enemy_objects_9010(a6),a0                      	| [$5b5c: ld   hl,$9010]
 	lea	l_9810(a6),a3                      	| [$5b5f: ld   iy,$9810]
-	jra	l_5b79                             	| [$5b63: jp   $5B79]
+	jra	enemy_vs_ship_collision_5b79                             	| [$5b63: jp   $5B79]
 
 l_5b66:
 	move.w	#0x0008,d1                      	| [$5b66: ld   bc,$0008]
@@ -9452,7 +9459,7 @@ l_5b66:
 	lea	l_9810(a6),a3                      	| [$5b72: ld   iy,$9810]
 	jra	l_5bc3                             	| [$5b76: jp   $5BC3]
 
-l_5b79:
+enemy_vs_ship_collision_5b79:
 	move.b	(a0),d0                         	| [$5b79: ld   a,(hl)]
 	addq.b	#1,d0                           	| [$5b7a: inc  a]
 	jne	l_5b95                             	| [$5b7b: jp   nz,$5B95]
@@ -9462,12 +9469,14 @@ l_5b79:
 	add.b	d3,d0                            	| [$5b83: add  a,d]
 	cmp.b	d4,d0                            	| [$5b84: cp   e]
 	jcc	l_5b96                             	| [$5b85: jr   nc,$5B96]
-	move.b	(0x00,a3),d0                    	| [$5b87: ld   a,(iy+$00)]
+	move.b	(displayed_y_00,a3),d0                    	| [$5b87: ld   a,(iy+$00)]
 	sub.b	d6,d0                            	| [$5b8a: sub  l]
 	add.b	d3,d0                            	| [$5b8b: add  a,d]
 	cmp.b	d4,d0                            	| [$5b8c: cp   e]
-	jcc	l_5b96                             	| [$5b8d: jr   nc,$5B96]
+	jcc	l_5b96                             		| [$5b8d: jr   nc,$5B96] jumps: no collision
 	jbsr	exx                               	| [$5b8f: exx]
+	* ship shot
+
 	move.b	#0xF0,d0                        	| [$5b90: ld   a,$F0]
 	move.b	d0,(a0)                         	| [$5b92: ld   (hl),a]
 	tst.b	d0                               	| [$5b93: and  a]
@@ -9480,8 +9489,7 @@ l_5b96:
 	jbsr	exx                               	| [$5b98: exx]
 	add.w	d3,a0                            	| [$5b99: add  hl,de]
 	subq.b	#1,d1                           	| [...]
-	jne	l_5b79                             	| [$5b9a: djnz $5B79]
-	CLEAR_XC_FLAGS                         	| [$5b9c: xor  a]
+	jne	enemy_vs_ship_collision_5b79                             	| [$5b9a: djnz $5B79]
 	clr.b	d0                               	| [$5b9c: xor  a]
 	rts                                    	| [$5b9d: ret]
 
@@ -9489,6 +9497,7 @@ l_5b9e:
 	move.b	(a0),d0                         	| [$5b9e: ld   a,(hl)]
 	addq.b	#1,d0                           	| [$5b9f: inc  a]
 	jne	l_5bb9                             	| [$5ba0: jp   nz,$5BB9]
+	* enemy active
 	jbsr	exx                               	| [$5ba3: exx]
 	move.b	(displayed_x_03,a3),d0                    	| [$5ba4: ld   a,(iy+$03)]
 	sub.b	d5,d0                            	| [$5ba7: sub  h]
@@ -9548,7 +9557,6 @@ l_5be2:
 	add.w	d3,a0                            	| [$5be5: add  hl,de]
 	subq.b	#1,d1                           	| [...]
 	jne	l_5bc3                             	| [$5be6: djnz $5BC3]
-	CLEAR_XC_FLAGS                         	| [$5be8: xor  a]
 	clr.b	d0                               	| [$5be8: xor  a]
 	rts                                    	| [$5be9: ret]
 
@@ -9888,8 +9896,8 @@ l_5f4d:
 	move.b	d0,current_player_9662(a6)                   	| [$5f6e: ld   ($9662),a]
 	move.b	d0,d5                           	| [$5f71: ld   h,a]
 	move.b	d0,d6                           	| [$5f72: ld   l,a]
-	move.b	d0,l_9663(a6)                   	| [$5f73: ld   ($9663),a]
-	move.b	d0,l_9666(a6)                   	| [$5f76: ld   ($9666),a]
+	move.b	d0,player_1_score_9663(a6)                   	| [$5f73: ld   ($9663),a]
+	move.b	d0,player_2_score_9666(a6)                   	| [$5f76: ld   ($9666),a]
 	STORE_WORD	d0,l_9664(a6)        	| [$5f79: ld   ($9664),hl]
 	STORE_WORD	d0,l_9667(a6)        	| [$5f7c: ld   ($9667),hl]
 	STORE_WORD	d0,l_9627(a6)        	| [$5f7f: ld   ($9627),hl]

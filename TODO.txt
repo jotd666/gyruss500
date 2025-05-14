@@ -3,13 +3,19 @@
    6400, 6415, 6488, 64FF
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
-- first time satellite bonus appears, no central double shot orange
-  bonus, and player killed
-- check for more checksums (LEA_ROM	0x....,a0
+- check attack wave params: log regs @ 4192
+
 - enemies attack but keep relatively small (no dashing on player...)
-  trace cpu/debug around 282b
+- same issue with death ray satellites: they never move forward. Find where they are updated
+  in MAME should be easier, and maybe it's the same issue!!
+  
 - implement difficulty
-- end of level: ship doesn't go to the center properly / sometimes crashes iLLEGAL
+- end of level: ship doesn't go to the center properly
+- "X WARPS TO XXXX" only works for first planet (NEPTUNE): check when it's written in MAME for later
+  stages
+- stage numbers completely off after a while (9 => 0)
+- chance stage bonus text digits are off
+
 - implement context switching (test first on startup!)
 - log sprites/flash when missing
 

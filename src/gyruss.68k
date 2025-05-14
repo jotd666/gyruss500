@@ -158,13 +158,6 @@
 1:
 	.endm
 
-	.macro	SET_D7_AS_XC
-	CLEAR_XC_FLAGS
-	tst.b	d7
-	jeq		0f
-	SET_XC_FLAGS
-0:
-	.endm
 
 
 	.macro	SET_X_FROM_C
@@ -2229,7 +2222,7 @@ l_0e08:
 	move.b	d0,l_915E(a6)                   	| [$0e14: ld   ($915E),a]
 	move.b	d0,l_9603(a6)                   	| [$0e17: ld   ($9603),a]
 	move.b	d0,l_960D(a6)                   	| [$0e1a: ld   ($960D),a]
-	move.b	d0,l_902E(a6)                   	| [$0e1d: ld   ($902E),a]
+	move.b	d0,at_least_one_active_enemy_902E(a6)                   	| [$0e1d: ld   ($902E),a]
 	move.b	d0,l_913E(a6)                   	| [$0e20: ld   ($913E),a]
 	move.b	d0,l_9602(a6)                   	| [$0e23: ld   ($9602),a]
 	move.b	d0,l_900E(a6)                   	| [$0e26: ld   ($900E),a]
@@ -2282,7 +2275,7 @@ l_0e69:
 	move.b	d0,l_91AE(a6)                   	| [$0e77: ld   ($91AE),a]
 	clr.b	d0                               	| [$0e7a: xor  a]
 	move.b	d0,l_960D(a6)                   	| [$0e7b: ld   ($960D),a]
-	move.b	d0,l_902E(a6)                   	| [$0e7e: ld   ($902E),a]
+	move.b	d0,at_least_one_active_enemy_902E(a6)                   	| [$0e7e: ld   ($902E),a]
 	move.b	d0,l_913E(a6)                   	| [$0e81: ld   ($913E),a]
 	move.b	d0,l_9602(a6)                   	| [$0e84: ld   ($9602),a]
 	move.b	d0,l_917E(a6)                   	| [$0e87: ld   ($917E),a]
@@ -3890,9 +3883,7 @@ l_1b86:
 	clr.b	d4                               	| [$1b94: ld   e,$00]
 	LOAD_D3_16_FROM_D3D4                        | [$1b96: and  a]
 	sub.w	d3,d5                            	| [$1b97: sbc  hl,de]
-	scs		d7								| preserve carry
 	LOAD_D5D6_FROM_D5_16
-	SET_D7_AS_XC
 	jbsr	shifting_on_d5d6_1bc3                            	| [$1b99: call $1BC3]
 	move.b	d5,(0x06,a2)                    	| [$1b9c: ld   (ix+$06),h]
 	move.b	d6,(0x07,a2)                    	| [$1b9f: ld   (ix+$07),l]
@@ -3901,9 +3892,7 @@ l_1b86:
 	clr.b	d4                               	| [$1ba8: ld   e,$00]
 	LOAD_D3_16_FROM_D3D4                               	| [$1baa: and  a]
 	sub.w	d3,d5                            	| [$1bab: sbc  hl,de]
-	scs		d7								| preserve carry
-	LOAD_D5D6_FROM_D5_16
-	SET_D7_AS_XC
+	LOAD_D5D6_FROM_D5_16			| doesn't change X, we're good
 	jbsr	shifting_on_d5d6_1bc3                            	| [$1bad: call $1BC3]
 	move.b	d5,(0x08,a2)                    	| [$1bb0: ld   (ix+$08),h]
 	move.b	d6,(0x09,a2)                    	| [$1bb3: ld   (ix+$09),l]
@@ -4427,7 +4416,6 @@ l_2203:
 	roxr.b	#1,d4                           	| [$2229: rr   e]
 	lsr.b	#1,d3                            	| [$222b: srl  d]
 	roxr.b	#1,d4                           	| [$222d: rr   e]
-	CLEAR_XC_FLAGS                         	| [$222f: xor  a]
 	clr.b	d0                               	| [$222f: xor  a]
 	LOAD_D3_16_FROM_D3D4
 	LOAD_D5_16_FROM_D5D6
@@ -6714,10 +6702,10 @@ switch_to_highscores_3509:
 	jra	next_game_state_080b                             	| [$352d: jp   $080B]
 
 l_3530:
-	lea	l_902E(a6),a0                      	| [$3530: ld   hl,$902E]
+	lea	at_least_one_active_enemy_902E(a6),a0                      	| [$3530: ld   hl,$902E]
 	move.b	(a0),d0                         	| [$3533: ld   a,(hl)]
 	                               	| [$3534: and  a]
-	jne	l_35ca                             	| [$3535: jp   nz,$35CA]
+	jne	update_active_enemy_flag_35ca                             	| [$3535: jp   nz,$35CA]
 	subq.b	#1,(a0)                         	| [$3538: dec  (hl)]
 	lea	enemy_objects_9010(a6),a2                      	| [$3539: ld   ix,$9010]
 	lea	l_9810(a6),a3                      	| [$353d: ld   iy,$9810]
@@ -6763,20 +6751,20 @@ l_3581:
 	move.b	is_screen_flipped_9407(a6),d0                   	| [$3581: ld   a,($9407)]
 	ror.b	#1,d0                            	| [$3584: rrca]
 	and.b	#0x80,d0                         	| [$3585: and  $80]
-	add.b	(a0),d0                          	| [$3587: add  a,(hl)]
+	add.b	(a0)+,d0                          	| [$3587: add  a,(hl)]
 	move.b	d0,(0x03,a3)                    	| [$3588: ld   (iy+$03),a]
 	move.b	#0xFF,(0x00,a3)                 	| [$358b: ld   (iy+$00),$FF]
-	addq.w	#1,a0                           	| [$358f: inc  hl]
-	move.b	(a0),d0                         	| [$3590: ld   a,(hl)]
+										| [$358f: inc  hl]
+	move.b	(a0)+,d0                         	| [$3590: ld   a,(hl)]
 	move.b	d0,(0x05,a2)                    	| [$3591: ld   (ix+$05),a]
 	clr.b	(0x06,a2)                        	| [$3594: ld   (ix+$06),$00]
 	clr.b	(0x07,a2)                        	| [$3598: ld   (ix+$07),$00]
-	addq.w	#1,a0                           	| [$359c: inc  hl]
-	move.b	(a0),d0                         	| [$359d: ld   a,(hl)]
+	                           	| [$359c: inc  hl]
+	move.b	(a0)+,d0                         	| [$359d: ld   a,(hl)]
 	move.b	d0,(0x08,a2)                    	| [$359e: ld   (ix+$08),a]
 	clr.b	(0x01,a3)                        	| [$35a1: ld   (iy+$01),$00]
 	clr.b	(0x02,a3)                        	| [$35a5: ld   (iy+$02),$00]
-	addq.w	#1,a0                           	| [$35a9: inc  hl]
+	                           	| [$35a9: inc  hl]
 	jbsr	exx                               	| [$35aa: exx]
 	move.b	(0x09,a2),d0                    	| [$35ab: ld   a,(ix+$09)]
 	LEA_ROM	0x3760,a0                          	| [$35ae: ld   hl,$3760]
@@ -6793,23 +6781,25 @@ l_3581:
 	move.b	#0xFF,(0x00,a2)                 	| [$35c4: ld   (ix+$00),$FF]
 	rts                                    	| [$35c8: ret]
 
-l_35ca:
+update_active_enemy_flag_35ca:
 	lea	enemy_objects_9010(a6),a0                      	| [$35ca: ld   hl,$9010]
 	move.w	#0x0010,d3                      	| [$35cd: ld   de,$0010]
-	nop                                    	| [$35d0: nop]
+	                                    	| [$35d0: nop]
 	move.b	#0x0A,d0                        	| [$35d1: ld   a,$0A]
 	move.b	d0,d1                           	| [$35d3: ld   b,a]
 l_35d4:
-	move.b	(a0),d0                         	| [$35d4: ld   a,(hl)]
+	move.b	(enemy_active_00,a0),d0                         	| [$35d4: ld   a,(hl)]
 	                               	| [$35d5: and  a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$35d6: ret  nz] [...]
 0:
+	* inactive enemy
 	add.w	d3,a0                            	| [$35d7: add  hl,de]
 	subq.b	#1,d1                           	| [...]
 	jne	l_35d4                             	| [$35d8: djnz $35D4]
-	clr.b	d0                               	| [$35da: xor  a]
-	move.b	d0,l_902E(a6)                   	| [$35db: ld   ($902E),a]
+	* no active enemy, update flag
+	                              	| [$35da: xor  a]
+	clr.b	at_least_one_active_enemy_902E(a6)                   	| [$35db: ld   ($902E),a]
 	rts                                    	| [$35de: ret]
 
 l_35df:
@@ -7194,11 +7184,11 @@ l_38ef:
 	move.b	l_9400(a6),d0                   	| [$38ef: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$38f2: and  $01]
 	jne	l_38fd                             	| [$38f4: jr   nz,$38FD]
-	lea	l_A138,a2                          	| [$38f6: ld   ix,$A138]
+	lea	l_A138(a6),a2                          	| [$38f6: ld   ix,$A138]
 	jra	l_3901                             	| [$38fa: jp   $3901]
 
 l_38fd:
-	lea	l_A338,a2                          	| [$38fd: ld   ix,$A338]
+	lea	l_A338(a6),a2                          	| [$38fd: ld   ix,$A338]
 l_3901:
 	lea	l_9938(a6),a3                      	| [$3901: ld   iy,$9938]
 	move.b	#0x05,d0                        	| [$3905: ld   a,$05]
@@ -7352,9 +7342,9 @@ l_3aae:
 	add.b	d2,d0                            	| [$3ab6: add  a,c]
 	rts                                    	| [$3ab7: ret]
 
-l_3ab8:
+starfield_related_3ab8:
 	lea	l_9918(a6),a3                      	| [$3ab8: ld   iy,$9918]
-	lea	l_A118,a2                          	| [$3abc: ld   ix,$A118]
+	lea	l_A118(a6),a2                          	| [$3abc: ld   ix,$A118]
 	READ_ROM_BYTE	0x09F8,d0                       	| [$3ac0: ld   a,($09F8)]
 	move.b	d0,d1                           	| [$3ac3: ld   b,a]
 	move.w	#0x0004,d3                      	| [$3ac4: ld   de,$0004]
@@ -7502,6 +7492,8 @@ l_404e:
 	move.b	d0,l_943B(a6)                   	| [$406d: ld   ($943B),a]
 	jra	next_game_state_080b                             	| [$4070: jp   $080B]
 
+* < D4/D5/D6 (byte)
+* > D1
 l_4073:
 	READ_ROM_BYTE	0x0661,d0                       	| [$4073: ld   a,($0661)]
 	moveq	#0,d1
@@ -7509,18 +7501,9 @@ l_4073:
 	subq	#1,d1		| for dbf
 	CLEAR_XC_FLAGS                               	| [$4077: xor  a]
 l_4078:
-	* store X/C flag
-	scs		d7
-	* load D5 16 can destroy X
 	LOAD_D5_16_FROM_D5D6
-	* restore X/C flags
-	CLEAR_XC_FLAGS
-	tst.b	d7
-	jeq		0f
-	SET_XC_FLAGS
-0:
 	addx.w	d5,d5                           	| [$4078: adc  hl,hl]
-	scs		d7
+	scs		d7			| save carry
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,d0                           	| [$407a: ld   a,h]
 	tst.b	d7
@@ -7788,7 +7771,7 @@ l_4516:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$4535: ret  nz] [...]
 0:
-	move.b	l_902E(a6),d0                   	| [$4536: ld   a,($902E)]
+	move.b	at_least_one_active_enemy_902E(a6),d0                   	| [$4536: ld   a,($902E)]
 	                               	| [$4539: and  a]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$453a: ret  z] [...]
@@ -8603,7 +8586,7 @@ clear_screen_then_init_tasks_4C00:
 	move.b	#0x01,d0                        	| [$4c04: ld   a,$01]
 	move.b	d0,sprite_sync_status_a7ff(a6)                       	| [$4c06: ld   ($A7FF),a]
 	jbsr	l_1400                            	| [$4c09: call $1400]
-	jbsr	l_3ab8                            	| [$4c0c: call $3AB8]
+	jbsr	starfield_related_3ab8                            	| [$4c0c: call $3AB8]
 	move.w	#0x0104,d3                          	| [$4c0f: ld   de,$0104]
 	jbsr	start_task_d3_0038                            	| [$4c12: rst  $38]
 	addq.b	#1,d3                           	| [$4c13: inc  e]

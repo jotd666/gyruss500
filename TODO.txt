@@ -3,12 +3,13 @@
    6400, 6415, 6488, 64FF
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
+- first time satellite bonus appears, no central double shot orange
+  bonus, and player killed
 - check for more checksums (LEA_ROM	0x....,a0
 - enemies attack but keep relatively small (no dashing on player...)
   trace cpu/debug around 282b
 - implement difficulty
 - end of level: ship doesn't go to the center properly / sometimes crashes iLLEGAL
-- stars during title: not enough of them: find out why?
 - implement context switching (test first on startup!)
 - log sprites/flash when missing
 

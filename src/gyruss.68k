@@ -1127,7 +1127,7 @@ jump_table_0620:
 	.long	-7
 
 l_066e:
-*	lea	l_9465(a6),a0                      	| [$066e: ld   hl,$9465]
+*	lea	distance_to_center_9465(a6),a0                      	| [$066e: ld   hl,$9465]
 *	move.b	#0x06,(a0)                      	| [$0671: ld   (hl),$06]
 *l_0673:
 *	move.w	#0x0000,d1                      	| [$0673: ld   bc,$0000]
@@ -1413,8 +1413,8 @@ global_state_demo_or_game_0828:
 	.long	l_0a1a
 	.long	l_13bd
 	.long	l_0b42
-	.long	l_0b71
-	.long	l_0b9a
+	.long	init_end_of_level_sequence_0b71
+	.long	update_end_of_level_sequence_0b9a
 	.long	l_0bb9
 	.long	l_0be7
 	.long	l_0c04
@@ -1532,7 +1532,7 @@ l_0946:
 	move.b	d0,current_player_9662(a6)                   	| [$0950: ld   ($9662),a] [uncovered]
 l_0953:
 	move.b	#0x5A,d0                        	| [$0953: ld   a,$5A]
-	move.b	d0,l_9465(a6)                   	| [$0955: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$0955: ld   ($9465),a]
 	READ_ROM_BYTE	0x0067,d0                       	| [$0958: ld   a,($0067)]
 	move.b	d0,sub_state_942C(a6)                   	| [$095b: ld   ($942C),a]
 	rts                                    	| [$095e: ret]
@@ -1553,7 +1553,7 @@ l_0993:
 	move.w	#0x010B,d3                          	| [$0994: ld   de,$010B]
 	jbsr	start_task_d3_0038                            	| [$0997: rst  $38]
 	move.b	#0xB4,d0                        	| [$0998: ld   a,$B4]
-	move.b	d0,l_9465(a6)                   	| [$099a: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$099a: ld   ($9465),a]
 	jbsr	l_3af2                            	| [$099d: call $3AF2]
 	jbsr	disable_game_objects_0e43                            	| [$09a0: call $0E43]
 	jra	next_game_state_080b                             	| [$09a3: jp   $080B]
@@ -1759,14 +1759,14 @@ l_0ac5:
 	move.b	l_9400(a6),d0                   	| [$0ac5: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$0ac8: and  $07]
 	jne	l_0b03                             	| [$0aca: jr   nz,$0B03]
-	lea	l_9465(a6),a0                      	| [$0acc: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0acc: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$0acf: dec  (hl)]
 	jne	l_0b03                             	| [$0ad0: jr   nz,$0B03]
 	LOAD_VIDEO_POINTER	video_address_9413(a6),a0         	| [$0ad2: ld   hl,($9413)] [uncovered]
 	WRITE_VIDEORAM	0x83                      	| [$0ad5: ld   (hl),$83] [uncovered]
 l_0ad7:
 	move.b	#0x78,d0                        	| [$0ad7: ld   a,$78]
-	move.b	d0,l_9465(a6)                   	| [$0ad9: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$0ad9: ld   ($9465),a]
 	jbsr	l_5daa                            	| [$0adc: call $5DAA]
 	jra	next_game_state_080b                             	| [$0adf: jp   $080B]
 
@@ -1857,7 +1857,7 @@ l_0b42:
 	move.b	d0,sub_state_942C(a6)                   	| [$0b6d: ld   ($942C),a]
 	rts                                    	| [$0b70: ret]
 
-l_0b71:
+init_end_of_level_sequence_0b71:
 	jbsr	update_starfield_in_game_3804                            	| [$0b71: call $3804]
 	jbsr	l_4b68                            	| [$0b74: call $4B68]
 	jbsr	l_3af2                            	| [$0b77: call $3AF2]
@@ -1865,24 +1865,23 @@ l_0b71:
 	ror.b	#2,d0                            	| [$0b7d: rrca] * 2
 	and.b	#0x07,d0                         	| [$0b7f: and  $07]
 	add.b	#0x20,d0                         	| [$0b81: add  a,$20]
-	move.b	d0,d4                           	| [$0b83: ld   e,a]
-	move.b	#0x01,d3                        	| [$0b84: ld   d,$01]
-	LOAD_D3_16_FROM_D3D4
+	move.w	#0x0100,d3                        	| [$0b84: ld   d,$01]
+	move.b	d0,d3                           	| [$0b83: ld   e,a]
 	jbsr	start_task_d3_0038                            	| [$0b86: rst  $38]
 	move.b	#0x96,d0                        	| [$0b87: ld   a,$96]
-	move.b	d0,l_9465(a6)                   	| [$0b89: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$0b89: ld   ($9465),a]
 	jbsr	l_5dce                            	| [$0b8c: call $5DCE]
 	jbsr	l_1b86                            	| [$0b8f: call $1B86]
 	move.b	#0xFB,d0                        	| [$0b92: ld   a,$FB]
 	move.b	d0,l_943B(a6)                   	| [$0b94: ld   ($943B),a]
 	jra	next_game_state_080b                             	| [$0b97: jp   $080B]
 
-l_0b9a:
+update_end_of_level_sequence_0b9a:
 	jbsr	update_starfield_inter_levels_3831                            	| [$0b9a: call $3831]
-	jbsr	l_1be0                            	| [$0b9d: call $1BE0]
+	jbsr	update_player_ship_fading_away_1be0                            	| [$0b9d: call $1BE0]
 	tst.b	d0                               	| [$0ba0: and  a]
 	jeq	l_0bb1                             	| [$0ba1: jp   z,$0BB1]
-	lea	l_9465(a6),a0                      	| [$0ba4: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0ba4: ld   hl,$9465]
 	move.b	(a0),d0                         	| [$0ba7: ld   a,(hl)]
 	                               	| [$0ba8: and  a]
 	bne.b	0f                               	| [...]
@@ -1897,7 +1896,7 @@ l_0b9a:
 	rts                                    	| [$0bb0: ret]
 
 l_0bb1:
-	lea	l_9465(a6),a0                      	| [$0bb1: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0bb1: ld   hl,$9465]
 	move.b	#0x06,(a0)                      	| [$0bb4: ld   (hl),$06]
 	jra	next_game_state_080b                             	| [$0bb6: jp   $080B]
 
@@ -1905,7 +1904,7 @@ l_0bb9:
 	move.b	#0xFC,d0                        	| [$0bb9: ld   a,$FC]
 	move.b	d0,l_943B(a6)                   	| [$0bbb: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$0bbe: call $3831]
-	lea	l_9465(a6),a0                      	| [$0bc1: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0bc1: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$0bc4: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$0bc5: ret  nz] [...]
@@ -1931,7 +1930,7 @@ l_0be7:
 	jbsr	update_starfield_inter_levels_3831                            	| [$0bec: call $3831]
 	jbsr	move_player_ship_1857                            	| [$0bef: call $1857]
 	jbsr	l_0cb6                            	| [$0bf2: call $0CB6]
-	lea	l_9465(a6),a0                      	| [$0bf5: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0bf5: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$0bf8: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$0bf9: ret  nz] [...]
@@ -1963,7 +1962,7 @@ l_0c04:
 	rts                                    	| [$0c29: ret]
 
 l_0c2a:
-	lea	l_9465(a6),a0                      	| [$0c2a: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0c2a: ld   hl,$9465]
 	move.b	#0x64,(a0)                      	| [$0c2d: ld   (hl),$64]
 	CLEAR_XC_FLAGS                         	| [$0c2f: xor  a]
 	clr.b	d0                               	| [$0c2f: xor  a]
@@ -2023,12 +2022,12 @@ l_0c98:
 	jbsr	move_player_ship_1857                            	| [$0ca0: call $1857]
 	jbsr	update_player_shots_1f30                            	| [$0ca3: call $1F30]
 	jbsr	l_0cb6                            	| [$0ca6: call $0CB6]
-	lea	l_9465(a6),a0                      	| [$0ca9: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0ca9: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$0cac: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$0cad: ret  nz] [...]
 0:
-	lea	l_9465(a6),a0                      	| [$0cae: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0cae: ld   hl,$9465]
 	move.b	#0x78,(a0)                      	| [$0cb1: ld   (hl),$78]
 	jra	next_game_state_080b                             	| [$0cb3: jp   $080B]
 
@@ -2099,7 +2098,7 @@ l_0d39:
 	jbsr	start_task_d3_0038                            	| [$0d39: rst  $38]
 	jbsr	l_5d8c                            	| [$0d3a: call $5D8C]
 l_0d3d:
-	lea	l_9465(a6),a0                      	| [$0d3d: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0d3d: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$0d40: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$0d41: ret  nz] [...]
@@ -2145,7 +2144,7 @@ l_0d75:
 
 l_0d97:
 	jbsr	update_starfield_inter_levels_3831                            	| [$0d97: call $3831]
-	jbsr	l_1be0                            	| [$0d9a: call $1BE0]
+	jbsr	update_player_ship_fading_away_1be0                            	| [$0d9a: call $1BE0]
 	tst.b	d0                               	| [$0d9d: and  a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$0d9e: ret  nz] [...]
@@ -2233,7 +2232,7 @@ l_0e08:
 	move.b	#0x05,d3                        	| [$0e2f: ld   d,$05]
 	LOAD_D3_16_FROM_D3D4
 	jbsr	start_task_d3_0038                            	| [$0e31: rst  $38]
-	lea	l_9465(a6),a0                      	| [$0e32: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0e32: ld   hl,$9465]
 	move.b	#0x78,(a0)                      	| [$0e35: ld   (hl),$78]
 	lea	sub_state_942C(a6),a0                      	| [$0e37: ld   hl,$942C]
 	move.b	#0x14,(a0)                      	| [$0e3a: ld   (hl),$14]
@@ -2250,7 +2249,7 @@ l_0e4c:
 	add.w	d3,a0                            	| [$0e4d: add  hl,de]
 	subq.b	#1,d1                           	| [...]
 	jne	l_0e4c                             	| [$0e4e: djnz $0E4C]
-	lea	l_9810(a6),a0                      	| [$0e50: ld   hl,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a0                      	| [$0e50: ld   hl,$9810]
 	move.w	#0x0004,d3                      	| [$0e53: ld   de,$0004]
 	move.b	#0x38,d1                        	| [$0e56: ld   b,$38]
 l_0e58:
@@ -2285,7 +2284,7 @@ l_0e69:
 	move.b	#0x05,d3                        	| [$0e8d: ld   d,$05]
 	LOAD_D3_16_FROM_D3D4
 	jbsr	start_task_d3_0038                            	| [$0e8f: rst  $38]
-	lea	l_9465(a6),a0                      	| [$0e90: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$0e90: ld   hl,$9465]
 	move.b	#0x78,(a0)                      	| [$0e93: ld   (hl),$78]
 	move.b	#0x0F,d0                        	| [$0e95: ld   a,$0F]
 	move.b	d0,l_918E(a6)                   	| [$0e97: ld   ($918E),a]
@@ -2906,7 +2905,7 @@ l_13bd:
 	move.b	#0xFB,d0                        	| [$13bd: ld   a,$FB]
 	move.b	d0,l_943B(a6)                   	| [$13bf: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$13c2: call $3831]
-	lea	l_9465(a6),a0                      	| [$13c5: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$13c5: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$13c8: dec  (hl)]
 	move.b	(a0),d0                         	| [$13c9: ld   a,(hl)]
 	cmp.b	#0x3C,d0                         	| [$13ca: cp   $3C]
@@ -2936,7 +2935,7 @@ l_13e5:
 	and.b	#0x01,d0                         	| [$13ef: and  $01]
 	move.b	d0,current_player_9662(a6)                   	| [$13f1: ld   ($9662),a]
 	move.b	#0x5A,d0                        	| [$13f4: ld   a,$5A]
-	move.b	d0,l_9465(a6)                   	| [$13f6: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$13f6: ld   ($9465),a]
 	READ_ROM_BYTE	0x24F4,d0                       	| [$13f9: ld   a,($24F4)]
 	move.b	d0,sub_state_942C(a6)                   	| [$13fc: ld   ($942C),a]
 	rts                                    	| [$13ff: ret]
@@ -3919,7 +3918,7 @@ shifting_on_d5d6_1bc3:
 	roxr.b	#1,d6                           	| [$1bdd: rr   l]
 	rts                                    	| [$1bdf: ret]
 
-l_1be0:
+update_player_ship_fading_away_1be0:
 	lea	sprite_shadow_ram_9800(a6),a3      	| [$1be0: ld   iy,sprite_shadow_ram_9800]
 	lea	level_playing_flag_9000(a6),a2                      	| [$1be4: ld   ix,$9000]
 	move.b	(0x0c,a2),d1                    	| [$1be8: ld   b,(ix+$0c)]
@@ -3965,7 +3964,7 @@ l_1c2e:
 l_1c32:
 	subq.b	#1,(0x0c,a2)                    	| [$1c32: dec  (ix+$0c)]
 	lea	enemy_objects_9010(a6),a2                      	| [$1c35: ld   ix,$9010]
-	lea	l_9810(a6),a3                      	| [$1c39: ld   iy,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$1c39: ld   iy,$9810]
 	move.b	l_9001(a6),d0                   	| [$1c3d: ld   a,($9001)]
 	move.b	d0,(0x03,a3)                    	| [$1c40: ld   (iy+$03),a]
 	move.b	#0x36,(0x00,a3)                 	| [$1c43: ld   (iy+$00),$36]
@@ -4001,7 +4000,7 @@ l_1c61:
 	jra	l_1bf9                             	| [$1c8d: jp   $1BF9]
 
 l_1c90:
-	lea	l_9810(a6),a3                      	| [$1c90: ld   iy,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a3          	| [$1c90: ld   iy,$9810]
 	lea	enemy_objects_9010(a6),a2                      	| [$1c94: ld   ix,$9010]
 	move.b	#0x02,d1                        	| [$1c98: ld   b,$02]
 	move.b	sub_state_942C(a6),d0                   	| [$1c9a: ld   a,($942C)]
@@ -4009,7 +4008,7 @@ l_1c90:
 	jeq	l_1ca3                             	| [$1c9f: jr   z,$1CA3]
 	move.b	#0x30,d1                        	| [$1ca1: ld   b,$30]
 l_1ca3:
-	move.b	(0x00,a3),d0                    	| [$1ca3: ld   a,(iy+$00)]
+	move.b	(displayed_y_00,a3),d0                    	| [$1ca3: ld   a,(iy+$00)]
 	cmp.b	d1,d0                            	| [$1ca6: cp   b]
 	jcs	l_1d1a                             	| [$1ca7: jp   c,$1D1A]
 	move.w	#0x00C0,d3                          	| [$1caa: ld   de,$00C0]
@@ -4018,13 +4017,13 @@ l_1ca3:
 	jeq	l_1cb7                             	| [$1cb2: jr   z,$1CB7]
 	move.w	#0x0180,d3                          	| [$1cb4: ld   de,$0180]
 l_1cb7:
-	move.b	(0x00,a3),d5                    	| [$1cb7: ld   h,(iy+$00)]
-	move.b	(0x03,a2),d6                    	| [$1cba: ld   l,(ix+$03)]
+	move.b	(displayed_y_00,a3),d5                    	| [$1cb7: ld   h,(iy+$00)]
+	move.b	(fine_y_03,a2),d6                    	| [$1cba: ld   l,(ix+$03)]
 	LOAD_D5_16_FROM_D5D6
 	add.w	d3,d5                            	| [$1cbd: add  hl,de]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x00,a3)                    	| [$1cbe: ld   (iy+$00),h]
-	move.b	d6,(0x03,a2)                    	| [$1cc1: ld   (ix+$03),l]
+	move.b	d5,(displayed_y_00,a3)                    	| [$1cbe: ld   (iy+$00),h]
+	move.b	d6,(fine_y_03,a2)                    	| [$1cc1: ld   (ix+$03),l]
 	jbsr	read_player_controls_1720                            	| [$1cc4: call $1720]
 	and.b	#0x0F,d0                         	| [$1cc7: and  $0F]
 	jeq	l_1d14                             	| [$1cc9: jr   z,$1D14]
@@ -4039,7 +4038,7 @@ l_1cb7:
 	add.b	d1,d0                            	| [$1cdb: add  a,b] [uncovered]
 	move.b	d0,d1                           	| [$1cdc: ld   b,a] [uncovered]
 l_1cdd:
-	move.b	(0x03,a3),d0                    	| [$1cdd: ld   a,(iy+$03)]
+	move.b	(displayed_x_03,a3),d0                    	| [$1cdd: ld   a,(iy+$03)]
 	sub.b	d1,d0                            	| [$1ce0: sub  b]
 	jeq	l_1d14                             	| [$1ce1: jr   z,$1D14]
 	addq.b	#0x02,d0                        	| [$1ce3: add  a,$02]
@@ -4047,37 +4046,36 @@ l_1cdd:
 	jcs	l_1d11                             	| [$1ce7: jr   c,$1D11]
 	cmp.b	#0x80,d0                         	| [$1ce9: cp   $80]
 	jcc	l_1cff                             	| [$1ceb: jr   nc,$1CFF]
-	move.b	(0x03,a3),d5                    	| [$1ced: ld   h,(iy+$03)] [uncovered]
-	move.b	(0x02,a2),d6                    	| [$1cf0: ld   l,(ix+$02)] [uncovered]
+	move.b	(displayed_x_03,a3),d5                    	| [$1ced: ld   h,(iy+$03)] [uncovered]
+	move.b	(fine_x_02,a2),d6                    	| [$1cf0: ld   l,(ix+$02)] [uncovered]
 	move.w	#-0xe0,d1                       	| [$1cf3: ld   bc,$FF20] [uncovered]
 	LOAD_D5_16_FROM_D5D6
 	add.w	d1,d5                            	| [$1cf6: add  hl,bc] [uncovered]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x03,a3)                    	| [$1cf7: ld   (iy+$03),h] [uncovered]
-	move.b	d6,(0x02,a2)                    	| [$1cfa: ld   (ix+$02),l] [uncovered]
+	move.b	d5,(displayed_x_03,a3)                    	| [$1cf7: ld   (iy+$03),h] [uncovered]
+	move.b	d6,(fine_x_02,a2)                    	| [$1cfa: ld   (ix+$02),l] [uncovered]
 	jra	l_1d14                             	| [$1cfd: jr   $1D14] [uncovered]
 
 l_1cff:
-	move.b	(0x03,a3),d5                    	| [$1cff: ld   h,(iy+$03)]
-	move.b	(0x02,a2),d6                    	| [$1d02: ld   l,(ix+$02)]
+	move.b	(displayed_x_03,a3),d5                    	| [$1cff: ld   h,(iy+$03)]
+	move.b	(fine_x_02,a2),d6                    	| [$1d02: ld   l,(ix+$02)]
 	LOAD_D5_16_FROM_D5D6
 	move.w	#0x00E0,d1                          	| [$1d05: ld   bc,$00E0]
 	add.w	d1,d5                            	| [$1d08: add  hl,bc]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x03,a3)                    	| [$1d09: ld   (iy+$03),h]
-	move.b	d6,(0x02,a2)                    	| [$1d0c: ld   (ix+$02),l]
+	move.b	d5,(displayed_x_03,a3)                    	| [$1d09: ld   (iy+$03),h]
+	move.b	d6,(fine_x_02,a2)                    	| [$1d0c: ld   (ix+$02),l]
 	jra	l_1d14                             	| [$1d0f: jr   $1D14]
 
 l_1d11:
-	move.b	d1,(0x03,a3)                    	| [$1d11: ld   (iy+$03),b]
+	move.b	d1,(displayed_x_03,a3)                    	| [$1d11: ld   (iy+$03),b]
 l_1d14:
 	jbsr	l_2f94                            	| [$1d14: call $2F94]
 	jra	l_1c2e                             	| [$1d17: jp   $1C2E]
 
 l_1d1a:
-	CLEAR_XC_FLAGS                         	| [$1d1a: xor  a]
 	clr.b	d0                               	| [$1d1a: xor  a]
-	move.b	d0,l_9810(a6)                   	| [$1d1b: ld   ($9810),a]
+	move.b	d0,sprite_shadow_ram_9800+0x10(a6)                   	| [$1d1b: ld   ($9810),a]
 	rts                                    	| [$1d1e: ret]
 
 * shoots & update shots
@@ -4574,7 +4572,7 @@ handle_enemies_2339:
 	clr.b	d0                               	| [$2339: xor  a]
 	move.b	d0,l_922E(a6)                   	| [$233a: ld   ($922E),a]
 	lea	enemy_objects_9010(a6),a2                      	| [$233d: ld   ix,$9010]
-	lea	l_9810(a6),a3                      	| [$2341: ld   iy,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$2341: ld   iy,$9810]
 	jbsr	handle_enemy_2518                            	| [$2345: call $2518]
 	lea	l_9020(a6),a2                      	| [$2348: ld   ix,$9020]
 	lea	l_9818(a6),a3                      	| [$234c: ld   iy,$9818]
@@ -4740,7 +4738,7 @@ show_title_for_a_while_24c2:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$24c7: ret  nz] [...]
 0:
-	lea	l_9465(a6),a0                      	| [$24c8: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$24c8: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$24cb: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$24cc: ret  nz] [...]
@@ -4863,7 +4861,7 @@ l_256d:
 	bne.b	0f                               	| [...]
 	rts                                    	| [$2578: ret  z] [...]
 0:
-	lea	l_9465(a6),a0                      	| [$2579: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$2579: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$257c: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$257d: ret  nz] [...]
@@ -4893,7 +4891,7 @@ l_256d:
 	clr.b	d0                               	| [$259d: xor  a]
 	move.b	d0,l_960C(a6)                   	| [$259e: ld   ($960C),a]
 	move.b	#0x2A,d0                        	| [$25a1: ld   a,$2A]
-	move.b	d0,l_9465(a6)                   	| [$25a3: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$25a3: ld   ($9465),a]
 	jbsr	l_5c82                            	| [$25a6: call $5C82]
 	jra	next_game_state_080b                             	| [$25a9: jp   $080B]
 
@@ -6079,7 +6077,7 @@ l_2e10:
 	jbsr	move_player_ship_1857                            	| [$2e16: call $1857]
 	jbsr	update_player_shots_1f30                            	| [$2e19: call $1F30]
 	jbsr	l_22f3                            	| [$2e1c: call $22F3]
-	lea	l_9465(a6),a0                      	| [$2e1f: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$2e1f: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$2e22: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$2e23: ret  nz] [...]
@@ -6248,7 +6246,7 @@ l_2f39:
 	rts                                    	| [$2f53: ret] [uncovered]
 
 l_2f94:
-	move.b	(0x00,a3),d0                    	| [$2f94: ld   a,(iy+$00)]
+	move.b	(displayed_y_00,a3),d0                    	| [$2f94: ld   a,(iy+$00)]
 	move.b	(a0),d0                         	| [$2f95: ld   a,(hl)] [uncovered]
 	                                    	| [$2f96: nop] [uncovered]
 	rol.b	#3,d0                            	| [$2f97: rlca] * 3
@@ -6552,7 +6550,7 @@ start_attack_32ac:
 	lea	enemy_objects_9010(a6),a0                      	| [$32b3: ld   hl,$9010]
 	move.w	#0x0010,d3                      	| [$32b6: ld   de,$0010]
 	jbsr	exx                               	| [$32b9: exx]
-	lea	l_9810(a6),a0                      	| [$32ba: ld   hl,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a0                      	| [$32ba: ld   hl,$9810]
 	move.w	#0x0008,d3                      	| [$32bd: ld   de,$0008]
 	move.b	l_924E(a6),d0                   	| [$32c0: ld   a,($924E)]
 	                               	| [$32c3: and  a]
@@ -6709,7 +6707,7 @@ l_3530:
 	jne	update_active_enemy_flag_35ca                             	| [$3535: jp   nz,$35CA]
 	subq.b	#1,(a0)                         	| [$3538: dec  (hl)]
 	lea	enemy_objects_9010(a6),a2                      	| [$3539: ld   ix,$9010]
-	lea	l_9810(a6),a3                      	| [$353d: ld   iy,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$353d: ld   iy,$9810]
 	lea	l_960D(a6),a0                      	| [$3541: ld   hl,$960D]
 	move.b	(a0),d0                         	| [$3544: ld   a,(hl)]
 	move.b	d0,d1                           	| [$3545: ld   b,a]
@@ -6877,7 +6875,7 @@ l_3645:
 	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$3656: rst  $10]
 	exg	a1,a0                              	| [$3657: ex   de,hl]
 	lea	enemy_objects_9010(a6),a2                      	| [$3658: ld   ix,$9010]
-	lea	l_9810(a6),a3                      	| [$365c: ld   iy,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$365c: ld   iy,$9810]
 	move.b	(a0),d1                         	| [$3660: ld   b,(hl)]
 	move.b	d1,d0                           	| [$3661: ld   a,b]
 	move.b	d0,l_91FE(a6)                   	| [$3662: ld   ($91FE),a]
@@ -7197,7 +7195,7 @@ l_3901:
 	rts                                    	| [$3908: ret]
 
 show_highscores_for_a_while_3909:
-	lea	l_9465(a6),a0                      	| [$3909: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$3909: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$390c: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$390d: ret  nz] [...]
@@ -7475,7 +7473,7 @@ l_404e:
 	jbsr	update_starfield_in_game_3804                            	| [$404e: call $3804]
 	jbsr	l_3af2                            	| [$4051: call $3AF2]
 	move.b	#0x5A,d0                        	| [$4054: ld   a,$5A]
-	move.b	d0,l_9465(a6)                   	| [$4056: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$4056: ld   ($9465),a]
 	jbsr	l_1b86                            	| [$4059: call $1B86]
 *  ROM checksum
 *	clr.b	d1                               	| [$405c: ld   b,$00]
@@ -7637,7 +7635,7 @@ l_4269:
 	move.b	#0xFD,d0                        	| [$426d: ld   a,$FD]
 	move.b	d0,l_943B(a6)                   	| [$426f: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$4272: call $3831]
-	lea	l_9465(a6),a0                      	| [$4275: ld   hl,$9465]
+	lea	distance_to_center_9465(a6),a0                      	| [$4275: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$4278: dec  (hl)]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$4279: ret  nz] [...]
@@ -8008,7 +8006,7 @@ l_46ed:
 	move.w	#0x0707,d3                        	| [$46ed: ld   d,$07]
 	jbsr	start_task_d3_0038                            	| [$46ef: rst  $38]
 	move.b	#0xB4,d0                        	| [$46f0: ld   a,$B4]
-	move.b	d0,l_9465(a6)                   	| [$46f2: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$46f2: ld   ($9465),a]
 	jra	next_game_state_080b                             	| [$46f5: jp   $080B]
 
 l_470a:
@@ -8867,7 +8865,7 @@ l_4ea1:
 	add.w	d3,a0                            	| [$4eac: add  hl,de]
 	subq.b	#1,d2                           	| [$4ead: dec  c]
 	jne	l_4e9e                             	| [$4eae: jr   nz,$4E9E]
-	lea	l_9810(a6),a0                      	| [$4eb0: ld   hl,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a0                      	| [$4eb0: ld   hl,$9810]
 	move.b	#0x0A,d0                        	| [$4eb3: ld   a,$0A]
 	move.b	d0,d1                           	| [$4eb5: ld   b,a]
 	moveq	#0x0008,d3                      	| [$4eb6: ld   de,$0008]
@@ -9124,7 +9122,7 @@ enemies_vs_ship_collisions_5943:
 	rts                                    	| [$5947: ret  nz] [...]
 0:
 	lea	enemy_objects_9010(a6),a2                      	| [$5948: ld   ix,$9010]
-	lea	l_9810(a6),a3                      	| [$594c: ld   iy,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$594c: ld   iy,$9810]
 	move.b	#0x0A,d1                        	| [$5950: ld   b,$0A]
 	move.b	iceberg_on_screen_915e(a6),d0                   	| [$5952: ld   a,($915E)]
 	                               	| [$5955: and  a]
@@ -9447,7 +9445,7 @@ enemy_vs_ships_collisions_5b53:
 	move.w	#0x0010,d3                      	| [$5b57: ld   de,$0010]
 	move.b	#0x0A,d1                        	| [$5b5a: ld   b,$0A]
 	lea	enemy_objects_9010(a6),a0                      	| [$5b5c: ld   hl,$9010]
-	lea	l_9810(a6),a3                      	| [$5b5f: ld   iy,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$5b5f: ld   iy,$9810]
 	jra	enemy_vs_ship_collision_5b79                             	| [$5b63: jp   $5B79]
 
 l_5b66:
@@ -9456,7 +9454,7 @@ l_5b66:
 	move.w	#0x0010,d3                      	| [$5b6a: ld   de,$0010]
 	move.b	#0x0A,d1                        	| [$5b6d: ld   b,$0A]
 	lea	enemy_objects_9010(a6),a0                      	| [$5b6f: ld   hl,$9010]
-	lea	l_9810(a6),a3                      	| [$5b72: ld   iy,$9810]
+	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$5b72: ld   iy,$9810]
 	jra	l_5bc3                             	| [$5b76: jp   $5BC3]
 
 enemy_vs_ship_collision_5b79:
@@ -9923,7 +9921,7 @@ l_5f96:
 	move.b	d0,l_9645(a6)                   	| [$5fac: ld   ($9645),a]
 	move.b	l_9444(a6),d0                   	| [$5faf: ld   a,($9444)]
 	move.b	#0x5A,d0                        	| [$5fb2: ld   a,$5A]
-	move.b	d0,l_9465(a6)                   	| [$5fb4: ld   ($9465),a]
+	move.b	d0,distance_to_center_9465(a6)                   	| [$5fb4: ld   ($9465),a]
 	jbsr	disable_game_objects_0e43                            	| [$5fb7: call $0E43]
 	jbsr	l_3af2                            	| [$5fba: call $3AF2]
 	jra	next_game_state_080b                             	| [$5fbd: jp   $080B]

@@ -33,6 +33,11 @@
   redrawing when crossing paths with sprites
   OR hack something for title only / in-game: redraw parts of screen with non-blank
 
+to turn off stars:
+
+bpset 3804,,{PC=$3803;g}
+bpset 3831,,{PC=$3803;g}
+
 6809 converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
 remove the second one
  

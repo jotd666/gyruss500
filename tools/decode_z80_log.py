@@ -1,7 +1,7 @@
 import os,struct,re
 
 # log has the registers, then "DEAD" in hex then ram and rom base addresses
-round_values_mask = 0xFE
+round_values_mask = 0xFF
 
 with open(r"..\cpu_log","rb") as f:
     contents = f.read()

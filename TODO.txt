@@ -6,14 +6,12 @@
 - check attack wave params: log regs @ 4192
 
 - enemies attack but keep relatively small (no dashing on player...)
-- same issue with death ray satellites: they never move forward. Find where they are updated
-  in MAME should be easier, and maybe it's the same issue!!
+- same issue with death ray satellites: they now move forward but not after a while it seems
+  seems easier to debug that instead of enemies but looks like same issue
   
 - implement difficulty
-- end of level: ship doesn't go to the center properly
-- "X WARPS TO XXXX" only works for first planet (NEPTUNE): check when it's written in MAME for later
-  stages
-- stage numbers completely off after a while (9 => 0)
+- stage numbers completely off after a while (9 => 0) ?? recheck
+- chance stage enemies don't appear
 - chance stage bonus text digits are off
 
 - implement context switching (test first on startup!)

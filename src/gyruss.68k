@@ -193,27 +193,36 @@
 	move.b	d7,(a0)+                           	| [$0a33: inc  hl]	
 	.endm
 
+* those macros use rol/ror instead of lsl/lsr
+* which doesn't clear MSB/LSB but matters much less than
+* leaving X untouched for next operations
+*
+* it wasn't much of a problem most previous ports 
+* but Gyruss needs X after a add.w d3,d5 because it calls
+* shifting_on_d5d6_1bc3 which needs D5.W => D5/D6 right after.
+* The original lsr implementation cleared X which caused issues
+
 	.macro	LOAD_D3_16_FROM_D3D4
 	and.l	#0xFFFF,d3
-	lsl.w	#8,d3
+	rol.w	#8,d3
 	move.b	d4,d3
 	.endm
 	.macro	LOAD_D5_16_FROM_D5D6
 	and.l	#0xFFFF,d5
-	lsl.w	#8,d5
+	rol.w	#8,d5
 	move.b	d6,d5
 	.endm
 	.macro	LOAD_D1D2_FROM_D1_16
 	move.b	d1,d2
-	lsr.w	#8,d1
+	ror.w	#8,d1
 	.endm
 	.macro	LOAD_D5D6_FROM_D5_16
 	move.b	d5,d6
-	lsr.w	#8,d5
+	ror.w	#8,d5
 	.endm
 	.macro	LOAD_D3D4_FROM_D3_16
 	move.b	d3,d4
-	lsr.w	#8,d3
+	ror.w	#8,d3
 	.endm
 
 	.macro	LOAD_D3D4_FROM_A1_ROM
@@ -1413,14 +1422,14 @@ global_state_demo_or_game_0828:
 	.long	l_0a1a
 	.long	l_13bd
 	.long	l_0b42
-	.long	init_end_of_level_sequence_0b71
+	.long	init_end_of_level_sequence_planet_0b71
 	.long	update_end_of_level_sequence_0b9a
 	.long	l_0bb9
 	.long	l_0be7
 	.long	l_0c04
 	.long	l_0c98
 	.long	l_0cf7
-	.long	l_404e
+	.long	init_end_of_level_sequence_404e
 	.long	l_0d97
 	.long	-1
 	.long	l_1580
@@ -1857,7 +1866,7 @@ l_0b42:
 	move.b	d0,sub_state_942C(a6)                   	| [$0b6d: ld   ($942C),a]
 	rts                                    	| [$0b70: ret]
 
-init_end_of_level_sequence_0b71:
+init_end_of_level_sequence_planet_0b71:
 	jbsr	update_starfield_in_game_3804                            	| [$0b71: call $3804]
 	jbsr	l_4b68                            	| [$0b74: call $4B68]
 	jbsr	l_3af2                            	| [$0b77: call $3AF2]
@@ -5241,7 +5250,6 @@ l_2823:
 	pea		l_2bb3(pc)         | [$2827: ld   hl,$2BB3]
 
 	                        	| [$282a: push hl]
-	ENABLE_REGS_LOG
 	move.b	(enemy_attack_phase_09,a2),d0                    	| [$282b: ld   a,(ix+$09)]
 	ror.b	#2,d0                            	| [$282e: rrca] * 2
 	and.b	#0x0F,d0                         	| [$2830: and  $0F]
@@ -5876,7 +5884,7 @@ l_2cb1:
 	jcs	l_2d14                             	| [$2cb9: jr   c,$2D14]
 	move.b	d1,d0                           	| [$2cbb: ld   a,b]
 	move.b	#0x01,d1                        	| [$2cbc: ld   b,$01]
-	move.b	(displayed_x_03,a3),d3                    	| [$2cbe: ld   d,(iy+$03)]
+	move.b	(displayed_x_03,a3),d3              | [$2cbe: ld   d,(iy+$03)]
 	clr.b	d4                               	| [$2cc1: ld   e,$00]
 	sub.b	d3,d0                            	| [$2cc3: sub  d]
 	cmp.b	#0x80,d0                         	| [$2cc4: cp   $80]
@@ -7469,7 +7477,7 @@ l_4049:
 	move.b	d0,(0x04,a2)                    	| [$404a: ld   (ix+$04),a]
 	rts                                    	| [$404d: ret]
 
-l_404e:
+init_end_of_level_sequence_404e:
 	jbsr	update_starfield_in_game_3804                            	| [$404e: call $3804]
 	jbsr	l_3af2                            	| [$4051: call $3AF2]
 	move.b	#0x5A,d0                        	| [$4054: ld   a,$5A]
@@ -8467,10 +8475,8 @@ l_4a86:
 	clr.b	d0                               	| [$4aa4: xor  a]
 	move.b	d0,l_92BE(a6)                   	| [$4aa5: ld   ($92BE),a]
 	LOAD_RAM_POINTER	ram_pointer_9617(a6),a0         	| [$4aa8: ld   hl,($9617)]
-	BREAKPOINT	"7736 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$4aab: ld   (hl),$00]
 	LOAD_RAM_POINTER	ram_pointer_9613(a6),a0         	| [$4aad: ld   hl,($9613)]
-	BREAKPOINT	"7739 review check if pointed value is in RAM"
 	clr.b	(a0)                             	| [$4ab0: ld   (hl),$00]
 	rts                                    	| [$4ab2: ret]
 
@@ -8899,6 +8905,9 @@ l_4ed7:
 	move.b	(a0),d3                         	| [$4ed9: ld   d,(hl)]
 	LOAD_A1_FROM_D3D4_ROM
 	exg	a1,a0                              	| [$4eda: ex   de,hl]
+	
+* < A0; ROM pointer
+* < A2: object structure pointer
 l_4edb:
 	move.b	(0x01,a2),d0                    	| [$4edb: ld   a,(ix+$01)]
 	addq.b	#0x04,d0                        	| [$4ede: add  a,$04]

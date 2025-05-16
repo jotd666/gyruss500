@@ -1,3 +1,6 @@
+beam sync 6809 routines: call them only
+in the end, with full sprite update
+
 - still small diffs amiga vs mame on memory blocks investigate
    47F2 ??
    6400, 6415, 6488, 64FF
@@ -35,6 +38,10 @@ to turn off stars:
 
 bpset 3804,,{PC=$3803;g}
 bpset 3831,,{PC=$3803;g}
+
+turn off sprite semaphore/sync
+
+bpset f0cd:sub,,{PC=$F0CF;g}
 
 6809 converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
 remove the second one

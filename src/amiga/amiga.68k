@@ -383,7 +383,7 @@ _user:
 	
 	move.l	misc_options,d1
 	btst	#0,d1
-	sne		skip_intro_flag
+**	sne		skip_intro_flag
 	btst	#1,d1
 	sne		frameskip
 	.ifndef	RELEASE

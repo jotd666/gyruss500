@@ -61,7 +61,11 @@ draw_queued_sprites_flag_6701 = 0x6701
 queue_sprites_flag_6702 = 0x6702
 update_sequence_control_flag_67fc = 0x67fc
 update_sequence_control_flag_67fd = 0x67fd
-number_of_sprites_to_update_counter_0a = 0x0a
+
+
+number_of_sprites_to_update_counter_0a = 0x0a
+
+
 * tell 6809 to perform more or less operations:
 * 0xFF: don't do anything (state not reached in the game)
 * 0x00: just sync the first sprites between 6000 and 4040. Earth
@@ -78,6 +82,18 @@ sprite_sync_status_67ff = 0x67ff
 	
 set_irq_flag_2000:
 	move.b	d0,m6809_interrupts_on
+	rts
+	
+init_current_ybeam:
+	move.b	#31,current_y_beam
+	rts
+	
+next_current_ybeam:
+	add.b	#14,current_y_beam
+	rts
+	
+get_current_ybeam:
+	move.b	current_y_beam,d0
 	rts
 	
 gyruss_sub_reset:
@@ -188,6 +204,8 @@ gysub_before_6000:
 0:
 
 	jbsr	ship_coordinate_transform_f566          | [$f0f9: jsr    $f566]
+	* here beamy = 31 on the arcade machine
+	jbsr	init_current_ybeam
 	jbsr	race_beam_update_sprites_f6ee           | [$f0fc: jsr    $f6ee]
 	jbsr	enemies_coordinate_transform_f626        	| [$f0ff: jsr    $f626]
 	jbsr	race_beam_update_sprites_f6ee           | [$f102: jsr    $f6ee]
@@ -232,6 +250,7 @@ gysub_after_6000:
 	*jbsr	osd_dump_logs
 	*illegal
 	
+	* here beamy = 164 on the arcade machine
 continue_f135:
 	move.b	#0x29,d0                        	| [$f135: lda    #$29]
 	move.b	#0x17,d1                        	| [$f137: ldb    #$17]
@@ -324,6 +343,8 @@ l_f1bc:
 	* each non "race" routine does something to convert coords
 	*
 	jbsr	ship_coordinate_transform_f566                            	| [$f1c6: jsr    $f566]
+	* here beamy = 31 on the arcade machine
+	jbsr	init_current_ybeam
 	jbsr	race_beam_update_sprites_f695                            	| [$f1c9: jsr    $f695]
 	* also used for player radial shots
 	jbsr	enemies_coordinate_transform_f626                            	| [$f1cc: jsr    $f626]
@@ -343,7 +364,9 @@ l_f1bc:
 	jbsr	coordinate_transform_six_f636                            	| [$f1f6: jsr    $f636]
 	jbsr	race_beam_update_sprites_f695                            	| [$f1f9: jsr    $f695]
 	jbsr	coordinate_transform_seven_f645                            	| [$f1fc: jsr    $f645]
+	* here beamy = 169 on the arcade machine
 	jbsr	race_beam_update_sprites_f695                            	| [$f1ff: jsr    $f695]
+	* here beamy = 176 on the arcade machine
 continue_f202:
 	move.b	#0x29,d0                        	| [$f202: lda    #$29]
 	move.b	#0x17,d1                        	| [$f204: ldb    #$17]
@@ -383,6 +406,8 @@ l_f226:
 
 l_f232:
 	jbsr	ship_coordinate_transform_f566                            	| [$f232: jsr    $f566]
+	* here beamy = 31 on the arcade machine
+	jbsr	init_current_ybeam
 	jbsr	race_beam_update_sprites_f695                            	| [$f235: jsr    $f695]
 	jbsr	coordinate_transform_zero_f660                            	| [$f238: jsr    $f660]
 	jbsr	race_beam_update_sprites_f695                            	| [$f23b: jsr    $f695]
@@ -402,6 +427,7 @@ l_f232:
 	jbsr	race_beam_update_sprites_f695                            	| [$f265: jsr    $f695]
 	jbsr	coordinate_transform_seven_f645                            	| [$f268: jsr    $f645]
 	jbsr	race_beam_update_sprites_f695                            	| [$f26b: jsr    $f695]
+	* here beamy = 186 on the arcade machine
 	jra	continue_f202                             	| [$f26e: bra    $f202]
 
 compute_coords_f273:
@@ -894,6 +920,11 @@ l_f4a3:
 	move.w	d1,d2                           	| [$f4b3: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f4b5: ldd    ,x++]
 	addq.w	#2,d2
+	nop
+	nop
+	nop
+	nop
+	nop
 	LOAD_D                                 	| [$f4b5: ldd    ,x++]
 	MAKE_D
 	GET_U_ADDRESS	0                        	| [$f4b7: std    ,u++]
@@ -1289,7 +1320,11 @@ l_f670:
 	bne	l_f670                             	| [$f692: bne    $f670]
 	rts                                    	| [$f694: rts]
 
-race_beam_update_sprites_f695:	GET_DP_ADDRESS	0x0b                    	| [$f695: lda    $0b]
+race_beam_update_sprites_f695:
+	jbsr	0f
+	jra		next_current_ybeam
+0:
+	GET_DP_ADDRESS	0x0b                    	| [$f695: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f697: cmpa   #$04]
 	bcc	l_f6d4                             	| [$f699: bcc    $f6d4]
@@ -1297,13 +1332,13 @@ race_beam_update_sprites_f695:	GET_DP_ADDRESS	0x0b                    	| [$f695
 	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f69d: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
 	move.w	#sprite_ram_4040,d4             	| [$f69f: ldu    #sprite_ram_4040]
-* racing the beam: check if all sprites are above the current beam position* we don't really need that (at least on amiga!)*l_f6a2:
-*	GET_ADDRESS	0x0000                     	| [$f6a2: lda    >$0000]
-*	move.b	(a0),d0                         	| [...]
-*	GET_U_ADDRESS	0x3                      	| [$f6a5: adda   $3,u]
-*	add.b	(a0),d0                          	| [...]
-*	bcs	l_f6b2                             	| [$f6a7: bcs    $f6b2]
-*	addq.w	#0x4,d4                         	| [$f6a9: leau   $4,u]
+* racing the beam: check if all sprites are above the current beam position
+l_f6a2:
+	jbsr	get_current_ybeam                   | [$f6a2: lda    >$0000]
+	GET_U_ADDRESS	0x3                      	| [$f6a5: adda   $3,u]
+	add.b	(a0),d0                          	| [...]
+	bcs	l_f6b2                             	| [$f6a7: bcs    $f6b2]
+	addq.w	#0x4,d4                         	| [$f6a9: leau   $4,u]
 l_f6ab:
 	cmp.w	#0x4100,d4                       	| [$f6ab: cmpu   #$4100]
 	* skip the beam racing part, update sprites 
@@ -1316,7 +1351,8 @@ l_f6b2:
 	beq	l_f6d5                             	| [$f6b4: beq    $f6d5]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f6b6: ldb    [$4200]] 0x6xxx
 	move.b	(a0),d1                         	| [...]
-	* optimize?	moveq	#0,d0                            	| [$f6ba: clra]
+	* TODO optimize?
+	moveq	#0,d0                            	| [$f6ba: clra]
 	asl.b	#1,d1                            	| [$f6bb: aslb]
 	roxl.b	#1,d0                             	| [$f6bc: rola]
 	asl.b	#1,d1                            	| [$f6bd: aslb]
@@ -1367,7 +1403,11 @@ l_f6d5:
 	bcc	l_f6b2                             	| [$f6eb: bcc    $f6b2]
 	rts                                    	| [$f6ed: rts]
 
-race_beam_update_sprites_f6ee:	GET_DP_ADDRESS	0x0b                    	| [$f6ee: lda    $0b]
+race_beam_update_sprites_f6ee:
+	jbsr	0f
+	jra		next_current_ybeam
+0:
+	GET_DP_ADDRESS	0x0b                    	| [$f6ee: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f6f0: cmpa   #$04]
 	bcc	l_f72d                             	| [$f6f2: bcc    $f72d]
@@ -1375,13 +1415,13 @@ race_beam_update_sprites_f6ee:	GET_DP_ADDRESS	0x0b                    	| [$f6ee
 	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f6f6: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
 	move.w	#sprite_ram_4040,d4             	| [$f6f8: ldu    #sprite_ram_4040]
-* racing the beam again* we don't really need this at least on the amiga*l_f6fb:
-*	GET_ADDRESS	0x0000                     	| [$f6fb: lda    >$0000]
-*	move.b	(a0),d0                         	| [...]
-*	GET_U_ADDRESS	0x3                      	| [$f6fe: adda   $3,u]
-*	add.b	(a0),d0                          	| [...]
-*	bcs	l_f70b                             	| [$f700: bcs    $f70b]
-*	addq.w	#0x4,d4                         	| [$f702: leau   $4,u]
+* racing the beam again
+l_f6fb:
+	jbsr	get_current_ybeam                   | [$f6a2: lda    >$0000]
+	GET_U_ADDRESS	0x3                      	| [$f6fe: adda   $3,u]
+	add.b	(a0),d0                          	| [...]
+	bcs	l_f70b                             	| [$f700: bcs    $f70b]
+	addq.w	#0x4,d4                         	| [$f702: leau   $4,u]
 l_f704:
 	cmp.w	#0x4100,d4                       	| [$f704: cmpu   #$4100]
 	bcs	l_f70b                             	| [$f708: bcs    $f6fb]
@@ -1393,13 +1433,14 @@ l_f70b:
 	beq	l_f72e                             	| [$f70d: beq    $f72e]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f70f: ldb    [$4200]]
 	move.b	(a0),d1                         	| [...]
+	* todo optimize!
 	moveq	#0,d0                            	| [$f713: clra]
 	asl.b	#1,d1                            	| [$f714: aslb]
 	roxl.b	#1,d0                             	| [$f715: rola]
 	asl.b	#1,d1                            	| [$f716: aslb]
 	roxl.b	#1,d0                             	| [$f717: rola]
 	MAKE_D
-	add.w	#0x6200,d1                       	| [$f718: addd   #$6200]
+	add.w	#shared_memory_6000+0x200,d1        | [$f718: addd   #$6200]
 	move.w	d1,d2                           	| [$f71b: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f71d: ldd    ,x++]
 	addq.w	#2,d2

@@ -5,13 +5,13 @@
 	.global vb_ticks_count
 	.global break_at_startup_flag
 	.global skip_intro_flag
-	.global	i_reg
 	.global highscore_needs_saving_flag
 	.global sprite_ram_9000
 	.global	regscopy
 	.global vbl_sync_counter
 	.global vbl_sync_flag
 	.global no_sync_flag
+	.global	current_y_beam
 	.global	m6809_interrupts_on
 	
 	.ifdef	RELEASE
@@ -62,11 +62,9 @@ stack_top:
 	
 regscopy:
 	.skip	56
+current_y_beam:
+	.byte	0
 
-i_reg:
-	.byte	0
-skip_intro_flag:
-	.byte	0
 invincible_flag:
 	.byte	0
 level_skip_flag:

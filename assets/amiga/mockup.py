@@ -74,15 +74,16 @@ def process(the_dump,offset=0):
             im = bank[color][code]
 
             if flip_x:
-                im = ImageOps.mirror(im)
-            if flip_y:
                 im = ImageOps.flip(im)
+            if flip_y:
+                im = ImageOps.mirror(im)
 
             result.paste(im,(y,x))
 
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-process(r"sprite_ram_mame_A000_2",offset=0)
+process(r"sprite_ram_A000",offset=0)
+process(r"sprite_ram_A200",offset=0)
 #process(r"gysub_before_6000",offset=0x200)
 #process(r"gysub_after_6000_amiga",offset=0)
 #process(r"gysub_after_6000",offset=0x200)

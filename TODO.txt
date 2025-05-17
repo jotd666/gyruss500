@@ -2,16 +2,24 @@ mockup.py: identify the orange sattelite bonus sprite codes and debug
 display. OR it means that A000/A200 aren't copied fully into 4040 sub, 
 dump should also dump 4040 sub state see if same than A000/A200
 
+- w 0 $100: intercept before update op (even) when orange satellite on screen
+- save memory block (A200) before and decode it, identify the offset
+  of the orange sattelite
+- run copy, check if orange sattellite BOTH sprites are copied or not
+- save memory block (4000) with winuae and decode it
+ 
+- another (maybe simpler) test is when the ship is zooming away at the end 
+  of the level
+
 addr=$a04c, offset=$004c, X=118, Y=168, flipx=False, flip_y=True, code=01bd, color=08, name=bonus_satellite
 addr=$a048, offset=$0048, X=118, Y=160, flipx=False, flip_y=True, code=00bd, color=08, name=bonus_satellite
+
+- update sprites: if Y = 0 don't display (spriteram offset 3)
 
 - another possibility is to revert to explicitly calling 6809 code instead of interrupt => tried and failed!!
 
 - optimize some 8 bit rols in 6809 code once it's good
 
-- still small diffs amiga vs mame on memory blocks investigate
-   47F2 ??
-   6400, 6415, 6488, 64FF
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
 - check attack wave params: log regs @ 4192
@@ -21,12 +29,10 @@ addr=$a048, offset=$0048, X=118, Y=160, flipx=False, flip_y=True, code=00bd, col
 - chance stage enemies don't appear
 - chance stage bonus text digits are off
 
-- implement context switching (test first on startup!)
 - log sprites/flash when missing
 
 - what do they do? A7FD & A7FC
 
-- update sprites: if Y = 0 don't display (spriteram offset 0) ??
 - update sprites: symmetry flags wrong (see player ship)
 
 

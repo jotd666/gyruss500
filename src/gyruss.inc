@@ -16,3 +16,5 @@ comment\@:
 next\@:
 	.endm
 	.endc
+
+OPT_NO_STARS = 1

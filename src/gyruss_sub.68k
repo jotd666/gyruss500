@@ -148,7 +148,6 @@ gyruss_sub_irq:
 	jeq	get_out_immediately_f15f                             	| [$f0bf: lbeq   $f15f]
 											| [$f0c3: lda    $67ff]
 	
-	*jra	sync_first_sprites_f54a    | TEMP!!                           	| [$f0bf: lbeq   $f15f]
 											| [...]
 	* wait for Z80 signal
 	GET_ADDRESS	draw_queued_sprites_flag_6701                     	| [$f0ca: lda    $6701]
@@ -157,11 +156,62 @@ l_f0ca:
 	* direct check & jump there next time we're interrupted?
 	move.b	(a0),d0                         	| [...]
 	**beq	l_f0ca                             	| [$f0cd: beq    $f0ca]
-	move.b	#0,0x100
 	GET_ADDRESS	frame_odd_or_even_6700	| [$f0cf: lda    frame_odd_or_even_6700]
 	move.b	(a0),d0                         	| [...]
-	bne	l_f1a3                             	| [$f0d2: lbne   $f1a3]
-	jbsr	try_to_update_all_sprites_f4e4                            	| [$f0d6: jsr    $f4e4]
+	jne	frame_odd_f1a3                             	| [$f0d2: lbne   $f1a3]
+	* frame even
+	
+	.ifdef	FUCK
+	lea		gysub_before_4000,a0
+	move.l	#0x4000,d6
+	moveq	#1,d7
+	jbsr	osd_read_file
+	jra		0f
+gysub_before_4000:
+	.asciz	"gysub_before_4000"
+	.align 	2
+0:
+	lea		gysub_before_6000,a0
+	move.l	#0x6000,d6
+	moveq	#1,d7
+	jbsr	osd_read_file
+	jra		0f
+gysub_before_6000:
+	.asciz	"gysub_before_6000"
+	.align 	2
+0:	
+
+	.endif
+	
+	move.b	#0,0x100
+	jbsr	try_to_update_all_sprites_even_f4e4                            	| [$f0d6: jsr    $f4e4]
+	
+	.ifdef	FUCK
+	DISABLE_REGS_LOG
+	lea		gysub_after_4000,a0
+	move.l	#0x4000,d6
+	move.l	#0x800,d5
+	moveq	#1,d7
+	jbsr	osd_write_file
+	jra		0f
+gysub_after_4000:
+	.asciz	"gysub_after_4000_amiga"
+	.align 	2
+0:
+	lea		gysub_after_6000,a0
+	move.l	#0x6000,d6
+	move.l	#0x800,d5
+	moveq	#1,d7
+	jbsr	osd_write_file
+	jra		0f
+gysub_after_6000:
+	.asciz	"gysub_after_6000_amiga"
+	.align 	2
+0:
+	jbsr	osd_dump_logs
+	illegal	
+	.endif
+	
 	GET_ADDRESS	0x6400                     	| [$f0d9: clr    $6400]
 	move.b	#0,(a0)                         	| [...]
 	GET_ADDRESS	0x6440                     	| [$f0dc: clr    $6440]
@@ -184,26 +234,7 @@ l_f0ef:
 	move.b	(a0),d0                         	| [...]
 	bne	alternate_update_sequence_f165          	| [$f0f7: bne    $f165]
 
-	*ENABLE_REGS_LOG
 
-	lea		gysub_before_4000,a0
-	move.l	#0x4000,d6
-	moveq	#1,d7
-	*jbsr	osd_read_file
-	jra		0f
-gysub_before_4000:
-	.asciz	"gysub_before_4000"
-	.align 	2
-0:
-	lea		gysub_before_6000,a0
-	move.l	#0x6000,d6
-	moveq	#1,d7
-	*jbsr	osd_read_file
-	jra		0f
-gysub_before_6000:
-	.asciz	"gysub_before_6000"
-	.align 	2
-0:
 
 	jbsr	ship_coordinate_transform_f566          | [$f0f9: jsr    $f566]
 	* here beamy = 31 on the arcade machine
@@ -228,29 +259,7 @@ gysub_before_6000:
 	jbsr	coordinate_transform_seven_f645         | [$f12f: jsr    $f645]
 	jbsr	race_beam_update_sprites_f6ee           | [$f132: jsr    $f6ee]
 
-	DISABLE_REGS_LOG
-	lea		gysub_after_4000,a0
-	move.l	#0x4000,d6
-	move.l	#0x800,d5
-	moveq	#1,d7
-	*jbsr	osd_write_file
-	jra		0f
-gysub_after_4000:
-	.asciz	"gysub_after_4000_amiga"
-	.align 	2
-0:
-	lea		gysub_after_6000,a0
-	move.l	#0x6000,d6
-	move.l	#0x2800,d5
-	moveq	#1,d7
-	*jbsr	osd_write_file
-	jra		0f
-gysub_after_6000:
-	.asciz	"gysub_after_6000_amiga"
-	.align 	2
-0:
-	*jbsr	osd_dump_logs
-	*illegal
+
 	
 	* here beamy = 164 on the arcade machine
 continue_f135:
@@ -313,8 +322,8 @@ alternate_update_sequence_f165:
 	jbsr	race_beam_update_sprites_f6ee                            	| [$f19e: jsr    $f6ee]
 	bra	continue_f135                             	| [$f1a1: bra    $f135]
 
-l_f1a3:
-	jbsr	try_to_update_all_sprites_f48b                            	| [$f1a3: jsr    $f48b]
+frame_odd_f1a3:
+	jbsr	try_to_update_all_sprites_odd_f48b                            	| [$f1a3: jsr    $f48b]
 	GET_ADDRESS	0x6500                     	| [$f1a6: clr    $6500]
 	move.b	#0,(a0)                         	| [...]
 	GET_ADDRESS	0x6540                     	| [$f1a9: clr    $6540]
@@ -885,7 +894,8 @@ l_f482:
 	bne	l_f3f1                             	| [$f486: lbne   $f3f1]
 	rts                                    	| [$f48a: rts]
 
-try_to_update_all_sprites_f48b:
+* reads from 6000 and updates 4040 while 6200 is being updated by main cpu
+try_to_update_all_sprites_odd_f48b:
 	moveq	#0,d2
 	move.w	#0x64c0,d2                      	| [$f48b: ldx    #$64c0]
 	GET_X_ADDRESS	0                        	| [$f48e: lda    ,x+]
@@ -898,14 +908,14 @@ try_to_update_all_sprites_f48b:
 	move.w	#sprite_ram_4040,d4             	| [$f494: ldu    #sprite_ram_4040]
 	GET_DP_ADDRESS	0x0b                    	| [$f497: clr    $0b]
 	move.b	#0,(a0)                         	| [...]
-	move.b	#0x30,d0                        	| [$f499: lda    #$30]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f49b: sta    $0a]
+	move.b	#0x30,d0                        	| [$f499: lda    #$30] all 48 sprites
+	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a      | [$f49b: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
 l_f49d:
 	GET_DP_ADDRESS	0x0b                    	| [$f49d: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f49f: cmpa   #$04]
-	bcc	l_f4c6                             	| [$f4a1: bcc    $f4c6]
+	bcc	hide_rest_of_sprites_f4c6                             	| [$f4a1: bcc    $f4c6]
 l_f4a3:
 	GET_DP_ADDRESS	0x09                    	| [$f4a3: lda    $09]
 	move.b	(a0),d0                         	| [...]
@@ -934,7 +944,7 @@ l_f4a3:
 	addq.w	#2,d4
 	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f4bd: inc    $01]
-	addq.b	#1,(a0)                         	| [...]
+	addq.b	#1,(a0)                         	| [...]  increase 4201 (lsb of pointer on 64xx)
 	GET_DP_ADDRESS	0x09                    	| [$f4bf: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f4c1: dec    $0a]
@@ -942,7 +952,7 @@ l_f4a3:
 	bne	l_f4a3                             	| [$f4c3: bne    $f4a3]
 	rts                                    	| [$f4c5: rts]
 
-l_f4c6:
+hide_rest_of_sprites_f4c6:
 	moveq	#0,d0                            	| [$f4c6: clra]
 l_f4c7:
 	GET_U_ADDRESS	0x3                      	| [$f4c7: sta    $3,u]
@@ -970,7 +980,8 @@ l_f4d0:
 	addq.b	#1,(a0)                         	| [...]
 	bra	l_f49d                             	| [$f4e2: bra    $f49d]
 
-try_to_update_all_sprites_f4e4:
+* reads from 6200 and updates 4040 while 6000 is being updated by main cpu
+try_to_update_all_sprites_even_f4e4:
 	moveq	#0,d2
 	move.w	#0x65c0,d2                      	| [$f4e4: ldx    #$65c0]
 	GET_X_ADDRESS	0                        	| [$f4e7: lda    ,x+]
@@ -990,7 +1001,7 @@ l_f4f6:
 	GET_DP_ADDRESS	0x0b                    	| [$f4f6: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f4f8: cmpa   #$04]
-	bcc	l_f51f                             	| [$f4fa: bcc    $f51f]
+	bcc	hide_rest_of_sprites_f51f                             	| [$f4fa: bcc    $f51f]
 l_f4fc:
 	GET_DP_ADDRESS	0x09                    	| [$f4fc: lda    $09]
 	move.b	(a0),d0                         	| [...]
@@ -1020,12 +1031,12 @@ l_f4fc:
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x09                    	| [$f518: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f51a: dec    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a   	| [$f51a: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f4fc                             	| [$f51c: bne    $f4fc]
 	rts                                    	| [$f51e: rts]
 
-l_f51f:
+hide_rest_of_sprites_f51f:
 	moveq	#0,d0                            	| [$f51f: clra]
 l_f520:
 	GET_U_ADDRESS	0x3                      	| [$f520: sta    $3,u]

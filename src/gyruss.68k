@@ -7095,6 +7095,9 @@ l_3826:
 
 * probably able to throw in more stars since most sprites aren't used otherwise
 update_starfield_inter_levels_3831:
+	.ifne	OPT_NO_STARS
+	rts
+	.endif
 	jbsr	l_38ef                            	| [$3831: call $38EF]
 	move.b	l_943B(a6),d0                   	| [$3834: ld   a,($943B)]
 	move.b	d0,d5                           	| [$3837: ld   h,a]
@@ -7286,6 +7289,9 @@ l_3960:
 	rts                                    	| [$396c: ret]
 
 update_starfield_39B1:
+	.ifne	OPT_NO_STARS
+	rts
+	.endif
 	lea	l_9330(a6),a2                      	| [$39b1: ld   ix,$9330]
 	lea	l_9918(a6),a3                      	| [$39b5: ld   iy,$9918]
 	move.w	#0x0010,d3                      	| [$39b9: ld   de,$0010]
@@ -7324,6 +7330,9 @@ l_39ef:
 	rts                                    	| [$39f6: ret]
 
 update_starfield_3A37:
+	.ifne	OPT_NO_STARS
+	rts
+	.endif
 	move.b	#0x26,d6                        	| [$3a37: ld   l,$26]
 	move.w	#0x0004,d3                      	| [$3a39: ld   de,$0004]
 l_3a3c:

@@ -455,6 +455,22 @@
 	.endm	
 	.endif
 	
+
+set_active_draw_semaphore:
+	move.b	#1,draw_queued_sprites_flag_a701(a6)   
+	rts
+set_active_queue_semaphore:
+	move.b	#1,queue_sprites_flag_a702(a6)   
+	rts
+	
+set_inactive_draw_semaphore:
+	clr.b	draw_queued_sprites_flag_a701(a6)   
+	rts
+set_inactive_queue_semaphore:
+	clr.b	queue_sprites_flag_a702(a6)   
+	rts
+
+
 read_videoram_a0:
 	move.l	a0,-(a7)
 	sub.l	#0x8000,a0
@@ -723,22 +739,27 @@ l_0103:
 	move.l	a0,-(sp)                        	| [$010c: push hl]
 
 	move.l	a2,-(sp)                        	| [$010d: push ix]
-
+	
 	move.l	a3,-(sp)                        	| [$010f: push iy]
 	lea		frame_odd_or_even_a700(a6),a0                          	| [$0111: ld   hl,$A700]
 	move.b	(a0),d0                         	| [$0114: ld   a,(hl)]
 	addq.b	#1,d0                           	| [$0115: inc  a]
 	and.b	#0x01,d0                         	| [$0116: and  $01]
 	move.b	d0,(a0)                         	| [$0118: ld   (hl),a]
-	move.b	#0x01,d0                        	| [$0119: ld   a,$01]
-	move.b	d0,draw_queued_sprites_flag_a701(a6)                       	| [$011b: ld   ($A701),a]
+	* unlocks 6809 sem wait
+	jbsr	set_active_draw_semaphore			| [$0119: ld   a,$01]                     	| [$011b: ld   ($A701),a]
+	* locks 6809 sem wait
 	clr.b	d0                               	| [$011e: xor  a]
-	move.b	d0,queue_sprites_flag_a702(a6)                       	| [$011f: ld   ($A702),a]
+	jbsr	set_inactive_queue_semaphore                       	| [$011f: ld   ($A702),a]
+	
 	jbsr	update_sprites_0244               	| [$0122: call update_sprites_0244]
-	clr.b	d0                               	| [$0125: xor  a]
-	move.b	d0,draw_queued_sprites_flag_a701(a6)                       	| [$0126: ld   ($A701),a]
-	move.b	#0x01,d0                        	| [$0129: ld   a,$01]
-	move.b	d0,queue_sprites_flag_a702(a6)                       	| [$012b: ld   ($A702),a]
+	* locks 6809 sem wait
+	                               	| [$0125: xor  a]
+	jbsr	set_inactive_draw_semaphore                       	| [$0126: ld   ($A701),a]
+	* unlocks 6809 sem wait
+	                        	| [$0129: ld   a,$01]
+	jbsr	set_active_queue_semaphore                      	| [$012b: ld   ($A702),a]
+	
 	* disable interrupts
 	clr.b	d0                               	| [$012e: xor  a]
 	jbsr	osd_interrupt_control                       	| [$012f: ld   ($C180),a]

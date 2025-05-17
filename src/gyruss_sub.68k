@@ -67,6 +67,7 @@ number_of_sprites_to_update_counter_0a = 0x0a
 
 
 * tell 6809 to perform more or less operations:
+* tell 6809 to perform more or less operations:
 * 0xFF: don't do anything (state not reached in the game)
 * 0x00: just sync the first sprites between 6000 and 4040. Earth
 * from title appears if we do that, but not the stars (as they probably
@@ -156,10 +157,11 @@ l_f0ca:
 	* direct check & jump there next time we're interrupted?
 	move.b	(a0),d0                         	| [...]
 	**beq	l_f0ca                             	| [$f0cd: beq    $f0ca]
+	move.b	#0,0x100
 	GET_ADDRESS	frame_odd_or_even_6700	| [$f0cf: lda    frame_odd_or_even_6700]
 	move.b	(a0),d0                         	| [...]
 	bne	l_f1a3                             	| [$f0d2: lbne   $f1a3]
-	jbsr	l_f4e4                            	| [$f0d6: jsr    $f4e4]
+	jbsr	try_to_update_all_sprites_f4e4                            	| [$f0d6: jsr    $f4e4]
 	GET_ADDRESS	0x6400                     	| [$f0d9: clr    $6400]
 	move.b	#0,(a0)                         	| [...]
 	GET_ADDRESS	0x6440                     	| [$f0dc: clr    $6440]
@@ -312,7 +314,7 @@ alternate_update_sequence_f165:
 	bra	continue_f135                             	| [$f1a1: bra    $f135]
 
 l_f1a3:
-	jbsr	l_f48b                            	| [$f1a3: jsr    $f48b]
+	jbsr	try_to_update_all_sprites_f48b                            	| [$f1a3: jsr    $f48b]
 	GET_ADDRESS	0x6500                     	| [$f1a6: clr    $6500]
 	move.b	#0,(a0)                         	| [...]
 	GET_ADDRESS	0x6540                     	| [$f1a9: clr    $6540]
@@ -883,7 +885,7 @@ l_f482:
 	bne	l_f3f1                             	| [$f486: lbne   $f3f1]
 	rts                                    	| [$f48a: rts]
 
-l_f48b:
+try_to_update_all_sprites_f48b:
 	moveq	#0,d2
 	move.w	#0x64c0,d2                      	| [$f48b: ldx    #$64c0]
 	GET_X_ADDRESS	0                        	| [$f48e: lda    ,x+]
@@ -910,6 +912,7 @@ l_f4a3:
 	beq	l_f4d0                             	| [$f4a5: beq    $f4d0]
 	GET_INDIRECT_ADDRESS	0x4200            	| [$f4a7: ldb    [$4200]]
 	move.b	(a0),d1                         	| [...]
+	* todo optimize (times 4)
 	moveq	#0,d0                            	| [$f4ab: clra]
 	asl.b	#1,d1                            	| [$f4ac: aslb]
 	roxl.b	#1,d0                             	| [$f4ad: rola]
@@ -920,13 +923,7 @@ l_f4a3:
 	move.w	d1,d2                           	| [$f4b3: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f4b5: ldd    ,x++]
 	addq.w	#2,d2
-	nop
-	nop
-	nop
-	nop
-	nop
 	LOAD_D                                 	| [$f4b5: ldd    ,x++]
-	MAKE_D
 	GET_U_ADDRESS	0                        	| [$f4b7: std    ,u++]
 	addq.w	#2,d4
 	MOVE_W_FROM_REG	d1,(a0)                	| [...]
@@ -973,7 +970,7 @@ l_f4d0:
 	addq.b	#1,(a0)                         	| [...]
 	bra	l_f49d                             	| [$f4e2: bra    $f49d]
 
-l_f4e4:
+try_to_update_all_sprites_f4e4:
 	moveq	#0,d2
 	move.w	#0x65c0,d2                      	| [$f4e4: ldx    #$65c0]
 	GET_X_ADDRESS	0                        	| [$f4e7: lda    ,x+]
@@ -986,7 +983,7 @@ l_f4e4:
 	move.w	#sprite_ram_4040,d4             	| [$f4ed: ldu    #sprite_ram_4040]
 	GET_DP_ADDRESS	0x0b                    	| [$f4f0: clr    $0b]
 	move.b	#0,(a0)                         	| [...]
-	move.b	#0x30,d0                        	| [$f4f2: lda    #$30]
+	move.b	#0x30,d0                        	| [$f4f2: lda    #$30] 48 (all) sprites
 	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f4f4: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
 l_f4f6:
@@ -1336,12 +1333,11 @@ race_beam_update_sprites_f695:
 l_f6a2:
 	jbsr	get_current_ybeam                   | [$f6a2: lda    >$0000]
 	GET_U_ADDRESS	0x3                      	| [$f6a5: adda   $3,u]
-	add.b	(a0),d0                          	| [...]
+	add.b	(a0),d0                          	| [...]			get sprite Y
 	bcs	l_f6b2                             	| [$f6a7: bcs    $f6b2]
 	addq.w	#0x4,d4                         	| [$f6a9: leau   $4,u]
 l_f6ab:
 	cmp.w	#0x4100,d4                       	| [$f6ab: cmpu   #$4100]
-	* skip the beam racing part, update sprites 
 	bcs	l_f6b2                             	| [$f6af: bcs    $f6a2]
 	rts                                    	| [$f6b1: rts]
 
@@ -1365,12 +1361,14 @@ l_f6b2:
 	LOAD_D                                 	| [$f6c4: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f6c6: std    ,u++]
 	addq.w	#2,d4
+	* copy first part of sprite data
 	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f6c8: ldd    ,x]
 
 	LOAD_D                                 	| [$f6c8: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f6ca: std    ,u++]
 	addq.w	#2,d4
+	* copy second part of sprite data
 	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f6cc: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
@@ -1448,17 +1446,19 @@ l_f70b:
 	LOAD_D                                 	| [$f71d: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f71f: std    ,u++]
 	addq.w	#2,d4
+	* copy first part of sprite data
 	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f721: ldd    ,x]
 	LOAD_D                                 	| [$f721: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f723: std    ,u++]
 	addq.w	#2,d4
+	* copy second part of sprite data
 	MOVE_W_FROM_REG	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f725: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x09                    	| [$f727: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f729: dec    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a     | [$f729: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f704                             	| [$f72b: bne    $f704]
 l_f72d:

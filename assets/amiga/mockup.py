@@ -41,7 +41,7 @@ tile_sets_0 = [loadtiles(i,"set_0") for i in range(16)]
 tile_sets_1 = [loadtiles(i,"set_1") for i in range(16)]
 tile_set = [tile_sets_0,tile_sets_1]
 
-def process(the_dump,offset=0):
+def process(the_dump,offset=0,base_address=0):
     the_dump = pathlib.Path(the_dump)
     # in input, we use a MAME memory dump: save sprites,$A000,$400
     # (0x200 are read, but there's a kind of double buffering
@@ -53,6 +53,7 @@ def process(the_dump,offset=0):
     result = Image.new("RGB",(256,256))
 
     for offs in range(0xBC,-4,-4):
+        raw_code_and_clut = (m_spriteram[offs+1]<<8)+m_spriteram[offs+2]
         x = m_spriteram[offs]
         y = 241 - m_spriteram[offs + 3]
         y = 256 -y # adding this to MAME formula else pic is not correct
@@ -65,10 +66,10 @@ def process(the_dump,offset=0):
             flip_y = bool(m_spriteram[offs + 2] & 0x80)
 
 
-            address = 0x9800+offs
+            address = base_address+offs
             fcode = gfx_bank*0x100+code
             name = sprite_names.get(fcode,"unknown")
-            print(f"addr=${address:04x}, X={y}, Y={x}, flipx={flip_x}, flip_y={flip_y}, code={fcode:04x}, color={color:02x}, name={name}")
+            print(f"addr=${address:04x}, offset=${offs:04x}, raw:=${raw_code_and_clut:04X} X={y}, Y={x}, flipx={flip_x}, flip_y={flip_y}, code={fcode:04x}, color={color:02x}, name={name}")
 
             bank = tile_set[gfx_bank]
             im = bank[color][code]
@@ -88,9 +89,9 @@ def process(the_dump,offset=0):
 
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-process(r"../../sprite_ram_4040",offset=0)
-process(r"../../sprite_ram_A000",offset=0)
-process(r"../../sprite_ram_A200",offset=0)
+process(r"../../sprite_ram_4040",offset=0,base_address=0x4040)
+process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
+#process(r"../../sprite_ram_A200",offset=0x200,base_address=0xA200)
 #process(r"gysub_before_6000",offset=0x200)
 #process(r"gysub_after_6000_amiga",offset=0)
 #process(r"gysub_after_6000",offset=0x200)

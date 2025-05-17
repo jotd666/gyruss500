@@ -24,7 +24,7 @@ def load_tileset(image_name,width,height,set_subdir,dump_prefix=""):
     k=0
     for j in range(nb_rows):
         for i in range(nb_cols):
-            img = Image.new("RGBA",(width,height))
+            img = Image.new("RGB",(width,height))
             img.paste(tiles_1,(-i*width,-j*height))
             tileset_1.append(img)
             if dump_prefix:
@@ -78,12 +78,19 @@ def process(the_dump,offset=0):
             if flip_y:
                 im = ImageOps.mirror(im)
 
+##
+##            for x in range(img.size[0]):
+##                for y in range(img.size[1]):
+##                    if img.getpixel((x,y)) == (0,0,0,255):
+##                        img.putpixel((x,y),(255,0,0,0))
+            # paste would require masking, well, never mind
             result.paste(im,(y,x))
 
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-process(r"sprite_ram_A000",offset=0)
-process(r"sprite_ram_A200",offset=0)
+process(r"../../sprite_ram_4040",offset=0)
+process(r"../../sprite_ram_A000",offset=0)
+process(r"../../sprite_ram_A200",offset=0)
 #process(r"gysub_before_6000",offset=0x200)
 #process(r"gysub_after_6000_amiga",offset=0)
 #process(r"gysub_after_6000",offset=0x200)

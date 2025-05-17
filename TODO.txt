@@ -3,6 +3,10 @@ display. OR it means that A000/A200 aren't copied fully into 4040 sub,
 dump should also dump 4040 sub state see if same than A000/A200
 also desperate attempt: try to display A000 or A200 buffer directly
 
+another possibility is to revert to explicitly calling 6809 code instead
+of interrupt
+- optimize some 8 bit rols in 6809 code once it's good
+
 - still small diffs amiga vs mame on memory blocks investigate
    47F2 ??
    6400, 6415, 6488, 64FF

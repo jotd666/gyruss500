@@ -18,7 +18,7 @@ next\@:
 	.endm
 
 
-OPT_NO_STARS = 0		| disable stars
+OPT_NO_STARS = 1		| disable stars
 
 	.endc
 

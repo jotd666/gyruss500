@@ -52,6 +52,7 @@ def process(the_dump,offset=0,base_address=0):
 
     result = Image.new("RGB",(256,256))
 
+    print("*"*50)
     for offs in range(0xBC,-4,-4):
         raw_code_and_clut = (m_spriteram[offs+1]<<8)+m_spriteram[offs+2]
         x = m_spriteram[offs]
@@ -60,7 +61,7 @@ def process(the_dump,offset=0,base_address=0):
 
         gfx_bank = m_spriteram[offs + 1] & 0x01
         code = ((m_spriteram[offs + 2] & 0x20) << 2) | (m_spriteram[offs + 1] >> 1)
-        if x:
+        if y:
             color = m_spriteram[offs + 2] & 0x0f
             flip_x = bool(~m_spriteram[offs + 2] & 0x40)
             flip_y = bool(m_spriteram[offs + 2] & 0x80)
@@ -89,9 +90,12 @@ def process(the_dump,offset=0,base_address=0):
 
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-process(r"gysub_after_4000_amiga",offset=0x40,base_address=0x4040)
+#process(r"gysub_after_4000_amiga",offset=0x40,base_address=0x4040)
+process(r"sattelites_A000",offset=0,base_address=0xA000)
+#process(r"sattelites_4040",offset=0,base_address=0x4040)
+#process(r"../../sprite_ram_4040",offset=0,base_address=0x4040)
 #process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
-#process(r"../../sprite_ram_A200",offset=0x200,base_address=0xA200)
+#process(r"../../sprite_ram_A200",offset=0,base_address=0xA200)
 #process(r"gysub_before_6000",offset=0x200)
 #process(r"gysub_after_6000_amiga",offset=0)
 #process(r"gysub_after_6000",offset=0x200)

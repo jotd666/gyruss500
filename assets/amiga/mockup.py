@@ -1,5 +1,5 @@
 from PIL import Image,ImageOps
-import os,pathlib
+import os,pathlib,struct
 
 from shared import *
 
@@ -53,8 +53,15 @@ def process(the_dump,offset=0,base_address=0):
     result = Image.new("RGB",(256,256))
 
     print("*"*50)
+    nb_active = 0
+    fccs = dict()
     for offs in range(0xBC,-4,-4):
         raw_code_and_clut = (m_spriteram[offs+1]<<8)+m_spriteram[offs+2]
+        raw_fourcc, = struct.unpack_from(">I",m_spriteram,offs)
+        if raw_fourcc in fccs:
+            poffs = fccs[raw_fourcc]
+            print(f"Duplicate sprite XYCODE {raw_fourcc:08X} offset={offs:04x}, prev_offset={poffs:04x}")
+        fccs[raw_fourcc] = offs
         x = m_spriteram[offs]
         y = 241 - m_spriteram[offs + 3]
         y = 256 -y # adding this to MAME formula else pic is not correct
@@ -65,6 +72,7 @@ def process(the_dump,offset=0,base_address=0):
             color = m_spriteram[offs + 2] & 0x0f
             flip_x = bool(~m_spriteram[offs + 2] & 0x40)
             flip_y = bool(m_spriteram[offs + 2] & 0x80)
+            nb_active += 1
 
 
             address = base_address+offs
@@ -88,14 +96,16 @@ def process(the_dump,offset=0,base_address=0):
             # paste would require masking, well, never mind
             result.paste(im,(y,x))
 
+    print(f"NB ACTIVE: {nb_active}")
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-#process(r"gysub_after_4000_amiga",offset=0x40,base_address=0x4040)
-process(r"sattelites_A000",offset=0,base_address=0xA000)
-#process(r"sattelites_4040",offset=0,base_address=0x4040)
+process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
+process(r"../../sprite_ram_4040",offset=0,base_address=0x4040)
+#process(r"sattelites_A000",offset=0,base_address=0xA000)
+#process(r"bug_4040",offset=0,base_address=0x4040)
 #process(r"../../sprite_ram_4040",offset=0,base_address=0x4040)
 #process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
 #process(r"../../sprite_ram_A200",offset=0,base_address=0xA200)
-#process(r"gysub_before_6000",offset=0x200)
+#process(r"gysub_6000",offset=0x0)
 #process(r"gysub_after_6000_amiga",offset=0)
 #process(r"gysub_after_6000",offset=0x200)

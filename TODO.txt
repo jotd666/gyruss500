@@ -1,16 +1,14 @@
-mockup.py: identify the orange sattelite bonus sprite codes and debug
-display. OR it means that A000/A200 aren't copied fully into 4040 sub, 
-dump should also dump 4040 sub state see if same than A000/A200
 
-- w 0 $100: intercept before update op (even) when orange satellite on screen
-- save memory block (A200) before and decode it, identify the offset
-  of the orange sattelite
-- run copy, check if orange sattellite BOTH sprites are copied or not
-- save memory block (4000) with winuae and decode it
- 
+
 - another (maybe simpler) test is when the ship is zooming away at the end 
   of the level
 
+- score is not updated at all
+
+- race_beam_update_sprites_xxxx: useful? no visual difference
+  when not called (except from player sprite disappearing and some
+  flashing on MAME)
+  
 addr=$a04c, offset=$004c, X=118, Y=168, flipx=False, flip_y=True, code=01bd, color=08, name=bonus_satellite
 addr=$a048, offset=$0048, X=118, Y=160, flipx=False, flip_y=True, code=00bd, color=08, name=bonus_satellite
 

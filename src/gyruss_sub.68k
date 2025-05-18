@@ -61,12 +61,14 @@ draw_queued_sprites_flag_6701 = 0x6701
 queue_sprites_flag_6702 = 0x6702
 update_sequence_control_flag_67fc = 0x67fc
 update_sequence_control_flag_67fd = 0x67fd
+pointer_4200 = 0x4200
+pointer_4211 = 0x4211
+
+* page 42 offsets for work variables
+number_of_sprites_to_update_09 = 0x09
+number_of_sprites_to_update_total_0a = 0x0a
 
 
-number_of_sprites_to_update_counter_0a = 0x0a
-
-
-* tell 6809 to perform more or less operations:
 * tell 6809 to perform more or less operations:
 * 0xFF: don't do anything (state not reached in the game)
 * 0x00: just sync the first sprites between 6000 and 4040. Earth
@@ -141,9 +143,49 @@ gyruss_sub_irq:
 * the IRQ
 	moveq	#0,d0
 	jbsr	set_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
+	
+	*****************************
+* check_duplicated_sprites
+	move.w	#sprite_ram_4040,d4             	| [$f6f8: ldu    #sprite_ram_4040]
+	GET_U_ADDRESS	0
+	move.l	a0,a2
+	moveq	#0,d7
+0:
+	addq	#1,d7
+	cmp.w	#0x30,d7
+	jeq		3f
+	move.l	(a2)+,d6
+	tst.b	d6
+	jeq		0b		| Y coord no need to compare!
+	
+	* compare with the rest of the array
+	move.l	a2,a1
+	move.w	#0x30-1,d5
+	sub.w	d7,d5		| number of tests to perform
+1:
+	cmp.l	(a1)+,d6
+	jne		2f
+	move.l	d6,d4
+	and.l	#0x00FFFF00,d4
+	jeq		2f			| can be equal if sprite code is 0000
+	* SAME!!!
+	subq	#4,a1
+	subq	#4,a2
+	*BREAKPOINT		"same A2/A1 sprites (in D6)"
+	move.w	#0x0F0,0xDFF180
+	jra		3f
+2:
+	dbf		d5,1b
+	jra		0b
+3:
+	jbsr	gyruss_sub_cpu_init
+
+	*****************************
+
+
 	GET_ADDRESS	sprite_sync_status_67ff                     	| [$f0bb: lda    $67ff]
 	move.b	(a0),d0                         	| [...]
-	jeq	sync_first_sprites_f54a                             	| [$f0c6: lbeq   $f54a]
+	jeq	sync_sprites_no_change_f54a                             	| [$f0c6: lbeq   $f54a]
 	addq.b	#1,d0                           	| [$f0be: inca]
 	jeq	get_out_immediately_f15f                             	| [$f0bf: lbeq   $f15f]
 											| [$f0c3: lda    $67ff]
@@ -161,64 +203,8 @@ l_f0ca:
 	jne	frame_odd_f1a3                             	| [$f0d2: lbne   $f1a3]
 	* frame even
 	
-		
-	.ifdef	FUCK
-	lea		gysub_before_4000,a0
-	move.l	#0x4000,d6
-	moveq	#1,d7
-	jbsr	osd_read_file
-	jra		0f
-gysub_before_4000:
-	.asciz	"gysub_before_4000"
-	.align 	2
-0:
-	lea		gysub_before_6000,a0
-	move.l	#0x6000,d6
-	moveq	#1,d7
-	jbsr	osd_read_file
-	jra		0f
-gysub_before_6000:
-	.asciz	"gysub_before_6000"
-	.align 	2
-0:	
 
-	.endif
-	
-
-	jbsr	try_to_update_all_sprites_even_f4e4                            	| [$f0d6: jsr    $f4e4]
-	
-*	GET_ADDRESS	0x4040
-*	lea		mockup,a1
-*	move.w	#0xC0/4-1,d0
-*1:
-*	move.l	(a1)+,(a0)+
-*		dbf	d0,1b
-
-	.ifdef	FUCK
-	DISABLE_REGS_LOG
-	lea		gysub_after_4000,a0
-	move.l	#0x4000,d6
-	move.l	#0x800,d5
-	moveq	#1,d7
-	jbsr	osd_write_file
-	jra		0f
-gysub_after_4000:
-	.asciz	"gysub_after_4000_amiga"
-	.align 	2
-0:
-	lea		gysub_after_6000,a0
-	move.l	#0x6000,d6
-	move.l	#0x800,d5
-	moveq	#1,d7
-	jbsr	osd_write_file
-	jra		0f
-gysub_after_6000:
-	.asciz	"gysub_after_6000_amiga"
-	.align 	2
-0:
-	jbsr	osd_dump_logs
-	illegal	
-	.endif
+	jbsr	try_to_update_all_sprites_even_f4e4      	| [$f0d6: jsr    $f4e4]
 	
 	GET_ADDRESS	0x6400                     	| [$f0d9: clr    $6400]
 	move.b	#0,(a0)                         	| [...]
@@ -331,7 +317,7 @@ alternate_update_sequence_f165:
 	bra	continue_f135                             	| [$f1a1: bra    $f135]
 
 frame_odd_f1a3:
-	jbsr	try_to_update_all_sprites_odd_f48b                            	| [$f1a3: jsr    $f48b]
+	jbsr	try_to_update_all_sprites_odd_f48b        	| [$f1a3: jsr    $f48b]
 	GET_ADDRESS	0x6500                     	| [$f1a6: clr    $6500]
 	move.b	#0,(a0)                         	| [...]
 	GET_ADDRESS	0x6540                     	| [$f1a9: clr    $6540]
@@ -457,30 +443,25 @@ compute_coords_f273:
 	beq	l_f2d5                             	| [$f278: beq    $f2d5]
 	moveq	#0,d0                            	| [$f27a: clra]
 	MAKE_D
-	LOG_REGS		f27b
 	GET_X_ADDRESS_FROM_REG	d1              	| [$f27b: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f27d: sta    $08]
 	move.b	d0,(a0)                         	| [...]
 	move.l	#0xe400,d2                      	| [$f27f: ldx    #$e400]
-	LOG_REGS		f282
 	GET_U_ADDRESS	0x3                      	| [$f282: ldb    $3,u]
 	move.b	(a0),d1                         	| [...]
 	moveq	#0,d0                            	| [$f284: clra]
 	asl.b	#1,d1                            	| [$f285: aslb]
 	roxl.b	#1,d0                             	| [$f286: rola]
 	MAKE_D
-	LOG_REGS		f287
 	add.w	d1,d2                            	| [$f287: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f289: ldd    $0200,x]
 	LOAD_D                                 	| [$f289: ldd    $0200,x]
 	bpl	l_f299                             	| [$f28d: bpl    $f299]
 	GET_DP_ADDRESS	0x08                    	| [$f28f: lda    $08]
 	move.b	(a0),d0                         	| [...]
-	LOG_REGS		f291
 	jbsr	multiply_ab                       	| [$f291: mul]
 	neg.b	d0                               	| [$f292: nega]
-	LOG_REGS		f293
 	bmi	l_f29f                             	| [$f293: bmi    $f29f]
 	beq	l_f29f                             	| [$f295: beq    $f29f]
 	bra	l_f2d5                             	| [$f297: bra    $f2d5] [uncovered]
@@ -488,7 +469,6 @@ compute_coords_f273:
 l_f299:
 	GET_DP_ADDRESS	0x08                    	| [$f299: lda    $08]
 	move.b	(a0),d0                         	| [...]
-	LOG_REGS		f29b
 	jbsr	multiply_ab                       	| [$f29b: mul]
 	tst.b	d0                               	| [$f29c: tsta]
 	bmi	l_f2d5                             	| [$f29d: bmi    $f2d5]
@@ -498,7 +478,6 @@ l_f29f:
 	move.b	d0,(a0)                         	| [...]
 	GET_X_ADDRESS	0                        	| [$f2a3: ldd    ,x]
 	LOAD_D                                 	| [$f2a3: ldd    ,x]
-	LOG_REGS		f2a5
 	bpl	l_f2b1                             	| [$f2a5: bpl    $f2b1]
 	GET_DP_ADDRESS	0x08                    	| [$f2a7: lda    $08]
 	move.b	(a0),d0                         	| [...]
@@ -512,7 +491,6 @@ l_f2b1:
 	GET_DP_ADDRESS	0x08                    	| [$f2b1: lda    $08]
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f2b3: mul]
-	LOG_REGS		f2b4
 	tst.b	d0                               	| [$f2b4: tsta]
 	bmi	l_f2d5                             	| [$f2b5: bmi    $f2d5]
 l_f2b7:
@@ -522,7 +500,7 @@ l_f2b7:
 	and.b	#0xc0,d0                         	| [$f2bb: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f2bd: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f2bf: inc    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211        | [$f2bf: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 												| [$f2c3: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
@@ -532,17 +510,14 @@ l_f2b7:
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f2cb: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
-	LOG_REGS		f2cd
 	GET_DP_ADDRESS	0x0e                    	| [$f2cd: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f2cf: lsrb]
 	                            	| [$f2d0: lsrb]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f2d1: stb    [$4211]]
-	LOG_REGS		f2d1
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f2d1: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 l_f2d5:
 	addq.w	#0x4,d4                         	| [$f2d5: leau   $4,u]
-	LOG_REGS		f2d7
 	GET_DP_ADDRESS	0x0c                    	| [$f2d7: dec    $0c]
 	subq.b	#1,(a0)                         	| [...]
 	bne	compute_coords_f273                             	| [$f2d9: bne    $f273]
@@ -555,25 +530,23 @@ l_f2dc:
 	beq	l_f35f                             	| [$f2e1: beq    $f35f]
 	moveq	#0,d0                            	| [$f2e3: clra]
 	MAKE_D
-	LOG_REGS		f2e4
 	GET_X_ADDRESS_FROM_REG	d1              	| [$f2e4: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f2e6: sta    $08]
 	move.b	d0,(a0)                         	| [...]
 	move.l	#0xe400,d2                      	| [$f2e8: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f2eb: ldb    $3,u]
+	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
-	moveq	#0,d0                            	| [$f2ed: clra]
-	asl.b	#1,d1                            	| [$f2ee: aslb]
-	roxl.b	#1,d0                             	| [$f2ef: rola]
-	MAKE_D
+	add.w	d1,d1                            	| [$f2ed: clra]
+	                            	| [$f2ee: aslb]
+	                             	| [$f2ef: rola]
 	add.w	d1,d2                            	| [$f2f0: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f2f2: ldd    $0200,x]
 	LOAD_D                                 	| [$f2f2: ldd    $0200,x]
 	bpl	l_f302                             	| [$f2f6: bpl    $f302]
 	GET_DP_ADDRESS	0x08                    	| [$f2f8: lda    $08]
 	move.b	(a0),d0                         	| [...]
-	LOG_REGS		f2fa
 	jbsr	multiply_ab                       	| [$f2fa: mul]
 	neg.b	d0                               	| [$f2fb: nega]
 	bmi	l_f308                             	| [$f2fc: bmi    $f308]
@@ -584,14 +557,12 @@ l_f302:
 	GET_DP_ADDRESS	0x08                    	| [$f302: lda    $08]
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f304: mul]
-	LOG_REGS		f305
 	tst.b	d0                               	| [$f305: tsta]
 	bmi	l_f35f                             	| [$f306: bmi    $f35f]
 l_f308:
 	GET_U_ADDRESS	0x2                      	| [$f308: ldb    $2,u]
 	move.b	(a0),d1                         	| [...]
 	and.b	#0x10,d1                         	| [$f30a: andb   #$10]
-	LOG_REGS		f30c
 	bne	l_f312                             	| [$f30c: bne    $f312]
 	add.b	#0x7c,d0                         	| [$f30e: adda   #$7c]
 	bra	l_f314                             	| [$f310: bra    $f314]
@@ -606,14 +577,11 @@ l_f314:
 	move.b	d0,(a0)                         	| [...]
 	GET_X_ADDRESS	0                        	| [$f31a: ldd    ,x]
 	LOAD_D                                 	| [$f31a: ldd    ,x]
-	LOG_REGS		f31c
 	bpl	l_f328                             	| [$f31c: bpl    $f328]
-	LOG_REGS		f31e
 	GET_DP_ADDRESS	0x08                    	| [$f31e: lda    $08]
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f320: mul]
 	neg.b	d0                               	| [$f321: nega]
-	LOG_REGS		f322
 	bmi	l_f32e                             	| [$f322: bmi    $f32e]
 	beq	l_f32e                             	| [$f324: beq    $f32e]
 	bra	l_f35f                             	| [$f326: bra    $f35f]
@@ -639,7 +607,7 @@ l_f32e:
 	and.b	#0xc0,d0                         	| [$f33c: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f33e: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f340: lda    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f340: lda    [$4211]]
 	                         	| [...]
 	add.b	#0x02,(a0)                         	| [$f344: adda   #$02]
 											| [$f346: sta    [$4211]]
@@ -652,14 +620,14 @@ l_f32e:
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f350: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
-	lsr.b	#1,d1                            	| [$f352: lsrb]
-	lsr.b	#1,d1                            	| [$f353: lsrb]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f354: stb    [$4211]]
+	lsr.b	#2,d1                            	| [$f352: lsrb]
+	                            	| [$f353: lsrb]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f354: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f358: dec    $12]
 	subq.b	#1,(a0)                         	| [...]
 	addq.b	#1,d1                           	| [$f35a: incb]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f35b: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f35b: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 l_f35f:
 	addq.w	#0x8,d4                         	| [$f35f: leau   $8,u]
@@ -674,7 +642,7 @@ l_f368:
 	and.b	#0xc0,d0                         	| [$f36a: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f36c: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f36e: inc    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f36e: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 												| [$f372: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
@@ -688,7 +656,7 @@ l_f368:
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f37e: lsrb]
 												| [$f37f: lsrb]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f380: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f380: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	bra	l_f35f                             	| [$f384: bra    $f35f]
 
@@ -706,11 +674,11 @@ compute_coords_f386:
 	moveq	#0,d2
 	move.w	#0xe400,d2                      	| [$f392: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f395: ldb    $3,u]
+	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
-	moveq	#0,d0                            	| [$f397: clra]
-	asl.b	#1,d1                            	| [$f398: aslb]
-	roxl.b	#1,d0                             	| [$f399: rola]
-	MAKE_D
+	add.w	d1,d1                            	| [$f397: clra]
+	                            	| [$f398: aslb]
+	                             	| [$f399: rola]
 	add.w	d1,d2                            	| [$f39a: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f39c: ldd    $0200,x]
 	LOAD_D                                 	| [$f39c: ldd    $0200,x]
@@ -758,7 +726,7 @@ l_f3ca:
 	and.b	#0xc0,d0                         	| [$f3ce: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f3d0: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f3d2: inc    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f3d2: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 	            	| [$f3d6: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
@@ -773,7 +741,7 @@ l_f3ca:
 	lsr.b	#2,d1                            	| [$f3e2: lsrb]
 												| [$f3e3: lsrb]
 	add.b	#0x40,d1                         	| [$f3e4: addb   #$40]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f3e6: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f3e6: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 l_f3ea:
 	addq.w	#0x4,d4                         	| [$f3ea: leau   $4,u]
@@ -797,11 +765,11 @@ l_f3f1:
 	moveq	#0,d2
 	move.w	#0xe400,d2                      	| [$f3ff: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f402: ldb    $3,u]
+	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
-	moveq	#0,d0                            	| [$f404: clra]
-	asl.b	#1,d1                            	| [$f405: aslb]
-	roxl.b	#1,d0                             	| [$f406: rola]
-	MAKE_D
+	add.w	d1,d1                            	| [$f404: clra]
+	                            	| [$f405: aslb]
+	                             	| [$f406: rola]
 	add.w	d1,d2                            	| [$f407: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f409: ldd    $0200,x]
 	LOAD_D                                 	| [$f409: ldd    $0200,x]
@@ -856,7 +824,7 @@ l_f43c:
 	and.b	#0xc0,d0                         	| [$f447: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f449: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f44b: inc    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f44b: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 	            	| [$f44f: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
@@ -871,14 +839,14 @@ l_f43c:
 	lsr.b	#2,d1                            	| [$f45b: lsrb]
 												| [$f45c: lsrb]
 	add.b	#0x40,d1                         	| [$f45d: addb   #$40]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f45f: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f45f: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	GET_U_ADDRESS	0x23                     	| [$f463: lda    $23,u]
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f466: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f468: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f46a: inc    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f46a: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 	            	| [$f46e: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
@@ -893,7 +861,7 @@ l_f43c:
 	lsr.b	#2,d1                            	| [$f47a: lsrb]
 												| [$f47b: lsrb]
 	add.b	#0x48,d1                         	| [$f47c: addb   #$48]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f47e: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f47e: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 l_f482:
 	addq.w	#0x4,d4                         	| [$f482: leau   $4,u]
@@ -905,19 +873,19 @@ l_f482:
 * reads from 6000 and updates 4040 while 6200 is being updated by main cpu
 try_to_update_all_sprites_odd_f48b:
 	moveq	#0,d2
-	move.w	#0x64c0,d2                      	| [$f48b: ldx    #$64c0]
+	move.w	#0x64c0,d2                      	| [$f48b: ldx    #$64c0]  contains the number of odd sprites to update
 	GET_X_ADDRESS	0                        	| [$f48e: lda    ,x+]
 	addq.w	#1,d2
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f490: sta    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09       | [$f490: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x00                    	| [$f492: stx    $00]
-	move.w	d2,(a0)                         	| [...]
+	move.w	d2,(a0)                         	| [...]		updates $4200 pointer
 	move.w	#sprite_ram_4040,d4             	| [$f494: ldu    #sprite_ram_4040]
 	GET_DP_ADDRESS	0x0b                    	| [$f497: clr    $0b]
 	move.b	#0,(a0)                         	| [...]
 	move.b	#0x30,d0                        	| [$f499: lda    #$30] all 48 sprites
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a      | [$f49b: sta    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a      | [$f49b: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
 l_f49d:
 	GET_DP_ADDRESS	0x0b                    	| [$f49d: lda    $0b]
@@ -925,18 +893,18 @@ l_f49d:
 	cmp.b	#0x04,d0                         	| [$f49f: cmpa   #$04]
 	bcc	hide_rest_of_sprites_f4c6                             	| [$f4a1: bcc    $f4c6]
 l_f4a3:
-	GET_DP_ADDRESS	0x09                    	| [$f4a3: lda    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4a3: lda    $09]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f4d0                             	| [$f4a5: beq    $f4d0]
-	GET_INDIRECT_ADDRESS	0x4200            	| [$f4a7: ldb    [$4200]]
+	* gives the sprite number to update, driven by shared memory in 65xx
+	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f4a7: ldb    [$4200]]
+	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
-	* todo optimize (times 4)
-	moveq	#0,d0                            	| [$f4ab: clra]
-	asl.b	#1,d1                            	| [$f4ac: aslb]
-	roxl.b	#1,d0                             	| [$f4ad: rola]
-	asl.b	#1,d1                            	| [$f4ae: aslb]
-	roxl.b	#1,d0                             	| [$f4af: rola]
-	MAKE_D
+	add.w	d1,d1                  	| [$f4ab: clra]
+	add.w	d1,d1                  	| [$f4ac: aslb]
+	                             	| [$f4ad: rola]
+	                            	| [$f4ae: aslb]
+	                             	| [$f4af: rola]
 	add.w	#shared_memory_6000,d1           	| [$f4b0: addd   #shared_memory_6000]
 	move.w	d1,d2                           	| [$f4b3: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f4b5: ldd    ,x++]
@@ -944,18 +912,18 @@ l_f4a3:
 	LOAD_D                                 	| [$f4b5: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f4b7: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f4b9: ldd    ,x]
 
 	LOAD_D                                 	| [$f4b9: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f4bb: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f4bd: inc    $01]
 	addq.b	#1,(a0)                         	| [...]  increase 4201 (lsb of pointer on 64xx)
-	GET_DP_ADDRESS	0x09                    	| [$f4bf: dec    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4bf: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f4c1: dec    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f4c1: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f4a3                             	| [$f4c3: bne    $f4a3]
 	rts                                    	| [$f4c5: rts]
@@ -966,7 +934,7 @@ l_f4c7:
 	GET_U_ADDRESS	0x3                      	| [$f4c7: sta    $3,u]
 	move.b	d0,(a0)                         	| [...]
 	addq.w	#0x4,d4                         	| [$f4c9: leau   $4,u]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f4cb: dec    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f4cb: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f4c7                             	| [$f4cd: bne    $f4c7]
 	rts                                    	| [$f4cf: rts]
@@ -978,9 +946,9 @@ l_f4d0:
 	sub.b	#0x40,d0                         	| [$f4d4: suba   #$40]
 										| [$f4d6: sta    $01]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4200            	| [$f4d8: lda    [$4200]]
+	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f4d8: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f4dc: sta    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4dc: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f4de: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
@@ -991,19 +959,19 @@ l_f4d0:
 * reads from 6200 and updates 4040 while 6000 is being updated by main cpu
 try_to_update_all_sprites_even_f4e4:
 	moveq	#0,d2
-	move.w	#0x65c0,d2                      	| [$f4e4: ldx    #$65c0]
+	move.w	#0x65c0,d2                      	| [$f4e4: ldx    #$65c0] contains the number of even sprites to update
 	GET_X_ADDRESS	0                        	| [$f4e7: lda    ,x+]
 	addq.w	#1,d2
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f4e9: sta    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4e9: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x00                    	| [$f4eb: stx    $00]
-	move.w	d2,(a0)                         	| [...]
+	move.w	d2,(a0)                         	| [...] store $65C1 in $4200
 	move.w	#sprite_ram_4040,d4             	| [$f4ed: ldu    #sprite_ram_4040]
 	GET_DP_ADDRESS	0x0b                    	| [$f4f0: clr    $0b]
 	move.b	#0,(a0)                         	| [...]
-	move.b	#0x30,d0                        	| [$f4f2: lda    #$30] 48 (all) sprites
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f4f4: sta    $0a]
+	move.b	#0x30,d0                        	| [$f4f2: lda    #$30] 48 (all) max number of sprites (not always reached)
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f4f4: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
 l_f4f6:
 	GET_DP_ADDRESS	0x0b                    	| [$f4f6: lda    $0b]
@@ -1011,17 +979,17 @@ l_f4f6:
 	cmp.b	#0x04,d0                         	| [$f4f8: cmpa   #$04]
 	bcc	hide_rest_of_sprites_f51f                             	| [$f4fa: bcc    $f51f]
 l_f4fc:
-	GET_DP_ADDRESS	0x09                    	| [$f4fc: lda    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4fc: lda    $09]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f529                             	| [$f4fe: beq    $f529]
-	GET_INDIRECT_ADDRESS	0x4200            	| [$f500: ldb    [$4200]]
+	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f500: ldb    [$4200]]
+	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
-	moveq	#0,d0                            	| [$f504: clra]
-	asl.b	#1,d1                            	| [$f505: aslb]
-	roxl.b	#1,d0                             	| [$f506: rola]
-	asl.b	#1,d1                            	| [$f507: aslb]
-	roxl.b	#1,d0                             	| [$f508: rola]
-	MAKE_D
+	add.w	d1,d1                            	| [$f504: clra]
+	add.w	d1,d1                            	| [$f505: aslb]
+	                             	| [$f506: rola]
+	                            	| [$f507: aslb]
+	                             	| [$f508: rola]
 	add.w	#0x6200,d1                       	| [$f509: addd   #$6200]
 	move.w	d1,d2                           	| [$f50c: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f50e: ldd    ,x++]
@@ -1029,17 +997,17 @@ l_f4fc:
 	LOAD_D                                 	| [$f50e: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f512: ldd    ,x]
 	LOAD_D                                 	| [$f512: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f514: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f516: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f518: dec    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f518: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a   	| [$f51a: dec    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a   	| [$f51a: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f4fc                             	| [$f51c: bne    $f4fc]
 	rts                                    	| [$f51e: rts]
@@ -1050,7 +1018,7 @@ l_f520:
 	GET_U_ADDRESS	0x3                      	| [$f520: sta    $3,u]
 	move.b	d0,(a0)                         	| [...]
 	addq.w	#0x4,d4                         	| [$f522: leau   $4,u]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f524: dec    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f524: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f520                             	| [$f526: bne    $f520]
 	rts                                    	| [$f528: rts]
@@ -1062,9 +1030,9 @@ l_f529:
 	sub.b	#0x40,d0                         	| [$f52d: suba   #$40]
 	GET_DP_ADDRESS	0x01                    	| [$f52f: sta    $01]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4200            	| [$f531: lda    [$4200]]
+	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f531: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f535: sta    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f535: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f537: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
@@ -1072,8 +1040,8 @@ l_f529:
 	addq.b	#1,(a0)                         	| [...]
 	bra	l_f4f6                             	| [$f53b: bra    $f4f6]
 
-	* copy first 12 sprites from shared memory with real sprite memory
-sync_first_sprites_f54a:
+	* copy sprites from shared memory with real sprite memory, no changes
+sync_sprites_no_change_f54a:
 	move.w	#shared_memory_6000,d4          	| [$f54a: ldu    #shared_memory_6000]
 	move.w	#sprite_ram_4040,d3             	| [$f54d: ldy    #sprite_ram_4040]
 	move.w	#0x0030-1,d2                      	| [$f551: ldx    #$0030]
@@ -1101,7 +1069,7 @@ l_f569:
 	and.b	#0xc0,d0                         	| [$f56b: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f56d: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f56f: inc    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f56f: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 												| [$f573: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
@@ -1109,7 +1077,7 @@ l_f569:
 	add.b	(a0),d0                          	| [...]
 	                    	| [$f579: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f57b: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f57b: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	addq.w	#0x4,d4                         	| [$f57f: leau   $4,u]
 	addq.b	#1,d1                           	| [$f581: incb]
@@ -1159,7 +1127,7 @@ l_f5af:
 	and.b	#0xc0,d0                         	| [$f5bb: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f5bd: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f5bf: lda    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f5bf: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
 	add.b	#0x02,d0                         	| [$f5c3: adda   #$02]
 									| [$f5c5: sta    [$4211]]
@@ -1174,12 +1142,12 @@ l_f5af:
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f5d1: lsrb]
 	                            	| [$f5d2: lsrb]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f5d3: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f5d3: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f5d7: dec    $12]
 	subq.b	#1,(a0)                         	| [...]
 	addq.b	#1,d1                           	| [$f5d9: incb]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f5da: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f5da: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 l_f5de:
 	addq.w	#0x8,d4                         	| [$f5de: leau   $8,u]
@@ -1227,7 +1195,6 @@ coordinate_transform_four_f60b:
 	GET_DP_ADDRESS	0x0f                    	| [$f60b: ldu    $0f]
 	MOVE_W_TO_REG	(a0),d4                         	| [...]
 	move.b	#0x08,d0                        	| [$f60d: lda    #$08]
-	LOG_REGS		f60f
 	GET_DP_ADDRESS	0x0c                    	| [$f60f: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f611: jsr    $f273]
@@ -1240,7 +1207,6 @@ coordinate_transform_eight_f617:
 	MOVE_W_TO_REG	(a0),d4                    	| [...]
 	add.w	#0x10,d4                         	| [$f619: leau   $10,u]
 	move.b	#0x06,d0                        	| [$f61c: lda    #$06]
-	LOG_REGS		F61E
 	GET_DP_ADDRESS	0x0c                    	| [$f61e: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f386                            	| [$f620: jsr    $f386]
@@ -1313,7 +1279,7 @@ l_f670:
 	and.b	#0xc0,d0                         	| [$f672: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f674: sta    $12]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f676: inc    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f676: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 					            	| [$f67a: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
@@ -1328,7 +1294,7 @@ l_f670:
 	lsr.b	#2,d1                            	| [$f686: lsrb]
 												| [$f687: lsrb]
 	add.b	#0x40,d1                         	| [$f688: addb   #$40]
-	GET_INDIRECT_ADDRESS	0x4211            	| [$f68a: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f68a: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	addq.w	#0x4,d4                         	| [$f68e: leau   $4,u]
 	GET_DP_ADDRESS	0x0c                    	| [$f690: dec    $0c]
@@ -1337,6 +1303,7 @@ l_f670:
 	rts                                    	| [$f694: rts]
 
 race_beam_update_sprites_f695:
+	rts
 	jbsr	0f
 	jra		next_current_ybeam
 0:
@@ -1345,7 +1312,7 @@ race_beam_update_sprites_f695:
 	cmp.b	#0x04,d0                         	| [$f697: cmpa   #$04]
 	bcc	l_f6d4                             	| [$f699: bcc    $f6d4]
 	move.b	#0x0e,d0                        	| [$f69b: lda    #$0e]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f69d: sta    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f69d: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
 	move.w	#sprite_ram_4040,d4             	| [$f69f: ldu    #sprite_ram_4040]
 * racing the beam: check if all sprites are above the current beam position
@@ -1361,18 +1328,18 @@ l_f6ab:
 	rts                                    	| [$f6b1: rts]
 
 l_f6b2:
-	GET_DP_ADDRESS	0x09                    	| [$f6b2: lda    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f6b2: lda    $09]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f6d5                             	| [$f6b4: beq    $f6d5]
-	GET_INDIRECT_ADDRESS	0x4200            	| [$f6b6: ldb    [$4200]] 0x6xxx
+	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f6b6: ldb    [$4200]] 0x6xxx
+	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
-	* TODO optimize?
-	moveq	#0,d0                            	| [$f6ba: clra]
-	asl.b	#1,d1                            	| [$f6bb: aslb]
-	roxl.b	#1,d0                             	| [$f6bc: rola]
-	asl.b	#1,d1                            	| [$f6bd: aslb]
-	roxl.b	#1,d0                             	| [$f6be: rola]
-	MAKE_D
+	add.w	d1,d1                            	| [$f6ba: clra]
+	add.w	d1,d1                            	| [$f6bb: aslb]
+	                             	| [$f6bc: rola]
+	                            	| [$f6bd: aslb]
+	                             	| [$f6be: rola]
+	
 	add.w	#shared_memory_6000,d1           	| [$f6bf: addd   #shared_memory_6000]
 	move.w	d1,d2                           	| [$f6c2: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f6c4: ldd    ,x++]
@@ -1381,19 +1348,18 @@ l_f6b2:
 	GET_U_ADDRESS	0                        	| [$f6c6: std    ,u++]
 	addq.w	#2,d4
 	* copy first part of sprite data
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f6c8: ldd    ,x]
-
 	LOAD_D                                 	| [$f6c8: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f6ca: std    ,u++]
 	addq.w	#2,d4
 	* copy second part of sprite data
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f6cc: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f6ce: dec    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f6ce: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f6d0: dec    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f6d0: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f6ab                             	| [$f6d2: bne    $f6ab]
 l_f6d4:
@@ -1406,9 +1372,9 @@ l_f6d5:
 	sub.b	#0x40,d0                         	| [$f6d9: suba   #$40]
 	GET_DP_ADDRESS	0x01                    	| [$f6db: sta    $01]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4200            	| [$f6dd: lda    [$4200]]
+	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f6dd: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f6e1: sta    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f6e1: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f6e3: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
@@ -1421,6 +1387,8 @@ l_f6d5:
 	rts                                    	| [$f6ed: rts]
 
 race_beam_update_sprites_f6ee:
+	rts
+	
 	jbsr	0f
 	jra		next_current_ybeam
 0:
@@ -1429,7 +1397,7 @@ race_beam_update_sprites_f6ee:
 	cmp.b	#0x04,d0                         	| [$f6f0: cmpa   #$04]
 	bcc	l_f72d                             	| [$f6f2: bcc    $f72d]
 	move.b	#0x0e,d0                        	| [$f6f4: lda    #$0e]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a                    	| [$f6f6: sta    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f6f6: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
 	move.w	#sprite_ram_4040,d4             	| [$f6f8: ldu    #sprite_ram_4040]
 * racing the beam again
@@ -1445,39 +1413,38 @@ l_f704:
 	rts                                    	| [$f70a: rts]
 
 l_f70b:
-	GET_DP_ADDRESS	0x09                    	| [$f70b: lda    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f70b: lda    $09]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f72e                             	| [$f70d: beq    $f72e]
-	GET_INDIRECT_ADDRESS	0x4200            	| [$f70f: ldb    [$4200]]
+	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f70f: ldb    [$4200]]
+	moveq 	#0,d1
 	move.b	(a0),d1                         	| [...]
-	* todo optimize!
-	moveq	#0,d0                            	| [$f713: clra]
-	asl.b	#1,d1                            	| [$f714: aslb]
-	roxl.b	#1,d0                             	| [$f715: rola]
-	asl.b	#1,d1                            	| [$f716: aslb]
-	roxl.b	#1,d0                             	| [$f717: rola]
-	MAKE_D
+	add.w	d1,d1                            	| [$f713: clra]
+	add.w	d1,d1                            	| [$f714: aslb]
+	                             	| [$f715: rola]
+	                            	| [$f716: aslb]
+	                             	| [$f717: rola]
+	
 	add.w	#shared_memory_6000+0x200,d1        | [$f718: addd   #$6200]
 	move.w	d1,d2                           	| [$f71b: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f71d: ldd    ,x++]
 	addq.w	#2,d2
-
 	LOAD_D                                 	| [$f71d: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f71f: std    ,u++]
 	addq.w	#2,d4
 	* copy first part of sprite data
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	GET_X_ADDRESS	0                        	| [$f721: ldd    ,x]
 	LOAD_D                                 	| [$f721: ldd    ,x]
 	GET_U_ADDRESS	0                        	| [$f723: std    ,u++]
 	addq.w	#2,d4
 	* copy second part of sprite data
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f725: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f727: dec    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f727: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_counter_0a     | [$f729: dec    $0a]
+	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a     | [$f729: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f704                             	| [$f72b: bne    $f704]
 l_f72d:
@@ -1490,9 +1457,9 @@ l_f72e:
 	sub.b	#0x40,d0                         	| [$f732: suba   #$40]
 									| [$f734: sta    $01]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	0x4200            	| [$f736: lda    [$4200]]
+	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f736: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x09                    	| [$f73a: sta    $09]
+	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f73a: sta    $09]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f73c: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
@@ -1504,5 +1471,4 @@ l_f72e:
 	bcc	l_f70b                             	| [$f744: bcc    $f70b]
 	rts                                    	| [$f746: rts]
 
-mockup:
-	.include	"sprite_ram_4040.s"		
+

@@ -144,41 +144,41 @@ gyruss_sub_irq:
 	moveq	#0,d0
 	jbsr	set_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
 	
-	*****************************
-* check_duplicated_sprites
-	move.w	#sprite_ram_4040,d4             	| [$f6f8: ldu    #sprite_ram_4040]
-	GET_U_ADDRESS	0
-	move.l	a0,a2
-	moveq	#0,d7
-0:
-	addq	#1,d7
-	cmp.w	#0x30,d7
-	jeq		3f
-	move.l	(a2)+,d6
-	tst.b	d6
-	jeq		0b		| Y coord no need to compare!
-	
-	* compare with the rest of the array
-	move.l	a2,a1
-	move.w	#0x30-1,d5
-	sub.w	d7,d5		| number of tests to perform
-1:
-	cmp.l	(a1)+,d6
-	jne		2f
-	move.l	d6,d4
-	and.l	#0x00FFFF00,d4
-	jeq		2f			| can be equal if sprite code is 0000
-	* SAME!!!
-	subq	#4,a1
-	subq	#4,a2
-	*BREAKPOINT		"same A2/A1 sprites (in D6)"
-	move.w	#0x0F0,0xDFF180
-	jra		3f
-2:
-	dbf		d5,1b
-	jra		0b
-3:
-	jbsr	gyruss_sub_cpu_init
+*	*****************************
+** check_duplicated_sprites
+*	move.w	#sprite_ram_4040,d4             	| [$f6f8: ldu    #sprite_ram_4040]
+*	GET_U_ADDRESS	0
+*	move.l	a0,a2
+*	moveq	#0,d7
+*0:
+*	addq	#1,d7
+*	cmp.w	#0x30,d7
+*	jeq		3f
+*	move.l	(a2)+,d6
+*	tst.b	d6
+*	jeq		0b		| Y coord no need to compare!
+*	
+*	* compare with the rest of the array
+*	move.l	a2,a1
+*	move.w	#0x30-1,d5
+*	sub.w	d7,d5		| number of tests to perform
+*1:
+*	cmp.l	(a1)+,d6
+*	jne		2f
+*	move.l	d6,d4
+*	and.l	#0x00FFFF00,d4
+*	jeq		2f			| can be equal if sprite code is 0000
+*	* SAME!!!
+*	subq	#4,a1
+*	subq	#4,a2
+*	*BREAKPOINT		"same A2/A1 sprites (in D6)"
+*	move.w	#0x0F0,0xDFF180
+*	jra		3f
+*2:
+*	dbf		d5,1b
+*	jra		0b
+*3:
+*	jbsr	gyruss_sub_cpu_init
 
 	*****************************
 
@@ -609,9 +609,8 @@ l_f32e:
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f340: lda    [$4211]]
 	                         	| [...]
-	add.b	#0x02,(a0)                         	| [$f344: adda   #$02]
-											| [$f346: sta    [$4211]]
-										| [...]
+	add.b	#0x02,d0                         	| [$f344: adda   #$02]
+	move.b	d0,(a0)								| [$f346: sta    [$4211]]
 	GET_DP_ADDRESS	0x12                    	| [$f34a: adda   $12]
 	add.b	(a0),d0                          	| [...]
 	                    	| [$f34c: sta    $12]
@@ -620,14 +619,18 @@ l_f32e:
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f350: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
+	* divide by 4 to find sprite index
 	lsr.b	#2,d1                            	| [$f352: lsrb]
-	                            	| [$f353: lsrb]
+												| [$f353: lsrb]
+	* store 2 consecutive sprite indexes in area pointed by 4211 (decreasing)
+	* probably to handle "big" sprites like big approaching iceberg
+	move.b	#0,0x100
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f354: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f358: dec    $12]
-	subq.b	#1,(a0)                         	| [...]
+	subq.b	#1,(a0)                         	| [...] decrease pointer in 4211
 	addq.b	#1,d1                           	| [$f35a: incb]
-	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f35b: stb    [$4211]]
+	GET_INDIRECT_ADDRESS	pointer_4211        | [$f35b: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 l_f35f:
 	addq.w	#0x8,d4                         	| [$f35f: leau   $8,u]
@@ -727,13 +730,11 @@ l_f3ca:
 	GET_DP_ADDRESS	0x12                    	| [$f3d0: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f3d2: inc    [$4211]]
-	addq.b	#1,(a0)                         	| [...]
-	            	| [$f3d6: lda    [$4211]]
-	move.b	(a0),d0                         	| [...]
+	addq.b	#1,(a0)                         	| [...]	            	
+	move.b	(a0),d0                         	| [$f3d6: lda    [$4211]]
 	GET_DP_ADDRESS	0x12                    	| [$f3da: adda   $12]
 	add.b	(a0),d0                          	| [...]
-	                    	| [$f3dc: sta    $12]
-	move.b	d0,(a0)                         	| [...]
+	move.b	d0,(a0)                         	| [$f3dc: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f3de: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f3e0: ldb    $0e]
@@ -829,13 +830,13 @@ l_f43c:
 	            	| [$f44f: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f453: adda   $12]
-	add.b	(a0),d0                          	| [...]
-	                    	| [$f455: sta    $12]
-	move.b	d0,(a0)                         	| [...]
+	add.b	(a0),d0                          	| [...]	                    	
+	move.b	d0,(a0)                         	| [$f455: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f457: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f459: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
+	* convert address to index of sprite (1 sprite = 4 bytes)
 	lsr.b	#2,d1                            	| [$f45b: lsrb]
 												| [$f45c: lsrb]
 	add.b	#0x40,d1                         	| [$f45d: addb   #$40]
@@ -847,13 +848,11 @@ l_f43c:
 	GET_DP_ADDRESS	0x12                    	| [$f468: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f46a: inc    [$4211]]
-	addq.b	#1,(a0)                         	| [...]
-	            	| [$f46e: lda    [$4211]]
-	move.b	(a0),d0                         	| [...]
+	addq.b	#1,(a0)                         	| [...]	            	
+	move.b	(a0),d0                         	| [$f46e: lda    [$4211]]
 	GET_DP_ADDRESS	0x12                    	| [$f472: adda   $12]
-	add.b	(a0),d0                          	| [...]
-	                    	| [$f474: sta    $12]
-	move.b	d0,(a0)                         	| [...]
+	add.b	(a0),d0                          	| [...]                 	
+	move.b	d0,(a0)                         	| [$f474: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f476: stu    $0d]
 	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f478: ldb    $0e]
@@ -908,17 +907,45 @@ l_f4a3:
 	add.w	#shared_memory_6000,d1           	| [$f4b0: addd   #shared_memory_6000]
 	move.w	d1,d2                           	| [$f4b3: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f4b5: ldd    ,x++]
-	addq.w	#2,d2
-	LOAD_D                                 	| [$f4b5: ldd    ,x++]
-	GET_U_ADDRESS	0                        	| [$f4b7: std    ,u++]
-	addq.w	#2,d4
-	move.w	d1,(a0)                	| [...]
-	GET_X_ADDRESS	0                        	| [$f4b9: ldd    ,x]
 
-	LOAD_D                                 	| [$f4b9: ldd    ,x]
-	GET_U_ADDRESS	0                        	| [$f4bb: std    ,u++]
-	addq.w	#2,d4
-	move.w	d1,(a0)                	| [...]
+
+	move.l	(a0),d6
+	
+	
+	
+*	* temp
+*	move.l	d6,d7
+*	and.l	#0x00FFFF00,d7
+*	lsr.l	#8,d7
+*	moveq	#0,d5
+*	move.b	d7,d5
+*	and.b	#0x20,d5
+*	add.w	d5,d5
+*	add.w	d5,d5
+*	lsr.w	#8,d7
+*	lsr.w	#1,d7
+*	jcc		0f
+*	bset	#8,d5
+*0:
+*	or.b	d7,d5
+*	* D5: sprite code!!
+*	cmp.b	#0x38,d5
+*	jne		0f
+*	breakpoint	"iceberg!!"
+*0:
+	
+	
+	addq.w	#4,d2
+	                                 	| [$f4b5: ldd    ,x++]
+	GET_U_ADDRESS	0                        	| [$f4b7: std    ,u++]
+	addq.w	#4,d4
+	move.l	d6,(a0)                	| [...]
+	                        	| [$f4b9: ldd    ,x]
+
+								| [$f4b9: ldd    ,x]
+									| [$f4bb: std    ,u++]
+				
+						| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f4bd: inc    $01]
 	addq.b	#1,(a0)                         	| [...]  increase 4201 (lsb of pointer on 64xx)
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4bf: dec    $09]
@@ -990,19 +1017,20 @@ l_f4fc:
 	                             	| [$f506: rola]
 	                            	| [$f507: aslb]
 	                             	| [$f508: rola]
-	add.w	#0x6200,d1                       	| [$f509: addd   #$6200]
+	add.w	#shared_memory_6000+0x200,d1                       	| [$f509: addd   #$6200]
 	move.w	d1,d2                           	| [$f50c: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f50e: ldd    ,x++]
-	addq.w	#2,d2
-	LOAD_D                                 	| [$f50e: ldd    ,x++]
+	move.l	(a0),d6
+	addq.w	#4,d2
+	                                 	| [$f50e: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
-	addq.w	#2,d4
-	move.w	d1,(a0)                	| [...]
-	GET_X_ADDRESS	0                        	| [$f512: ldd    ,x]
-	LOAD_D                                 	| [$f512: ldd    ,x]
-	GET_U_ADDRESS	0                        	| [$f514: std    ,u++]
-	addq.w	#2,d4
-	move.w	d1,(a0)                	| [...]
+	addq.w	#4,d4
+	move.l	d6,(a0)                	| [...]
+								| [$f512: ldd    ,x]
+							| [$f512: ldd    ,x]
+								| [$f514: std    ,u++]
+			
+					| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f516: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f518: dec    $09]
@@ -1303,7 +1331,6 @@ l_f670:
 	rts                                    	| [$f694: rts]
 
 race_beam_update_sprites_f695:
-	rts
 	jbsr	0f
 	jra		next_current_ybeam
 0:
@@ -1387,8 +1414,6 @@ l_f6d5:
 	rts                                    	| [$f6ed: rts]
 
 race_beam_update_sprites_f6ee:
-	rts
-	
 	jbsr	0f
 	jra		next_current_ybeam
 0:

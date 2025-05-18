@@ -8,7 +8,15 @@ sprite_names = get_sprite_names()
 
 
 
+def raw_to_code(raw):
+    lsb = raw & 0xFF
+    msb = raw >> 8
 
+
+    base = ((lsb & 0x20) << 2) + (msb >> 1)
+    if msb & 1:
+        base += 0x100
+    return base
 
 
 def load_tileset(image_name,width,height,set_subdir,dump_prefix=""):
@@ -41,7 +49,7 @@ tile_sets_0 = [loadtiles(i,"set_0") for i in range(16)]
 tile_sets_1 = [loadtiles(i,"set_1") for i in range(16)]
 tile_set = [tile_sets_0,tile_sets_1]
 
-def process(the_dump,offset=0,base_address=0):
+def process(the_dump,offset=0,base_address=0,name_filter=None):
     the_dump = pathlib.Path(the_dump)
     # in input, we use a MAME memory dump: save sprites,$A000,$400
     # (0x200 are read, but there's a kind of double buffering
@@ -78,7 +86,8 @@ def process(the_dump,offset=0,base_address=0):
             address = base_address+offs
             fcode = gfx_bank*0x100+code
             name = sprite_names.get(fcode,"unknown")
-            print(f"addr=${address:04x}, offset=${offs:04x}, raw:=${raw_code_and_clut:04X} X={y}, Y={x}, flipx={flip_x}, flip_y={flip_y}, code={fcode:04x}, color={color:02x}, name={name}")
+            if not name_filter or name_filter in name:
+                print(f"addr=${address:04x}, offset=${offs:04x}, raw:=${raw_code_and_clut:04X} X={y}, Y={x}, flipx={flip_x}, flip_y={flip_y}, code={fcode:04x}, color={color:02x}, name={name}")
 
             bank = tile_set[gfx_bank]
             im = bank[color][code]
@@ -99,8 +108,9 @@ def process(the_dump,offset=0,base_address=0):
     print(f"NB ACTIVE: {nb_active}")
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
-process(r"../../sprite_ram_4040",offset=0,base_address=0x4040)
+#process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
+process(r"ice",offset=0,base_address=0xA000,name_filter="iceberg")
+#process(r"iceberg_amiga_4040",offset=0,base_address=0x4040,name_filter="iceberg")
 #process(r"sattelites_A000",offset=0,base_address=0xA000)
 #process(r"bug_4040",offset=0,base_address=0x4040)
 #process(r"../../sprite_ram_4040",offset=0,base_address=0x4040)

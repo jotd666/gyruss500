@@ -6871,7 +6871,6 @@ l_3623:
 	move.b	d0,l_9601(a6)                   	| [$3625: ld   ($9601),a]
 	lea	l_90B0(a6),a0                      	| [$3628: ld   hl,$90B0]
 	STORE_RAM_POINTER	a0,l_9479(a6)        	| [$362b: ld   ($9479),hl]
-	BREAKPOINT	"6480 review check if source is in RAM"
 	                                    	| [$362e: nop]
 	clr.b	d0                               	| [$362f: ld   a,$00]
 	move.b	d0,l_947B(a6)                   	| [$3631: ld   ($947B),a]

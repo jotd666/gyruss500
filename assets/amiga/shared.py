@@ -47,7 +47,7 @@ def get_sprite_names():
     add_dual_range(0,0x13,"player_ship")
     add_range(0x1C0,0x1C5,"player_ship")
     add_dual_range(0xD0,0xD3,"player_ship")
-    add_range(0x34,0x39,"iceberg")
+    add_dual_range(0x34,0x39,"iceberg")
     add_range(0x8A,0x90,"death_ray")
     add(0x134,"iceberg")
     add_dual_range(0xD4,0xDD,"earth")

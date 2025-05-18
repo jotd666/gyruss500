@@ -1,22 +1,13 @@
-
-
-- another (maybe simpler) test is when the ship is zooming away at the end 
-  of the level
-
 - score is not updated at all
 
-- race_beam_update_sprites_xxxx: useful? no visual difference
-  when not called (except from player sprite disappearing and some
-  flashing on MAME)
+- review several cases of 6809 index array fill code (like multi-part iceberg, that works
+  but others don't like arriving ships)
   
 addr=$a04c, offset=$004c, X=118, Y=168, flipx=False, flip_y=True, code=01bd, color=08, name=bonus_satellite
 addr=$a048, offset=$0048, X=118, Y=160, flipx=False, flip_y=True, code=00bd, color=08, name=bonus_satellite
 
 - update sprites: if Y = 0 don't display (spriteram offset 3)
 
-- another possibility is to revert to explicitly calling 6809 code instead of interrupt => tried and failed!!
-
-- optimize some 8 bit rols in 6809 code once it's good
 
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
@@ -46,6 +37,7 @@ to turn off stars:
 
 bpset 3804,,{PC=$3803;g}
 bpset 3831,,{PC=$3803;g}
+and reset
 
 turn off sprite semaphore/sync
 

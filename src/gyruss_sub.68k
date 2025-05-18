@@ -161,6 +161,7 @@ l_f0ca:
 	jne	frame_odd_f1a3                             	| [$f0d2: lbne   $f1a3]
 	* frame even
 	
+		
 	.ifdef	FUCK
 	lea		gysub_before_4000,a0
 	move.l	#0x4000,d6
@@ -183,9 +184,16 @@ gysub_before_6000:
 
 	.endif
 	
-	move.b	#0,0x100
+
 	jbsr	try_to_update_all_sprites_even_f4e4                            	| [$f0d6: jsr    $f4e4]
 	
+*	GET_ADDRESS	0x4040
+*	lea		mockup,a1
+*	move.w	#0xC0/4-1,d0
+*1:
+*	move.l	(a1)+,(a0)+
+*		dbf	d0,1b
+
 	.ifdef	FUCK
 	DISABLE_REGS_LOG
 	lea		gysub_after_4000,a0
@@ -1496,3 +1504,5 @@ l_f72e:
 	bcc	l_f70b                             	| [$f744: bcc    $f70b]
 	rts                                    	| [$f746: rts]
 
+mockup:
+	.include	"sprite_ram_4040.s"		

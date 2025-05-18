@@ -1277,6 +1277,7 @@ update_one_bob:
 0:
 	or.b	d2,d3
 	
+	
 	move.b	(TARGET_SPRITE_CODE2,a0),d2
 	* color = m_spriteram[offs + 2] & 0x0f
 	and.b	#0xF,d2		| CLUT
@@ -1305,7 +1306,7 @@ update_one_bob:
 	add.w	d2,d2
 	add.w	d2,d2
 	move.l	(a1,d2.w),d4
-	jeq		2f
+	jeq		22f
 
 	* re-load properties (for X/Y flip)
 	move.b	(TARGET_SPRITE_CODE2,a0),d3
@@ -1356,7 +1357,13 @@ update_one_bob:
 2:
 	addq.w	#PREVIOUS_SPRITE_SIZE,a6
 	rts
-
+22:
+	.ifndef	RELEASE
+	lsr.w	#2,d2		| code
+	lsr.w	#2,d3		| clut
+	move.w	#0xF00,_custom+color
+	.endif
+	jra		2b
 
 update_one_hw_sprite:
 	* code = 0 and clut = 0 => disabled ?? to check

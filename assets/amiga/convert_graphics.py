@@ -106,6 +106,11 @@ with open(used_graphics_dir / "used_sprites","rb") as f:
         if cluts:
             add_sprite(index,cluts=cluts)
 
+if dump_it:
+    with open(dump_dir / "used_sprites.json","w") as f:
+        sprite_cluts_dict = {hex(k):v for k,v in enumerate(sprite_cluts) if v}
+        json.dump(sprite_cluts_dict,f,indent=2)
+
 def add_hw_sprite(index,name,cluts=[0]):
     if isinstance(index,range):
         pass

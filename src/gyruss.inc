@@ -1,6 +1,7 @@
 	.ifdef	RELEASE
 	.macro	BREAKPOINT comment
 	.endm
+OPT_NO_STARS = 0
 	.else
 LOG_BUFFER_SIZE = 0x10000
 	* amiga specific
@@ -15,6 +16,9 @@ comment\@:
 	.align	2
 next\@:
 	.endm
+
+
+OPT_NO_STARS = 0		| disable stars
+
 	.endc
 
-OPT_NO_STARS = 1

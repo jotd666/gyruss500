@@ -1,37 +1,29 @@
-- score is not updated at all
-
-- review several cases of 6809 index array fill code (like multi-part iceberg, that works
-  but others don't like arriving ships)
-  
-addr=$a04c, offset=$004c, X=118, Y=168, flipx=False, flip_y=True, code=01bd, color=08, name=bonus_satellite
-addr=$a048, offset=$0048, X=118, Y=160, flipx=False, flip_y=True, code=00bd, color=08, name=bonus_satellite
-
-- update sprites: if Y = 0 don't display (spriteram offset 3)
-
+- 32 colors => 16 + attached sprites? count colors of tiles & sprites independently
+- when ship is fading out it appears too big when rotating anti-clockwise!)
+- chance stage bonus text digits are off ??
+- highscore: letters are flipped when entered
+- add 10000 points cheat
+- sometimes enemy sprites flashing/shifting
+- death ray satellites position seem not aligned (maybe that is easier to debug)
 
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
-- check attack wave params: log regs @ 4192
 
 - implement difficulty
 - stage numbers completely off after a while (9 => 0) ?? recheck
-- chance stage enemies don't appear
-- chance stage bonus text digits are off
 
 - log sprites/flash when missing
 
-- what do they do? A7FD & A7FC
-
-- update sprites: symmetry flags wrong (see player ship)
-
+- reduce memory (log tiles instead of including them all?)
 
 - game state reverse: 082f jump table & other jump tables
-- 32 colors => 16 + attached sprites?
 - star effect: hack with pixel placement when detected in the sprite update
   (takes too much blitter time!)
-- restore buffer to get rid of but then tiles would need
-  redrawing when crossing paths with sprites
-  OR hack something for title only / in-game: redraw parts of screen with non-blank
+- restore buffer: do it only in title screen and for some Y (score/credit+lives)
+  do it if non-blank tile where "GAME OVER" or "X WARPS TO..."
+  or "<planet name>" or "KONAMI copytight"
+  if not activated, then pure delete
+- upper screen chars blue "shadow". Is that restore from wrapped lower Y?
 
 to turn off stars:
 
@@ -45,6 +37,5 @@ bpset f0cd:sub,,{PC=$F0CF;g}
 
 6809 converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
 remove the second one
- 
-converter: .error: specify address/line
-converter: jra/jmp (a0/a1/...) => .error
+Z80 converter: .error: specify address/line
+Z80 converter: jra/jmp (a0/a1/...) => .error

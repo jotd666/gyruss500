@@ -1323,7 +1323,16 @@ update_one_bob:
 101:
 	move.w	(a0)+,d4		| height
 	move.w	(a0)+,d5		| width
-	add.w	(a0)+,d1		| add offset to Y
+	move.w	(a0)+,d2		| Y-offset
+	btst	#6,d3
+	jne		101f
+	* flipped: offset is different: it's 16-height-offset
+	neg.w	d2
+	sub.w	d4,d2
+	add.w	#0x10,d2
+101:
+	add.w	d2,d1
+
 	* A0 points on the first bitplane of the bob
 
 	move.l		playfield_drawed_screen_ptr(pc),a1
@@ -1360,9 +1369,9 @@ update_one_bob:
 	rts
 22:
 	.ifndef	RELEASE
-	lsr.w	#2,d2		| code
-	lsr.w	#2,d3		| clut
-	move.w	#0xF00,_custom+color
+	lsr.w	#2,d2		| clut
+	lsr.w	#2,d3		| code
+	*move.w	#0xF00,_custom+color
 	.endif
 	jra		2b
 

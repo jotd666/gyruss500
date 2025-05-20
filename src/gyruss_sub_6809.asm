@@ -112,8 +112,8 @@ F0C6: 10 27 2C A8 LBEQ   sync_first_sprites_f54a
 F0CA: B6 EF 29    LDA    draw_queued_sprites_flag_6701
 F0CD: 27 73       BEQ    $F0CA
 F0CF: B6 45 22    LDA    frame_odd_or_even_6700
-F0D2: 10 26 22 EF LBNE   $F1A3
-F0D6: BD 76 CC    JSR    $F4E4
+F0D2: 10 26 22 EF LBNE   frame_odd_f1a3
+F0D6: BD 76 CC    JSR    try_to_update_all_sprites_even_f4e4
 F0D9: 7F EC 88    CLR    $6400
 F0DC: 7F 4C C8    CLR    $6440
 F0DF: 7F 46 A2    CLR    $6480
@@ -193,7 +193,8 @@ F19B: BD DE 6D    JSR    coordinate_transform_seven_f645
 F19E: BD 7E CC    JSR    race_beam_update_sprites_f6ee
 F1A1: 20 10       BRA    continue_f135
 
-F1A3: BD D6 A9    JSR    $F48B
+frame_odd_f1a3:
+F1A3: BD D6 A9    JSR    try_to_update_all_sprites_odd_f48b
 F1A6: 7F E7 28    CLR    $6500
 F1A9: 7F ED C8    CLR    $6540
 F1AC: 7F 4D 08    CLR    $6580
@@ -270,6 +271,7 @@ F268: BD DE CD    JSR    coordinate_transform_seven_f645
 F26B: BD DE BD    JSR    race_beam_update_sprites_f695
 F26E: 20 1A       BRA    continue_f202
 
+compute_coords_f273:
 F273: 8E C2 22    LDX    #$E000
 F276: E6 46       LDB    ,U
 F278: 27 73       BEQ    $F2D5
@@ -314,18 +316,18 @@ F2B7: 8B 50       ADDA   #$78
 F2B9: A7 CB       STA    $3,U
 F2BB: 84 E8       ANDA   #$C0
 F2BD: 97 9A       STA    $12
-F2BF: 6C BD 60 93 INC    [$4211]
-F2C3: A6 BD 60 93 LDA    [$4211]
+F2BF: 6C BD 60 93 INC    [pointer_4211]
+F2C3: A6 BD 60 93 LDA    [pointer_4211]
 F2C7: 9B 3A       ADDA   $12
 F2C9: 97 9A       STA    $12
 F2CB: DF 25       STU    $0D
 F2CD: D6 86       LDB    $0E
 F2CF: 54          LSRB
 F2D0: 54          LSRB
-F2D1: E7 1D C0 33 STB    [$4211]
+F2D1: E7 1D C0 33 STB    [pointer_4211]
 F2D5: 33 C6       LEAU   $4,U
 F2D7: 0A 24       DEC    $0C
-F2D9: 26 10       BNE    $F273
+F2D9: 26 10       BNE    compute_coords_f273
 F2DB: 39          RTS
 
 F2DC: 8E C8 88    LDX    #$E000
@@ -385,19 +387,19 @@ F338: 27 06       BEQ    $F368
 F33A: A6 CB       LDA    $3,U
 F33C: 84 E8       ANDA   #$C0
 F33E: 97 9A       STA    $12
-F340: A6 BD C0 93 LDA    [$4211]
+F340: A6 BD C0 93 LDA    [pointer_4211]
 F344: 8B 20       ADDA   #$02
-F346: A7 1D 6A 39 STA    [$4211]
+F346: A7 1D 6A 39 STA    [pointer_4211]
 F34A: 9B 9A       ADDA   $12
 F34C: 97 3A       STA    $12
 F34E: DF 85       STU    $0D
 F350: D6 2C       LDB    $0E
 F352: 54          LSRB
 F353: 54          LSRB
-F354: E7 BD C0 93 STB    [$4211]
+F354: E7 BD C0 93 STB    [pointer_4211]
 F358: 0A 3A       DEC    $12
 F35A: 5C          INCB
-F35B: E7 B7 6A 99 STB    [$4211]
+F35B: E7 B7 6A 99 STB    [pointer_4211]
 F35F: 33 6A       LEAU   $8,U
 F361: 0A 8E       DEC    $0C
 F363: 10 26 DD F7 LBNE   $F2DC
@@ -406,17 +408,18 @@ F367: 39          RTS
 F368: A6 6B       LDA    $3,U
 F36A: 84 48       ANDA   #$C0
 F36C: 97 3A       STA    $12
-F36E: 6C 17 60 33 INC    [$4211]
-F372: A6 1D 60 33 LDA    [$4211]
+F36E: 6C 17 60 33 INC    [pointer_4211]
+F372: A6 1D 60 33 LDA    [pointer_4211]
 F376: 9B 90       ADDA   $12
 F378: 97 3A       STA    $12
 F37A: DF 85       STU    $0D
 F37C: D6 26       LDB    $0E
 F37E: 54          LSRB
 F37F: 54          LSRB
-F380: E7 BD C0 93 STB    [$4211]
+F380: E7 BD C0 93 STB    [pointer_4211]
 F384: 20 FB       BRA    $F35F
 
+compute_coords_f386:
 F386: 8E 62 28    LDX    #$E000
 F389: E6 4C       LDB    ,U
 F38B: 27 75       BEQ    $F3EA
@@ -461,8 +464,8 @@ F3CA: 8B F0       ADDA   #$78
 F3CC: A7 6B       STA    $3,U
 F3CE: 84 48       ANDA   #$C0
 F3D0: 97 30       STA    $12
-F3D2: 6C 1D 60 33 INC    [$4211]
-F3D6: A6 1D 6A 39 LDA    [$4211]
+F3D2: 6C 1D 60 33 INC    [pointer_4211]
+F3D6: A6 1D 6A 39 LDA    [pointer_4211]
 F3DA: 9B 9A       ADDA   $12
 F3DC: 97 3A       STA    $12
 F3DE: DF 85       STU    $0D
@@ -470,10 +473,10 @@ F3E0: D6 2C       LDB    $0E
 F3E2: 54          LSRB
 F3E3: 54          LSRB
 F3E4: CB 62       ADDB   #$40
-F3E6: E7 1D 6A 39 STB    [$4211]
+F3E6: E7 1D 6A 39 STB    [pointer_4211]
 F3EA: 33 CC       LEAU   $4,U
 F3EC: 0A 24       DEC    $0C
-F3EE: 26 1E       BNE    $F386
+F3EE: 26 1E       BNE    compute_coords_f386
 F3F0: 39          RTS
 
 F3F1: 8E 62 82    LDX    #$E000
@@ -525,8 +528,8 @@ F442: CB 86       ADDB   #$04
 F444: E7 EA A2    STB    $20,U
 F447: 84 E8       ANDA   #$C0
 F449: 97 9A       STA    $12
-F44B: 6C B7 6A 99 INC    [$4211]
-F44F: A6 BD 60 93 LDA    [$4211]
+F44B: 6C B7 6A 99 INC    [pointer_4211]
+F44F: A6 BD 60 93 LDA    [pointer_4211]
 F453: 9B 30       ADDA   $12
 F455: 97 90       STA    $12
 F457: DF 25       STU    $0D
@@ -534,12 +537,12 @@ F459: D6 86       LDB    $0E
 F45B: 54          LSRB
 F45C: 54          LSRB
 F45D: CB C8       ADDB   #$40
-F45F: E7 BD 60 93 STB    [$4211]
+F45F: E7 BD 60 93 STB    [pointer_4211]
 F463: A6 EA 01    LDA    $23,U
 F466: 84 42       ANDA   #$C0
 F468: 97 3A       STA    $12
-F46A: 6C 17 6A 39 INC    [$4211]
-F46E: A6 17 60 33 LDA    [$4211]
+F46A: 6C 17 6A 39 INC    [pointer_4211]
+F46E: A6 17 60 33 LDA    [pointer_4211]
 F472: 9B 90       ADDA   $12
 F474: 97 30       STA    $12
 F476: DF 8F       STU    $0D
@@ -547,12 +550,13 @@ F478: D6 26       LDB    $0E
 F47A: 54          LSRB
 F47B: 54          LSRB
 F47C: CB 60       ADDB   #$48
-F47E: E7 17 60 33 STB    [$4211]
+F47E: E7 17 60 33 STB    [pointer_4211]
 F482: 33 C6       LEAU   $4,U
 F484: 0A 2E       DEC    $0C
 F486: 10 26 D7 4F LBNE   $F3F1
 F48A: 39          RTS
 
+try_to_update_all_sprites_odd_f48b:
 F48B: 8E 4C E8    LDX    #$64C0
 F48E: A6 08       LDA    ,X+
 F490: 97 2B       STA    $09
@@ -563,10 +567,10 @@ F499: 86 B8       LDA    #$30
 F49B: 97 22       STA    $0A
 F49D: 96 83       LDA    $0B
 F49F: 81 26       CMPA   #$04
-F4A1: 24 A1       BCC    $F4C6
+F4A1: 24 A1       BCC    hide_rest_of_sprites_f4c6
 F4A3: 96 2B       LDA    $09
 F4A5: 27 AB       BEQ    $F4D0
-F4A7: E6 B7 6A 88 LDB    [$4200]
+F4A7: E6 B7 6A 88 LDB    [pointer_4200]
 F4AB: 4F          CLRA
 F4AC: 58          ASLB
 F4AD: 49          ROLA
@@ -584,6 +588,7 @@ F4C1: 0A 88       DEC    $0A
 F4C3: 26 FC       BNE    $F4A3
 F4C5: 39          RTS
 
+hide_rest_of_sprites_f4c6:
 F4C6: 4F          CLRA
 F4C7: A7 6B       STA    $3,U
 F4C9: 33 CC       LEAU   $4,U
@@ -595,12 +600,13 @@ F4D0: 96 23       LDA    $01
 F4D2: 84 42       ANDA   #$C0
 F4D4: 80 62       SUBA   #$40
 F4D6: 97 83       STA    $01
-F4D8: A6 B7 CA 88 LDA    [$4200]
+F4D8: A6 B7 CA 88 LDA    [pointer_4200]
 F4DC: 97 21       STA    $09
 F4DE: 0C 89       INC    $01
 F4E0: 0C 29       INC    $0B
 F4E2: 20 3B       BRA    $F49D
 
+try_to_update_all_sprites_even_f4e4:
 F4E4: 8E 47 42    LDX    #$65C0
 F4E7: A6 A8       LDA    ,X+
 F4E9: 97 81       STA    $09
@@ -611,10 +617,10 @@ F4F2: 86 B2       LDA    #$30
 F4F4: 97 28       STA    $0A
 F4F6: 96 89       LDA    $0B
 F4F8: 81 2C       CMPA   #$04
-F4FA: 24 AB       BCC    $F51F
+F4FA: 24 AB       BCC    hide_rest_of_sprites_f51f
 F4FC: 96 21       LDA    $09
 F4FE: 27 A1       BEQ    $F529
-F500: E6 BD C0 82 LDB    [$4200]
+F500: E6 BD C0 82 LDB    [pointer_4200]
 F504: 4F          CLRA
 F505: 58          ASLB
 F506: 49          ROLA
@@ -632,6 +638,7 @@ F51A: 0A 82       DEC    $0A
 F51C: 26 F6       BNE    $F4FC
 F51E: 39          RTS
 
+hide_rest_of_sprites_f51f:
 F51F: 4F          CLRA
 F520: A7 61       STA    $3,U
 F522: 33 C6       LEAU   $4,U
@@ -643,13 +650,14 @@ F529: 96 89       LDA    $01
 F52B: 84 E8       ANDA   #$C0
 F52D: 80 C8       SUBA   #$40
 F52F: 97 23       STA    $01
-F531: A6 1D C0 22 LDA    [$4200]
+F531: A6 1D C0 22 LDA    [pointer_4200]
 F535: 97 8B       STA    $09
 F537: 0C 29       INC    $01
 F539: 0C 83       INC    $0B
 F53B: 20 91       BRA    $F4F6
 
 sync_first_sprites_f54a:
+sync_sprites_no_change_f54a:
 F54A: CE E8 28    LDU    #shared_memory_6000
 F54D: 10 8E C8 62 LDY    #sprite_ram_4040
 F551: 8E 82 B2    LDX    #$0030
@@ -668,11 +676,11 @@ F568: 5F          CLRB
 F569: A6 CB       LDA    $3,U
 F56B: 84 E8       ANDA   #$C0
 F56D: 97 9A       STA    $12
-F56F: 6C BD 60 93 INC    [$4211]
-F573: A6 BD 60 93 LDA    [$4211]
+F56F: 6C BD 60 93 INC    [pointer_4211]
+F573: A6 BD 60 93 LDA    [pointer_4211]
 F577: 9B 3A       ADDA   $12
 F579: 97 9A       STA    $12
-F57B: E7 B7 6A 99 STB    [$4211]
+F57B: E7 B7 6A 99 STB    [pointer_4211]
 F57F: 33 66       LEAU   $4,U
 F581: 5C          INCB
 F582: C1 86       CMPB   #$04
@@ -706,19 +714,19 @@ F5B7: A6 6B       LDA    $3,U
 F5B9: A7 CF       STA    $7,U
 F5BB: 84 E8       ANDA   #$C0
 F5BD: 97 9A       STA    $12
-F5BF: A6 BD 60 93 LDA    [$4211]
+F5BF: A6 BD 60 93 LDA    [pointer_4211]
 F5C3: 8B 20       ADDA   #$02
-F5C5: A7 1D C0 39 STA    [$4211]
+F5C5: A7 1D C0 39 STA    [pointer_4211]
 F5C9: 9B 9A       ADDA   $12
 F5CB: 97 3A       STA    $12
 F5CD: DF 85       STU    $0D
 F5CF: D6 2C       LDB    $0E
 F5D1: 54          LSRB
 F5D2: 54          LSRB
-F5D3: E7 BD 60 93 STB    [$4211]
+F5D3: E7 BD 60 93 STB    [pointer_4211]
 F5D7: 0A 3A       DEC    $12
 F5D9: 5C          INCB
-F5DA: E7 17 6A 39 STB    [$4211]
+F5DA: E7 17 6A 39 STB    [pointer_4211]
 F5DE: 33 C0       LEAU   $8,U
 F5E0: 0A 2E       DEC    $0C
 F5E2: 26 49       BNE    $F5AF
@@ -729,7 +737,7 @@ coordinate_transform_one_f5e7:
 F5E7: DE 27       LDU    $0F
 F5E9: 86 82       LDA    #$0A
 F5EB: 97 24       STA    $0C
-F5ED: BD 7A FB    JSR    $F273
+F5ED: BD 7A FB    JSR    compute_coords_f273
 F5F0: DF 2D       STU    $0F
 F5F2: 39          RTS
 
@@ -737,7 +745,7 @@ coordinate_transform_two_f5f3:
 F5F3: DE 2D       LDU    $0F
 F5F5: 86 8A       LDA    #$08
 F5F7: 97 24       STA    $0C
-F5F9: BD 7A FB    JSR    $F273
+F5F9: BD 7A FB    JSR    compute_coords_f273
 F5FC: DF 27       STU    $0F
 F5FE: 39          RTS
 
@@ -745,7 +753,7 @@ coordinate_transform_three_f5ff:
 F5FF: DE 2D       LDU    $0F
 F601: 86 88       LDA    #$0A
 F603: 97 2E       STA    $0C
-F605: BD 70 F1    JSR    $F273
+F605: BD 70 F1    JSR    compute_coords_f273
 F608: DF 27       STU    $0F
 F60A: 39          RTS
 
@@ -753,7 +761,7 @@ coordinate_transform_four_f60b:
 F60B: DE 27       LDU    $0F
 F60D: 86 80       LDA    #$08
 F60F: 97 2E       STA    $0C
-F611: BD 70 F1    JSR    $F273
+F611: BD 70 F1    JSR    compute_coords_f273
 F614: DF 2D       STU    $0F
 F616: 39          RTS
 
@@ -762,7 +770,7 @@ F617: DE 27       LDU    $0F
 F619: 33 40 98    LEAU   $10,U
 F61C: 86 2E       LDA    #$06
 F61E: 97 84       STA    $0C
-F620: BD D1 04    JSR    $F386
+F620: BD D1 04    JSR    compute_coords_f386
 F623: DF 2D       STU    $0F
 F625: 39          RTS
 
@@ -771,7 +779,7 @@ F626: DE 8D       LDU    $0F
 F628: 33 E1 89 80 LEAU   $0108,U
 F62C: 86 20       LDA    #$08
 F62E: 97 84       STA    $0C
-F630: BD D1 04    JSR    $F386
+F630: BD D1 04    JSR    compute_coords_f386
 F633: DF 2D       STU    $0F
 F635: 39          RTS
 
@@ -813,8 +821,8 @@ F66F: 39          RTS
 F670: A6 61       LDA    $3,U
 F672: 84 42       ANDA   #$C0
 F674: 97 30       STA    $12
-F676: 6C 1D 6A 39 INC    [$4211]
-F67A: A6 17 6A 39 LDA    [$4211]
+F676: 6C 1D 6A 39 INC    [pointer_4211]
+F67A: A6 17 6A 39 LDA    [pointer_4211]
 F67E: 9B 9A       ADDA   $12
 F680: 97 30       STA    $12
 F682: DF 8F       STU    $0D
@@ -822,7 +830,7 @@ F684: D6 2C       LDB    $0E
 F686: 54          LSRB
 F687: 54          LSRB
 F688: CB 68       ADDB   #$40
-F68A: E7 17 6A 39 STB    [$4211]
+F68A: E7 17 6A 39 STB    [pointer_4211]
 F68E: 33 CC       LEAU   $4,U
 F690: 0A 2E       DEC    $0C
 F692: 26 5E       BNE    $F670
@@ -846,7 +854,7 @@ F6B1: 39          RTS
 
 F6B2: 96 8B       LDA    $09
 F6B4: 27 3D       BEQ    $F6D5
-F6B6: E6 1D 6A 28 LDB    [$4200]
+F6B6: E6 1D 6A 28 LDB    [pointer_4200]
 F6BA: 4F          CLRA
 F6BB: 58          ASLB
 F6BC: 49          ROLA
@@ -868,7 +876,7 @@ F6D5: 96 83       LDA    $01
 F6D7: 84 E8       ANDA   #$C0
 F6D9: 80 C8       SUBA   #$40
 F6DB: 97 29       STA    $01
-F6DD: A6 17 CA 22 LDA    [$4200]
+F6DD: A6 17 CA 22 LDA    [pointer_4200]
 F6E1: 97 8B       STA    $09
 F6E3: 0C 23       INC    $01
 F6E5: 0C 89       INC    $0B
@@ -895,7 +903,7 @@ F70A: 39          RTS
 
 F70B: 96 21       LDA    $09
 F70D: 27 97       BEQ    $F72E
-F70F: E6 BD 60 82 LDB    [$4200]
+F70F: E6 BD 60 82 LDB    [pointer_4200]
 F713: 4F          CLRA
 F714: 58          ASLB
 F715: 49          ROLA
@@ -917,7 +925,7 @@ F72E: 96 89       LDA    $01
 F730: 84 E2       ANDA   #$C0
 F732: 80 C2       SUBA   #$40
 F734: 97 23       STA    $01
-F736: A6 1D 6A 28 LDA    [$4200]
+F736: A6 1D 6A 28 LDA    [pointer_4200]
 F73A: 97 81       STA    $09
 F73C: 0C 29       INC    $01
 F73E: 0C 83       INC    $0B

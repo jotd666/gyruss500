@@ -608,7 +608,7 @@ l_f32e:
 	GET_DP_ADDRESS	0x12                    	| [$f33e: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f340: lda    [$4211]]
-	                         	| [...]
+	move.b	(a0),d0                         	| [...]
 	add.b	#0x02,d0                         	| [$f344: adda   #$02]
 	move.b	d0,(a0)								| [$f346: sta    [$4211]]
 	GET_DP_ADDRESS	0x12                    	| [$f34a: adda   $12]
@@ -624,7 +624,7 @@ l_f32e:
 												| [$f353: lsrb]
 	* store 2 consecutive sprite indexes in area pointed by 4211 (decreasing)
 	* probably to handle "big" sprites like big approaching iceberg
-	move.b	#0,0x100
+
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f354: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x12                    	| [$f358: dec    $12]

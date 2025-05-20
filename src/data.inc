@@ -1,7 +1,7 @@
 * offsets are shifted by 0x8000 because Z80 converter
 * uses real offsets from RAM pointer
 level_playing_flag_9000 = 0x1000
-l_9001 = 0x1001
+player_ship_angle_9001 = 0x1001
 l_9002 = 0x1002
 l_9003 = 0x1003
 l_9006 = 0x1006

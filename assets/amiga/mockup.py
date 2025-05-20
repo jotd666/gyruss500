@@ -62,14 +62,9 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
 
     print("*"*50)
     nb_active = 0
-    fccs = dict()
+
     for offs in range(0xBC,-4,-4):
         raw_code_and_clut = (m_spriteram[offs+1]<<8)+m_spriteram[offs+2]
-        raw_fourcc, = struct.unpack_from(">I",m_spriteram,offs)
-        if raw_fourcc in fccs:
-            poffs = fccs[raw_fourcc]
-            print(f"Duplicate sprite XYCODE {raw_fourcc:08X} offset={offs:04x}, prev_offset={poffs:04x}")
-        fccs[raw_fourcc] = offs
         x = m_spriteram[offs]
         y = 241 - m_spriteram[offs + 3]
         y = 256 -y # adding this to MAME formula else pic is not correct
@@ -109,7 +104,8 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
 #process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
-process(r"ice",offset=0,base_address=0xA000,name_filter="iceberg")
+process(r"sprites_9800",offset=0,base_address=0x9800,name_filter="player")
+process(r"sprites_9800_amiga",offset=0,base_address=0x9800,name_filter="player")
 #process(r"iceberg_amiga_4040",offset=0,base_address=0x4040,name_filter="iceberg")
 #process(r"sattelites_A000",offset=0,base_address=0xA000)
 #process(r"bug_4040",offset=0,base_address=0x4040)

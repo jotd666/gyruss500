@@ -30,6 +30,10 @@ contents = bytes([a|b for a,b in zip(new_contents,old_contents)])
 if old_contents == contents:
     print("Nothing new")
 else:
+    for i,(a,b) in enumerate(zip(old_contents,contents)):
+        if a!=b:
+            code,clut = divmod(i,16)
+            print(f"New: code={code:02x}, clut={clut:02x}")
     with open(merged_path_file / used_name,"wb") as f:
         f.write(contents)
 

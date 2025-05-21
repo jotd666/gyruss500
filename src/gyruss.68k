@@ -1098,7 +1098,7 @@ l_05e0:
                        	| [$05e4: ld   (watchdog_C000),a]
 	jra	l_4a04                             	| [$05e7: jp   $4A04]
 
-l_05ea:
+write_2_digits_05ea:
 	move.b	d0,d1                           	| [$05ea: ld   b,a]
 	ror.b	#4,d0                            	| [$05eb: rrca] * 4
 	and.b	#0x0F,d0                         	| [$05ef: and  $0F]
@@ -1623,7 +1623,7 @@ l_09a6:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$09bf: ret  nz] [...]
 0:
-	move.b	l_92BE(a6),d0                   	| [$09c0: ld   a,($92BE)]
+	move.b	death_ray_sattelites_active_92BE(a6),d0                   	| [$09c0: ld   a,($92BE)]
 	                               	| [$09c3: and  a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$09c4: ret  nz] [...]
@@ -1998,24 +1998,23 @@ l_0c04:
 l_0c2a:
 	lea	distance_to_center_9465(a6),a0                      	| [$0c2a: ld   hl,$9465]
 	move.b	#0x64,(a0)                      	| [$0c2d: ld   (hl),$64]
-	CLEAR_XC_FLAGS                         	| [$0c2f: xor  a]
 	clr.b	d0                               	| [$0c2f: xor  a]
 	move.b	d0,l_91AE(a6)                   	| [$0c30: ld   ($91AE),a]
-	move.b	l_917E(a6),d0                   	| [$0c33: ld   a,($917E)]
+	move.b	bcd_nb_chance_ships_shot_917e(a6),d0                   	| [$0c33: ld   a,($917E)]
 	cmp.b	#0x40,d0                         	| [$0c36: cp   $40]
-	jcs	l_0c53                             	| [$0c38: jr   c,$0C53]
+	jcs	report_chance_stage_results_0c53                             	| [$0c38: jr   c,$0C53]
 	move.w	#0x0119,d3                          	| [$0c3a: ld   de,$0119] [uncovered]
 	jbsr	start_task_d3_0038                            	| [$0c3d: rst  $38] [uncovered]
 	move.b	#0x1E,d3                        	| [$0c3e: ld   e,$1E] [uncovered]
 	jbsr	start_task_d3_0038                            	| [$0c40: rst  $38] [uncovered]
 	READ_ROM_BYTE	0x1208,d0                       	| [$0c41: ld   a,($1208)] [uncovered]
-	move.b	d0,l_917E(a6)                   	| [$0c44: ld   ($917E),a] [uncovered]
+	move.b	d0,bcd_nb_chance_ships_shot_917e(a6)                   	| [$0c44: ld   ($917E),a] [uncovered]
 	READ_ROM_BYTE	0x24EA,d0                       	| [$0c47: ld   a,($24EA)] [uncovered]
 	move.b	d0,l_934E(a6)                   	| [$0c4a: ld   ($934E),a] [uncovered]
 	jbsr	l_5d92                            	| [$0c4d: call $5D92] [uncovered]
 	jra	l_0c7a                             	| [$0c50: jp   $0C7A] [uncovered]
 
-l_0c53:
+report_chance_stage_results_0c53:
 	move.w	#0x0118,d3                          	| [$0c53: ld   de,$0118]
 	jbsr	start_task_d3_0038                            	| [$0c56: rst  $38]
 	move.w	#0x011A,d3                          	| [$0c57: ld   de,$011A]
@@ -2023,12 +2022,12 @@ l_0c53:
 	addq.w	#1,d3                           	| [$0c5b: inc  e]
 	jbsr	start_task_d3_0038                            	| [$0c5c: rst  $38]
 	lea		0x8652,a1                          	| [$0c5d: ld   de,$8652]
-	move.b	l_917E(a6),d0                   	| [$0c60: ld   a,($917E)]
+	move.b	bcd_nb_chance_ships_shot_917e(a6),d0                   	| [$0c60: ld   a,($917E)]
 	move.b	#0x01,d2                        	| [$0c63: ld   c,$01]
-	jbsr	l_05ea                            	| [$0c65: call $05EA]
-	move.b	l_917E(a6),d0                   	| [$0c68: ld   a,($917E)]
+	jbsr	write_2_digits_05ea                            	| [$0c65: call $05EA]
+	move.b	bcd_nb_chance_ships_shot_917e(a6),d0                   	| [$0c68: ld   a,($917E)]
 	lea		0x85B2,a1                          	| [$0c6b: ld   de,$85B2]
-	jbsr	l_05ea                            	| [$0c6e: call $05EA]
+	jbsr	write_2_digits_05ea                            	| [$0c6e: call $05EA]
 	jbsr	l_5c88                            	| [$0c71: call $5C88]
 	jbsr	l_5dd4                            	| [$0c74: call $5DD4]
 	jra	next_game_state_080b                             	| [$0c77: jp   $080B]
@@ -2038,8 +2037,8 @@ l_0c7a:
 	READ_ROM_BYTE 0x0072,d0                       	| [$0c7a: ld   a,($0072)]
 	lea	0x85B2,a1                      	| [$0c7d: ld   de,$85B2]
 	move.b	#0x01,d2                        	| [$0c80: ld   c,$01]
-	jbsr	l_05ea                            	| [$0c82: call $05EA]
-	LEA_ROM	0x011B,a1                          	| [$0c85: ld   de,$011B]
+	jbsr	write_2_digits_05ea                            	| [$0c82: call $05EA]
+	move.w	#0x011B,d3                          	| [$0c85: ld   de,$011B]
 	jbsr	start_task_d3_0038                            	| [$0c88: rst  $38]
 	lea	0x85D2,a0                      	| [$0c89: ld   hl,$85D2]
 	WRITE_VIDEORAM	0x17                      	| [$0c8c: ld   (hl),$17]
@@ -2104,7 +2103,7 @@ l_0cf7:
 	move.b	(a0),d0                         	| [$0d0e: ld   a,(hl)]
 	                               	| [$0d0f: and  a]
 	jne	l_0d6e                             	| [$0d10: jr   nz,$0D6E]
-	move.b	l_917E(a6),d0                   	| [$0d12: ld   a,($917E)]
+	move.b	bcd_nb_chance_ships_shot_917e(a6),d0                   	| [$0d12: ld   a,($917E)]
 	                               	| [$0d15: and  a]
 	jeq	l_0d3d                             	| [$0d16: jr   z,$0D3D]
 	move.b	l_9400(a6),d0                   	| [$0d18: ld   a,($9400)]
@@ -2112,7 +2111,7 @@ l_0cf7:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$0d1d: ret  nz] [...]
 0:
-	lea	l_917E(a6),a0                      	| [$0d1e: ld   hl,$917E]
+	lea	bcd_nb_chance_ships_shot_917e(a6),a0                      	| [$0d1e: ld   hl,$917E]
 	move.w	#0x0402,d3                          	| [$0d21: ld   de,$0402]
 	move.b	(a0),d0                         	| [$0d24: ld   a,(hl)]
 	moveq	#1,d7
@@ -2313,7 +2312,7 @@ l_0e69:
 	move.b	d0,at_least_one_active_enemy_902E(a6)                   	| [$0e7e: ld   ($902E),a]
 	move.b	d0,l_913E(a6)                   	| [$0e81: ld   ($913E),a]
 	move.b	d0,l_9602(a6)                   	| [$0e84: ld   ($9602),a]
-	move.b	d0,l_917E(a6)                   	| [$0e87: ld   ($917E),a]
+	move.b	d0,bcd_nb_chance_ships_shot_917e(a6)                   	| [$0e87: ld   ($917E),a]
 	move.b	d0,iceberg_on_screen_915e(a6)                   	| [$0e8a: ld   ($915E),a]
 	move.b	#0x05,d3                        	| [$0e8d: ld   d,$05]
 	LOAD_D3_16_FROM_D3D4
@@ -3335,7 +3334,7 @@ l_16e8:
 	jeq	l_16f6                             	| [$16f3: jr   z,$16F6]
 	subq.b	#1,(a0)                         	| [$16f5: dec  (hl)] [uncovered]
 l_16f6:
-	lea	l_92CE(a6),a0                      	| [$16f6: ld   hl,$92CE]
+	lea	unknown_active_flag_92ce(a6),a0                      	| [$16f6: ld   hl,$92CE]
 	move.b	(a0),d0                         	| [$16f9: ld   a,(hl)]
 	                               	| [$16fa: and  a]
 	jeq	l_16fe                             	| [$16fb: jr   z,$16FE]
@@ -3352,7 +3351,7 @@ l_1708:
 	jbsr	l_1714                            	| [$1708: call $1714]
 	                              	| [$170b: ex   de,hl]
 	                       	| [$170c: ld   de,$FFE0]
-	sub.w	#0x20,a0                            	| [$170f: add  hl,de]
+	sub.w	#0x20,a1                            	| [$170f: add  hl,de]
 	                              	| [$1710: ex   de,hl]
 l_1711:
 	move.b	d1,d0                           	| [$1711: ld   a,b]
@@ -5700,7 +5699,7 @@ l_2b4a:
 	move.b	l_91AE(a6),d0                   	| [$2b59: ld   a,($91AE)]
 	                               	| [$2b5c: and  a]
 	jeq	l_2b69                             	| [$2b5d: jr   z,$2B69]
-	lea	l_917E(a6),a0                      	| [$2b5f: ld   hl,$917E]
+	lea	bcd_nb_chance_ships_shot_917e(a6),a0                      	| [$2b5f: ld   hl,$917E]
 	READ_ROM_BYTE	0x0996,d0                       	| [$2b62: ld   a,($0996)]
 	move.b	(a0),d7                          	| [$2b65: add  a,(hl)]
 	abcd	d7,d0								| daa
@@ -6132,7 +6131,7 @@ l_2e10:
 	clr.b	d0                               	| [$2e3b: xor  a]
 	move.b	d0,l_93AD(a6)                   	| [$2e3c: ld   ($93AD),a]
 	move.b	d0,l_924E(a6)                   	| [$2e3f: ld   ($924E),a]
-	move.b	d0,l_92BE(a6)                   	| [$2e42: ld   ($92BE),a]
+	move.b	d0,death_ray_sattelites_active_92BE(a6)                   	| [$2e42: ld   ($92BE),a]
 	move.b	d0,l_931E(a6)                   	| [$2e45: ld   ($931E),a]
 	move.b	d0,seconds_since_last_respawn_935e(a6)                   	| [$2e48: ld   ($935E),a]
 	move.b	d0,enemy_flees_flag_91ee(a6)                   	| [$2e4b: ld   ($91EE),a]
@@ -7648,7 +7647,7 @@ l_4191:
 	move.b	d0,l_920E(a6)                   	| [$41d1: ld   ($920E),a]
 	                           	| [$41d4: inc  de]
 	move.b	(a1)+,d0                         	| [$41d5: ld   a,(de)]
-	move.b	d0,l_92DE(a6)                   	| [$41d6: ld   ($92DE),a]
+	move.b	d0,unknown_active_flag_92de(a6)                   	| [$41d6: ld   ($92DE),a]
 	                           	| [$41d9: inc  de]
 	move.b	(a1),d0                         	| [$41da: ld   a,(de)]
 	move.b	d0,l_92EE(a6)                   	| [$41db: ld   ($92EE),a]
@@ -8163,20 +8162,20 @@ l_47e3:
 	jra	l_47c6                             	| [$47eb: jr   $47C6]
 
 l_4816:
-	move.b	l_92BE(a6),d0                   	| [$4816: ld   a,($92BE)]
+	move.b	death_ray_sattelites_active_92BE(a6),d0                   	| [$4816: ld   a,($92BE)]
 	                               	| [$4819: and  a]
-	jne	l_48ba                             	| [$481a: jp   nz,$48BA]
+	jne	update_death_ray_sattelites_48ba                             	| [$481a: jp   nz,$48BA]
 	move.b	l_9605(a6),d0                   	| [$481d: ld   a,($9605)]
 	                               	| [$4820: and  a]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$4821: ret  z] [...]
 0:
-	move.b	l_92DE(a6),d0                   	| [$4822: ld   a,($92DE)]
+	move.b	unknown_active_flag_92de(a6),d0                   	| [$4822: ld   a,($92DE)]
 	                               	| [$4825: and  a]
-	bne.b	0f                               	| [...]
-	rts                                    	| [$4826: ret  z] [...]
+	bne.b	0f                      | [...]
+	rts                             | [$4826: ret  z] [...]
 0:
-	move.b	l_92CE(a6),d0                   	| [$4827: ld   a,($92CE)]
+	move.b	unknown_active_flag_92ce(a6),d0          | [$4827: ld   a,($92CE)]
 	                               	| [$482a: and  a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$482b: ret  nz] [...]
@@ -8224,20 +8223,20 @@ l_4816:
 	st.b	(0x01,a2)                 	| [$48a3: ld   (ix+$01),$FF]
 	move.b	#0x02,(0x04,a2)                 	| [$48a7: ld   (ix+$04),$02]
 	st.b	d0                                	| [$48ab: ld   a,$FF]
-	move.b	d0,l_92BE(a6)                   	| [$48ad: ld   ($92BE),a]
+	move.b	d0,death_ray_sattelites_active_92BE(a6)                   	| [$48ad: ld   ($92BE),a]
 	READ_ROM_BYTE	0x3050,d0                       	| [$48b0: ld   a,($3050)]
 	move.b	d0,l_92FE(a6)                   	| [$48b3: ld   ($92FE),a]
 	jra	l_5d1c                             	| [$48b6: jp   $5D1C]
 
-l_48ba:
+update_death_ray_sattelites_48ba:
 	LOAD_RAM_POINTER	ram_pointer_9611(a6),a2         	| [$48ba: ld   ix,($9611)]
 	LOAD_RAM_POINTER	ram_pointer_9613(a6),a3         	| [$48be: ld   iy,($9613)]
-	jbsr	l_4954                            	| [$48c2: call $4954]
+	jbsr	ray_generator_ship_collision_4954                            	| [$48c2: call $4954]
 	move.b	(0x00,a3),d0                    	| [$48c5: ld   a,(iy+$00)]
 	move.b	d0,l_933E(a6)                   	| [$48c8: ld   ($933E),a]
 	LOAD_RAM_POINTER	ram_pointer_9615(a6),a2         	| [$48cb: ld   ix,($9615)]
 	LOAD_RAM_POINTER	ram_pointer_9617(a6),a3         	| [$48cf: ld   iy,($9617)]
-	jbsr	l_4954                            	| [$48d3: call $4954]
+	jbsr	ray_generator_ship_collision_4954                            	| [$48d3: call $4954]
 	LOAD_RAM_POINTER	ram_pointer_9619(a6),a2         	| [$48d6: ld   ix,($9619)]
 	LOAD_RAM_POINTER	ram_pointer_961B(a6),a3         	| [$48da: ld   iy,($961B)]
 	move.b	l_92FE(a6),d0                   	| [$48de: ld   a,($92FE)]
@@ -8259,6 +8258,7 @@ l_48fa:
 	bne.b	0f                               	| [...]
 	jbsr	l_5d04                            	| [$48fd: call z,$5D04]
 0:
+* tests collision between the death ray itself (not the ray generators)
 l_4900:
 	move.b	l_9400(a6),d0                   	| [$4900: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$4903: and  $07]
@@ -8291,8 +8291,11 @@ l_4900:
 	bcs.b	0f                               	| [...]
 	rts                                    	| [$492c: ret  nc] [...]
 0:
+	tst.b	invincible_flag
+	jne		0f
 	move.b	#0xF0,d0                        	| [$492d: ld   a,$F0] [uncovered]
 	move.b	d0,level_playing_flag_9000(a6)                   	| [$492f: ld   ($9000),a] [uncovered]
+0:
 	rts                                    	| [$4932: ret] [uncovered]
 
 l_4933:
@@ -8300,7 +8303,7 @@ l_4933:
 	clr.b	(0x00,a3)                        	| [$4937: ld   (iy+$00),$00]
 	rts                                    	| [$493b: ret]
 
-l_4954:
+ray_generator_ship_collision_4954:
 	move.b	(0x01,a2),d0                    	| [$4954: ld   a,(ix+$01)]
 	                               	| [$4957: and  a]
 	bne.b	0f                               	| [...]
@@ -8337,12 +8340,16 @@ l_498a:
 	rts                                    	| [$4993: ret  c] [...]
 0:
 	move.b	player_ship_angle_9001(a6),d0                   	| [$4994: ld   a,($9001)]
-	sub.b	(0x03,a3),d0                     	| [$4997: sub  (iy+$03)]
+	sub.b	(displayed_x_03,a3),d0                     	| [$4997: sub  (iy+$03)]
 	addq.b	#0x06,d0                        	| [$499a: add  a,$06]
 	cmp.b	#0x0D,d0                         	| [$499c: cp   $0D]
 	bcs.b	0f                               	| [...]
+1:
 	rts                                    	| [$499e: ret  nc] [...]
 0:
+	tst.b	invincible_flag
+	jne		1b
+	* death ray / sattelites collision with player
 	move.b	#0xF0,d0                        	| [$499f: ld   a,$F0] [uncovered]
 	move.b	d0,level_playing_flag_9000(a6)                   	| [$49a1: ld   ($9000),a] [uncovered]
 l_49a4:
@@ -8504,9 +8511,9 @@ l_4a86:
 	rts                                    	| [$4a9d: ret  nz] [...]
 0:
 	move.b	l_92EE(a6),d0                   	| [$4a9e: ld   a,($92EE)]
-	move.b	d0,l_92CE(a6)                   	| [$4aa1: ld   ($92CE),a]
+	move.b	d0,unknown_active_flag_92ce(a6)                   	| [$4aa1: ld   ($92CE),a]
 	clr.b	d0                               	| [$4aa4: xor  a]
-	move.b	d0,l_92BE(a6)                   	| [$4aa5: ld   ($92BE),a]
+	move.b	d0,death_ray_sattelites_active_92BE(a6)                   	| [$4aa5: ld   ($92BE),a]
 	LOAD_RAM_POINTER	ram_pointer_9617(a6),a0         	| [$4aa8: ld   hl,($9617)]
 	clr.b	(a0)                             	| [$4aab: ld   (hl),$00]
 	LOAD_RAM_POINTER	ram_pointer_9613(a6),a0         	| [$4aad: ld   hl,($9613)]
@@ -8837,10 +8844,11 @@ write_stage_number_4e27:
 	moveq	#0,d1
 	move.b	d0,d1                           	| [$4e30: ld   b,a]
 	*addq.b	#1,d1    | don't add: dbf                       	| [$4e31: inc  b]
-	READ_ROM_BYTE	0x1295,d0                       	| [$4e32: ld   a,($1295)]
+	moveq	#0,d0                       	| [$4e32: ld   a,($1295)] cryptic load 0...
 	* convert stage number to BCD
-l_4e35:
+	CLEAR_XC_FLAGS
 	moveq	#1,d7
+l_4e35:
 	abcd	d7,d0                        	| [$4e35: add  a,$01] + daa
 	dbf	d1,l_4e35                             	| [$4e38: djnz $4E35]
 	move.w	#0x0040,d5                      	| [$4e3a: ld   hl,$0040]

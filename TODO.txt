@@ -3,20 +3,21 @@
 - use hardware sprites for player ship maybe uses less colors
   (specially when exploding, could be done by a palette change if we just
   use the sprite allocation routine)
-- chance stage bonus text digits are off ?? or missing 0
 - highscore: letters are flipped when entered
 - add 10000 points cheat
+- chance stage perfect = D0000 points!!!
 - sometimes enemy sprites flashing/shifting: understand better the sprite "double
   buffering" that the game does
 - death ray satellites position seem not aligned (maybe that is easier to debug)
   OK at some angles, but clearly not good on some others: locate the death ray
-  update
-- invincivility: ok except for death ray sattelites
+  update: now only one of the sattelites is showing...
+- invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
+- add infinite lives cheat too
 
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
 
-- implement difficulty
+- implement difficulty & level select
 
 - log sprites/flash when missing
 

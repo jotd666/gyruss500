@@ -512,7 +512,10 @@ enemy_appear_timer_08 = 0x08
 enemy_attack_phase_09 = 0x09
 enemy_state_0a = 0x0a
 
+* for sprite structures (0x9800, 0xA000, 0x4040)
 displayed_y_00 = 0x00
+sprite_code_01 = 0x01
+sprite_code_02 = 0x02
 displayed_x_03 = 0x03
 
 cpu_init:
@@ -3610,7 +3613,7 @@ l_18de:
 
 l_1901:
 	clr.b	d0                               	| [$1901: ld   a,$00]
-	*move.b	d0,l_C185                       	| [$1903: ld   ($C185),a]
+	*move.b	d0,l_C185                       	| [$1903: ld   ($C185),a] no flip screen cocktail mode
 	jra	l_4faf                             	| [$1906: jp   $4FAF]
 
 l_1909:
@@ -3996,15 +3999,15 @@ l_1c32:
 	lea	enemy_objects_9010(a6),a2                      	| [$1c35: ld   ix,$9010]
 	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$1c39: ld   iy,$9810]
 	move.b	player_ship_angle_9001(a6),d0                   	| [$1c3d: ld   a,($9001)]
-	move.b	d0,(0x03,a3)                    	| [$1c40: ld   (iy+$03),a]
-	move.b	#0x36,(0x00,a3)                 	| [$1c43: ld   (iy+$00),$36]
+	move.b	d0,(displayed_x_03,a3)                    	| [$1c40: ld   (iy+$03),a]
+	move.b	#0x36,(displayed_y_00,a3)                 	| [$1c43: ld   (iy+$00),$36]
 	move.b	#0x40,(0x01,a2)                 	| [$1c47: ld   (ix+$01),$40]
 	clr.b	d0                               	| [$1c4b: xor  a]
 	move.b	d0,l_9803(a6)                   	| [$1c4c: ld   ($9803),a]
 	move.b	d0,l_9807(a6)                   	| [$1c4f: ld   ($9807),a]
 	move.b	d0,l_980B(a6)                   	| [$1c52: ld   ($980B),a]
 	move.b	d0,l_980F(a6)                   	| [$1c55: ld   ($980F),a]
-	jbsr	l_2f94                            	| [$1c58: call $2F94]
+	jbsr	update_player_ship_fading_away_2f94                            	| [$1c58: call $2F94]
 	jbsr	l_4ebf                            	| [$1c5b: call $4EBF]
 	jra	l_1c2e                             	| [$1c5e: jp   $1C2E]
 
@@ -4100,7 +4103,7 @@ l_1cff:
 l_1d11:
 	move.b	d1,(displayed_x_03,a3)                    	| [$1d11: ld   (iy+$03),b]
 l_1d14:
-	jbsr	l_2f94                            	| [$1d14: call $2F94]
+	jbsr	update_player_ship_fading_away_2f94                            	| [$1d14: call $2F94]
 	jra	l_1c2e                             	| [$1d17: jp   $1C2E]
 
 l_1d1a:
@@ -6245,54 +6248,52 @@ l_2f06:
 	jbsr	fetch_a0_plus_d0_0008                            	| [$2f24: rst  $08]
 
 
-l_2f25:
+update_player_ship_fading_away_2f25:
 	btst.b	#7,d2                           	| [$2f25: bit  7,c]
 	jne	l_2f39                             	| [$2f27: jr   nz,$2F39]
-	move.b	d0,(0x01,a3)                    	| [$2f29: ld   (iy+$01),a]
+	move.b	d0,(sprite_code_01,a3)                    	| [$2f29: ld   (iy+$01),a]
 	addq.b	#1,d0                           	| [$2f2c: inc  a]
-	move.b	d0,(0x05,a3)                    	| [$2f2d: ld   (iy+$05),a]
+	move.b	d0,(sprite_code_01+4,a3)                    	| [$2f2d: ld   (iy+$05),a]
 	addq.w	#1,a0                           	| [$2f30: inc  hl]
 	move.b	(a0),d0                         	| [$2f31: ld   a,(hl)]
-	move.b	d0,(0x02,a3)                    	| [$2f32: ld   (iy+$02),a]
-	move.b	d0,(0x06,a3)                    	| [$2f35: ld   (iy+$06),a]
+	move.b	d0,(sprite_code_02,a3)                    	| [$2f32: ld   (iy+$02),a]
+	move.b	d0,(sprite_code_02+4,a3)                    	| [$2f35: ld   (iy+$06),a]
 	rts                                    	| [$2f38: ret]
 
 l_2f39:
-	move.b	d0,(0x05,a3)                    	| [$2f39: ld   (iy+$05),a]
+	move.b	d0,(sprite_code_01+4,a3)                    	| [$2f39: ld   (iy+$05),a]
 	addq.b	#1,d0                           	| [$2f3c: inc  a]
-	move.b	d0,(0x01,a3)                    	| [$2f3d: ld   (iy+$01),a]
+	move.b	d0,(sprite_code_01,a3)                    	| [$2f3d: ld   (iy+$01),a]
 	addq.w	#1,a0                           	| [$2f40: inc  hl]
 	move.b	(a0),d0                         	| [$2f41: ld   a,(hl)]
 	eor.b	#0xC0,d0                         	| [$2f42: xor  $C0]
-	move.b	d0,(0x02,a3)                    	| [$2f44: ld   (iy+$02),a]
-	move.b	d0,(0x06,a3)                    	| [$2f47: ld   (iy+$06),a]
+	move.b	d0,(sprite_code_02,a3)                    	| [$2f44: ld   (iy+$02),a]
+	move.b	d0,(sprite_code_02+4,a3)                    	| [$2f47: ld   (iy+$06),a]
 	btst.b	#4,d0                           	| [$2f4a: bit  4,a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$2f4c: ret  nz] [...]
 0:
-	move.b	(0x05,a3),d0                    	| [$2f4d: ld   a,(iy+$05)] [uncovered]
-	move.b	d0,(0x01,a3)                    	| [$2f50: ld   (iy+$01),a] [uncovered]
+	move.b	(sprite_code_01+4,a3),d0                    	| [$2f4d: ld   a,(iy+$05)] [uncovered]
+	move.b	d0,(sprite_code_01,a3)                    	| [$2f50: ld   (iy+$01),a] [uncovered]
 	rts                                    	| [$2f53: ret] [uncovered]
 
-l_2f94:
+update_player_ship_fading_away_2f94:
 	move.b	(displayed_y_00,a3),d0                    	| [$2f94: ld   a,(iy+$00)]
-	move.b	(a0),d0                         	| [$2f95: ld   a,(hl)] [uncovered]
-	                                    	| [$2f96: nop] [uncovered]
 	rol.b	#3,d0                            	| [$2f97: rlca] * 3
 	and.b	#0x07,d0                         	| [$2f9a: and  $07]
 	LEA_ROM	0x2FB0,a0                          	| [$2f9c: ld   hl,$2FB0]
-	jbsr	load_rom_pointer_in_a1_d3_0010                            	| [$2f9f: rst  $10]
-	move.b	(0x03,a3),d0                    	| [$2fa0: ld   a,(iy+$03)]
+	jbsr	load_rom_pointer_in_a1_d3_0010      | [$2f9f: rst  $10]
+	move.b	(displayed_x_03,a3),d0             	| [$2fa0: ld   a,(iy+$03)]
 	add.b	#0x08,d0                         	| [$2fa3: add  a,$08]
 	move.b	d0,d2                           	| [$2fa5: ld   c,a]
 	ror.b	#3,d0                            	| [$2fa6: rrca] * 3
 	and.b	#0x0E,d0                         	| [$2fa9: and  $0E]
 	exg	a1,a0                              	| [$2fab: ex   de,hl]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$2fac: rst  $08]
-	jra	l_2f25                             	| [$2fad: jp   $2F25]
+	jra	update_player_ship_fading_away_2f25                             	| [$2fad: jp   $2F25]
 
 l_2fd9:
-	move.b	(0x00,a3),d0                    	| [$2fd9: ld   a,(iy+$00)]
+	move.b	(displayed_y_00,a3),d0                    	| [$2fd9: ld   a,(iy+$00)]
 	addq.b	#0x04,d0                        	| [$2fdc: add  a,$04]
 	cmp.b	#0x09,d0                         	| [$2fde: cp   $09]
 	jcs	l_2fff                             	| [$2fe0: jp   c,$2FFF]
@@ -6302,19 +6303,19 @@ l_2fd9:
 	jeq	l_2ff0                             	| [$2feb: jr   z,$2FF0]
 	LEA_ROM	0x1126,a0                          	| [$2fed: ld   hl,$1126]
 l_2ff0:
-	move.b	(0x03,a3),d0                    	| [$2ff0: ld   a,(iy+$03)]
+	move.b	(displayed_x_03,a3),d0                    	| [$2ff0: ld   a,(iy+$03)]
 	add.b	#0x08,d0                         	| [$2ff3: add  a,$08]
 	move.b	d0,d2                           	| [$2ff5: ld   c,a]
 	ror.b	#3,d0                            	| [$2ff6: rrca] * 3
 	and.b	#0x0E,d0                         	| [$2ff9: and  $0E]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$2ffb: rst  $08]
-	jra	l_2f25                             	| [$2ffc: jp   $2F25]
+	jra	update_player_ship_fading_away_2f25                             	| [$2ffc: jp   $2F25]
 
 l_2fff:
-	clr.b	(0x01,a3)                        	| [$2fff: ld   (iy+$01),$00]
-	clr.b	(0x05,a3)                        	| [$3003: ld   (iy+$05),$00]
-	clr.b	(0x02,a3)                        	| [$3007: ld   (iy+$02),$00]
-	clr.b	(0x06,a3)                        	| [$300b: ld   (iy+$06),$00]
+	clr.b	(sprite_code_01,a3)                        	| [$2fff: ld   (iy+$01),$00]
+	clr.b	(sprite_code_01+4,a3)                        	| [$3003: ld   (iy+$05),$00]
+	clr.b	(sprite_code_02,a3)                        	| [$3007: ld   (iy+$02),$00]
+	clr.b	(sprite_code_02+4,a3)                        	| [$300b: ld   (iy+$06),$00]
 	rts                                    	| [$300f: ret]
 
 clear_sprite_mem_blocks_3010:
@@ -6328,8 +6329,8 @@ clear_sprite_mem_blocks_3010:
 
 l_304b:
 	jbsr	l_3055                            	| [$304b: call $3055]
-	addq.b	#1,(0x02,a3)                    	| [$304e: inc  (iy+$02)]
-	addq.b	#1,(0x06,a3)                    	| [$3051: inc  (iy+$06)]
+	addq.b	#1,(sprite_code_02,a3)                    	| [$304e: inc  (iy+$02)]
+	addq.b	#1,(sprite_code_02+4,a3)                    	| [$3051: inc  (iy+$06)]
 	rts                                    	| [$3054: ret]
 
 l_3055:
@@ -6891,11 +6892,11 @@ l_3645:
 	                           	| [$3646: inc  hl]
 	move.b	(a0)+,d3                         	| [$3647: ld   d,(hl)]
 	                           	| [$3648: inc  hl]
-	LOAD_D3_16_FROM_D3D4
+	* this is a ROM address
+	LOAD_A1_FROM_D3D4_ROM
 	move.b	(a0),d0                         	| [$3649: ld   a,(hl)]
 	move.b	d0,l_9477(a6)                   	| [$364a: ld   ($9477),a]
 	move.b	d0,l_9478(a6)                   	| [$364d: ld   ($9478),a]
-	BREAKPOINT	"a1/d3 6505"
 	exg	a1,a0                              	| [$3650: ex   de,hl]
 	move.b	d1,d0                           	| [$3651: ld   a,b]
 	ror.b	#2,d0                            	| [$3652: rrca] * 2
@@ -6904,14 +6905,14 @@ l_3645:
 	exg	a1,a0                              	| [$3657: ex   de,hl]
 	lea	enemy_objects_9010(a6),a2                      	| [$3658: ld   ix,$9010]
 	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$365c: ld   iy,$9810]
-	move.b	(a0),d1                         	| [$3660: ld   b,(hl)]
+	move.b	(a0)+,d1                         	| [$3660: ld   b,(hl)]
 	move.b	d1,d0                           	| [$3661: ld   a,b]
 	move.b	d0,l_91FE(a6)                   	| [$3662: ld   ($91FE),a]
 	move.b	d0,l_903E(a6)                   	| [$3665: ld   ($903E),a]
 	move.b	l_9605(a6),d0                   	| [$3668: ld   a,($9605)]
 	add.b	d1,d0                            	| [$366b: add  a,b]
 	move.b	d0,l_9605(a6)                   	| [$366c: ld   ($9605),a]
-	addq.w	#1,a0                           	| [$366f: inc  hl]
+												| [$366f: inc  hl]
 	move.w	#0x0008,d3                      	| [$3670: ld   de,$0008]
 l_3673:
 	movem.w	d1/d2,-(sp)                    	| [$3673: push bc]
@@ -6931,7 +6932,6 @@ l_3689:
 	move.b	l_947B(a6),d0                   	| [$368a: ld   a,($947B)]
 	move.b	d0,d1                           	| [$368d: ld   b,a]
 	LOAD_RAM_POINTER	l_9479(a6),a0         	| [$368e: ld   hl,($9479)]
-	BREAKPOINT	"6541 review check if pointed value is in RAM"
 	move.w	#0x0010,d3                      	| [$3691: ld   de,$0010]
 l_3694:
 	move.b	(a0),d0                         	| [$3694: ld   a,(hl)]
@@ -6942,7 +6942,7 @@ l_3698:
 	add.w	d3,a0                            	| [$3699: add  hl,de]
 	jra	l_3694                             	| [$369a: jr   $3694]
 l_369c:
-	BREAKPOINT	"a0/d6 mixup 6552"
+	LOAD_D5D6_FROM_A0_RAM
 	move.b	ram_pointer_9611(a6),d0                   	| [$369c: ld   a,($9611)]
 	sub.b	d6,d0                            	| [$369f: sub  l]
 	jeq	l_3698                             	| [$36a0: jr   z,$3698]
@@ -6954,7 +6954,6 @@ l_369c:
 	jeq	l_3698                             	| [$36ac: jr   z,$3698]
 	add.w	d3,a0                            	| [$36ae: add  hl,de]
 	STORE_RAM_POINTER	a0,l_9479(a6)        	| [$36af: ld   ($9479),hl]
-	BREAKPOINT	"review check l_9479 if source is in RAM"
 	addq.b	#1,d1                           	| [$36b2: inc  b]
 	move.b	d1,d0                           	| [$36b3: ld   a,b]
 	move.b	d0,l_947B(a6)                   	| [$36b4: ld   ($947B),a]
@@ -7904,6 +7903,11 @@ l_45a3:
 	bcs.b	0f                               	| [...]
 	rts                                    	| [$45d9: ret  nc] [...]
 0:
+	tst.b	invincible_flag
+	jeq		0f
+	rts
+0:
+	* kill the player
 	move.b	#0xF0,d0                        	| [$45da: ld   a,$F0]
 	move.b	d0,level_playing_flag_9000(a6)                   	| [$45dc: ld   ($9000),a]
 	rts                                    	| [$45df: ret]
@@ -9146,7 +9150,7 @@ l_5921:
 	move.b	#0x08,d1                        	| [$5932: ld   b,$08]
 	lea	l_9330(a6),a0                      	| [$5934: ld   hl,$9330]
 	lea	l_9918(a6),a3                      	| [$5937: ld   iy,$9918]
-	jbsr	enemy_vs_ship_collision_5b79                            	| [$593b: call $5B79]
+	jbsr	bullet_vs_ship_collision_5b79                            	| [$593b: call $5B79]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$593e: ret  z] [...]
 0:
@@ -9194,6 +9198,9 @@ l_596c:
 	cmp.b	d6,d0                            	| [$5983: cp   l]
 	jcc	l_5994                             	| [$5984: jr   nc,$5994] branch: no collision
 
+	tst.b	invincible_flag
+	jne		l_5994
+	
 	* player ship / enemy ship collision
 	move.b	#0xF0,d0                        	| [$5986: ld   a,$F0]
 	move.b	d0,(0x00,a2)                    	| [$5988: ld   (ix+$00),a]
@@ -9284,7 +9291,7 @@ l_5a04:
 	jne	l_5a22                             	| [$5a12: jr   nz,$5A22]
 	move.b	#0x05,d3                        	| [$5a14: ld   d,$05]
 	move.b	#0x0B,d4                        	| [$5a16: ld   e,$0B]
-	jbsr	enemy_vs_ships_collisions_5b53                            	| [$5a18: call $5B53]
+	jbsr	enemy_vs_player_shot_collisions_5b53                            	| [$5a18: call $5B53]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$5a1b: ret  z] [...]
 0:
@@ -9308,7 +9315,7 @@ l_5a2a:
 	jne	l_5a48                             	| [$5a38: jr   nz,$5A48]
 	move.b	#0x05,d3                        	| [$5a3a: ld   d,$05]
 	move.b	#0x0B,d4                        	| [$5a3c: ld   e,$0B]
-	jbsr	enemy_vs_ships_collisions_5b53                            	| [$5a3e: call $5B53]
+	jbsr	enemy_vs_player_shot_collisions_5b53                            	| [$5a3e: call $5B53]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$5a41: ret  z] [...]
 0:
@@ -9332,7 +9339,7 @@ l_5a50:
 	jne	l_5a6f                             	| [$5a5e: jp   nz,$5A6F]
 	move.b	#0x05,d3                        	| [$5a61: ld   d,$05]
 	move.b	#0x0B,d4                        	| [$5a63: ld   e,$0B]
-	jbsr	enemy_vs_ships_collisions_5b53                            	| [$5a65: call $5B53]
+	jbsr	enemy_vs_player_shot_collisions_5b53                            	| [$5a65: call $5B53]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$5a68: ret  z] [...]
 0:
@@ -9477,14 +9484,14 @@ l_5b40:
 	lea	l_98C0(a6),a3                      	| [$5b4c: ld   iy,$98C0]
 	jra	l_5b9e                             	| [$5b50: jp   $5B9E]
 
-enemy_vs_ships_collisions_5b53:
+enemy_vs_player_shot_collisions_5b53:
 	move.w	#0x0008,d1                      	| [$5b53: ld   bc,$0008]
 	jbsr	exx                               	| [$5b56: exx]
 	move.w	#0x0010,d3                      	| [$5b57: ld   de,$0010]
 	move.b	#0x0A,d1                        	| [$5b5a: ld   b,$0A]
 	lea	enemy_objects_9010(a6),a0                      	| [$5b5c: ld   hl,$9010]
 	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$5b5f: ld   iy,$9810]
-	jra	enemy_vs_ship_collision_5b79                             	| [$5b63: jp   $5B79]
+	jra	bullet_vs_ship_collision_5b79                             	| [$5b63: jp   $5B79]
 
 l_5b66:
 	move.w	#0x0008,d1                      	| [$5b66: ld   bc,$0008]
@@ -9495,7 +9502,12 @@ l_5b66:
 	lea	sprite_shadow_ram_9800+0x10(a6),a3                      	| [$5b72: ld   iy,$9810]
 	jra	l_5bc3                             	| [$5b76: jp   $5BC3]
 
-enemy_vs_ship_collision_5b79:
+* tests collisions for enemy ships attacking vs bullets
+* and also player ship collision vs enemy bullets
+*
+* enemies in distant swarm are not handled here
+*
+bullet_vs_ship_collision_5b79:
 	move.b	(a0),d0                         	| [$5b79: ld   a,(hl)]
 	addq.b	#1,d0                           	| [$5b7a: inc  a]
 	jne	l_5b95                             	| [$5b7b: jp   nz,$5B95]
@@ -9510,9 +9522,30 @@ enemy_vs_ship_collision_5b79:
 	add.b	d3,d0                            	| [$5b8b: add  a,d]
 	cmp.b	d4,d0                            	| [$5b8c: cp   e]
 	jcc	l_5b96                             		| [$5b8d: jr   nc,$5B96] jumps: no collision
+	tst.b	invincible_flag
+	jeq		0f
+
 	jbsr	exx                               	| [$5b8f: exx]
 	* ship shot
 
+	* check if this is the player ship or another one
+	* 9330 or 9340, making this cheat better than MAME cheat
+	* which prevents ships not in swarm to be shot
+	lea	l_9330(a6),a4
+	cmp.l	a0,a4
+	jne		0f
+	rts
+0:
+	lea	(0x10,a4),a4   | 9340
+	cmp.l	a0,a4
+	jne		0f
+	rts
+0:
+	lea	(0x10,a4),a4   | 9350
+	cmp.l	a0,a4
+	jne		0f
+	rts
+0:
 	move.b	#0xF0,d0                        	| [$5b90: ld   a,$F0]
 	move.b	d0,(a0)                         	| [$5b92: ld   (hl),a]
 	tst.b	d0                               	| [$5b93: and  a]
@@ -9525,7 +9558,7 @@ l_5b96:
 	jbsr	exx                               	| [$5b98: exx]
 	add.w	d3,a0                            	| [$5b99: add  hl,de]
 	subq.b	#1,d1                           	| [...]
-	jne	enemy_vs_ship_collision_5b79                             	| [$5b9a: djnz $5B79]
+	jne	bullet_vs_ship_collision_5b79                             	| [$5b9a: djnz $5B79]
 	clr.b	d0                               	| [$5b9c: xor  a]
 	rts                                    	| [$5b9d: ret]
 
@@ -9560,7 +9593,6 @@ l_5bba:
 	subq.b	#1,d1                           	| [...]
 	jne	l_5b9e                             	| [$5bbe: djnz $5B9E]
 	jbsr	exx                               	| [$5bc0: exx]
-	CLEAR_XC_FLAGS                         	| [$5bc1: xor  a]
 	clr.b	d0                               	| [$5bc1: xor  a]
 	rts                                    	| [$5bc2: ret]
 

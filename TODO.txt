@@ -1,22 +1,27 @@
+- stage numbers completely off after a while (9 => 0 after uranus, no more "X WARPS TO ...")
 - 32 colors => 16 + attached sprites? count colors of tiles & sprites independently
-- when ship is fading out it appears too big when rotating anti-clockwise!)
-- chance stage bonus text digits are off ??
+- use hardware sprites for player ship maybe uses less colors
+  (specially when exploding, could be done by a palette change if we just
+  use the sprite allocation routine)
+- chance stage bonus text digits are off ?? or missing 0
 - highscore: letters are flipped when entered
 - add 10000 points cheat
-- sometimes enemy sprites flashing/shifting
+- sometimes enemy sprites flashing/shifting: understand better the sprite "double
+  buffering" that the game does
 - death ray satellites position seem not aligned (maybe that is easier to debug)
+  OK at some angles, but clearly not good on some others: locate the death ray
+  update
+- invincivility: ok except for death ray sattelites
 
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
 
 - implement difficulty
-- stage numbers completely off after a while (9 => 0) ?? recheck
 
 - log sprites/flash when missing
 
 - reduce memory (log tiles instead of including them all?)
 
-- game state reverse: 082f jump table & other jump tables
 - star effect: hack with pixel placement when detected in the sprite update
   (takes too much blitter time!)
 - restore buffer: do it only in title screen and for some Y (score/credit+lives)
@@ -31,9 +36,16 @@ bpset 3804,,{PC=$3803;g}
 bpset 3831,,{PC=$3803;g}
 and reset
 
-turn off sprite semaphore/sync
+turn off sprite semaphore/sync:
 
 bpset f0cd:sub,,{PC=$F0CF;g}
+
+turn off music 25/27 and background humming:
+
+bpset 5c38,a==$25 || a==$27 || a == $2,{PC=$3803;g}
+
+a=1: credit
+a=6: attack wave sound
 
 6809 converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
 remove the second one

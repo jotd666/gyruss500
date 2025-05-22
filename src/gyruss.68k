@@ -505,8 +505,10 @@ load_video_ram_d5_to_a0:
 	
 enemy_active_00 = 0x00
 ship_angle_01 = 0x01	| 0: right, 40: down, 80: left, C0: up
+active_01 = 0x01     | for death ray emitter
 fine_x_02 = 0x02
 fine_y_03 = 0x03
+orientation_04 = 0x04
 ship_fine_angle_05 = 0x05
 enemy_appear_timer_08 = 0x08
 enemy_attack_phase_09 = 0x09
@@ -796,9 +798,11 @@ l_0149:
 	jbsr	osd_read_dsw_1                       	| [$016b: ld   a,($C0E0)]
 	not.b	d0                               	| [$016e: cpl]
 	move.b	d0,copy_of_dsw1_9431(a6)                   	| [$016f: ld   ($9431),a]
-	lea	l_9400(a6),a0                      	| [$0172: ld   hl,$9400]
+	lea	general_fast_timer_9400(a6),a0                      	| [$0172: ld   hl,$9400]
 	addq.b	#1,(a0)                         	| [$0175: inc  (hl)]
-	lea	l_944E(a6),a0                      	| [$0176: ld   hl,$944E]
+	* this is the same, but in BCD. Doesn't seem used at all, though
+	CLEAR_XC_FLAGS
+	lea	general_fast_bcd_timer_944e(a6),a0                      	| [$0176: ld   hl,$944E]
 	move.b	(a0),d0                         	| [$0179: ld   a,(hl)]
 	moveq	#1,d7
 	abcd	d7,d0                           	| [$017a: inc  a] + daa
@@ -1070,21 +1074,20 @@ l_05b9:
 	add.w	d3,a0                            	| [$05c4: add  hl,de]
 	jne	l_05b7                             	| [$05c5: jr   nz,$05B7]
 *    ROM checksum
-*	clr.b	d1                               	| [$05c7: ld   b,$00]
-*	move.w	#0x0060,d5                      	| [$05c9: ld   hl,$0060]
-*	CLEAR_XC_FLAGS                         	| [$05cc: xor  a]
-*	clr.b	d0                               	| [$05cc: xor  a]
-*l_05cd:
-*	move.b	(a0),d7
-*	eor.b	d7,d0                            	| [$05cd: xor  (hl)]
-*	addq.w	#1,a0                           	| [$05ce: inc  hl]
-*	subq.b	#1,d1                           	| [...]
-*	jne	l_05cd                             	| [$05cf: djnz $05CD]
-*	subq.b	#0x00,d0                        	| [$05d1: sub  $00]
-*	nop                                    	| [$05d3: nop]
-*	nop                                    	| [$05d4: nop]
-*	nop                                    	| [$05d5: nop]
-	BREAKPOINT		"5D6???? D0???"
+											| [$05c7: ld   b,$00]
+											| [$05c9: ld   hl,$0060]
+											| [$05cc: xor  a]
+											| [$05cc: xor  a]
+						
+						
+											| [$05cd: xor  (hl)]
+											| [$05ce: inc  hl]
+											| [...]
+											| [$05cf: djnz $05CD]
+											| [$05d1: sub  $00]
+											| [$05d3: nop]
+											| [$05d4: nop]
+											| [$05d5: nop]
 	rts                                    	| [$05d6: ret]
 
 
@@ -1598,7 +1601,7 @@ l_09a6:
 	clr.b	level_skip_flag
 	jra		l_0dc1
 0:
-	move.b	l_9400(a6),d0                   	| [$09a6: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$09a6: ld   a,($9400)]
 	and.b	#0x0F,d0                         	| [$09a9: and  $0F]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$09ab: ret  z] [...]
@@ -1688,7 +1691,7 @@ l_0a1a:
 	move.b	#0xFC,d0                        	| [$0a1a: ld   a,$FC]
 	move.b	d0,l_943B(a6)                   	| [$0a1c: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$0a1f: call $3831]
-	move.b	l_9400(a6),d0                   	| [$0a22: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$0a22: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$0a25: and  $01]
 	jne	l_0aed                             	| [$0a27: jp   nz,$0AED]
 	jbsr	read_player_controls_1720                            	| [$0a2a: call $1720]
@@ -1790,9 +1793,10 @@ l_0ab0:
 	clr.b	d0                               	| [$0ac1: xor  a]
 	move.b	d0,l_941C(a6)                   	| [$0ac2: ld   ($941C),a]
 l_0ac5:
-	move.b	l_9400(a6),d0                   	| [$0ac5: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$0ac5: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$0ac8: and  $07]
 	jne	l_0b03                             	| [$0aca: jr   nz,$0B03]
+	* each 8 ticks
 	lea	distance_to_center_9465(a6),a0                      	| [$0acc: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$0acf: dec  (hl)]
 	jne	l_0b03                             	| [$0ad0: jr   nz,$0B03]
@@ -2003,6 +2007,7 @@ l_0c2a:
 	move.b	bcd_nb_chance_ships_shot_917e(a6),d0                   	| [$0c33: ld   a,($917E)]
 	cmp.b	#0x40,d0                         	| [$0c36: cp   $40]
 	jcs	report_chance_stage_results_0c53                             	| [$0c38: jr   c,$0C53]
+	* PERFECT!
 	move.w	#0x0119,d3                          	| [$0c3a: ld   de,$0119] [uncovered]
 	jbsr	start_task_d3_0038                            	| [$0c3d: rst  $38] [uncovered]
 	move.b	#0x1E,d3                        	| [$0c3e: ld   e,$1E] [uncovered]
@@ -2065,7 +2070,7 @@ l_0c98:
 	jra	next_game_state_080b                             	| [$0cb3: jp   $080B]
 
 l_0cb6:
-	move.b	l_9400(a6),d0                   	| [$0cb6: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$0cb6: ld   a,($9400)]
 	move.b	d0,d1                           	| [$0cb9: ld   b,a]
 	and.b	#0x07,d0                         	| [$0cba: and  $07]
 	beq.b	0f                               	| [...]
@@ -2106,7 +2111,7 @@ l_0cf7:
 	move.b	bcd_nb_chance_ships_shot_917e(a6),d0                   	| [$0d12: ld   a,($917E)]
 	                               	| [$0d15: and  a]
 	jeq	l_0d3d                             	| [$0d16: jr   z,$0D3D]
-	move.b	l_9400(a6),d0                   	| [$0d18: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$0d18: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$0d1b: and  $07]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$0d1d: ret  nz] [...]
@@ -2856,7 +2861,6 @@ l_12fe:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$1304: ret  nz] [...]
 0:
-	CLEAR_XC_FLAGS                         	| [$1305: xor  a]
 	clr.b	d0                               	| [$1305: xor  a]
 	*move.b	d0,l_C183                       	| [$1306: ld   ($C183),a]
 	rts                                    	| [$1309: ret]
@@ -2909,7 +2913,7 @@ l_1381:
 	move.b	(a0),d7
 	eor.b	d7,d0                            	| [$1393: xor  (hl)]
 	move.b	d0,l_94B0(a6)                   	| [$1394: ld   ($94B0),a]
-	lea	l_9400(a6),a0                      	| [$1397: ld   hl,$9400]
+	lea	general_fast_timer_9400(a6),a0                      	| [$1397: ld   hl,$9400]
 	add.b	(a0),d0                          	| [$139a: add  a,(hl)]
 	jbsr	exx                               	| [$139b: exx]
 	rts                                    	| [$139c: ret]
@@ -3323,7 +3327,7 @@ l_16e0:
 	jeq	l_16e8                             	| [$16e5: jr   z,$16E8]
 	subq.b	#1,(a0)                         	| [$16e7: dec  (hl)]
 l_16e8:
-	move.b	l_9400(a6),d0                   	| [$16e8: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$16e8: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$16eb: and  $01]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$16ed: ret  z] [...]
@@ -3666,7 +3670,7 @@ l_191f:
 	jeq	l_1976                             	| [$1972: jr   z,$1976]
 	move.b	#0x02,d1                        	| [$1974: ld   b,$02]
 l_1976:
-	move.b	l_9400(a6),d0                   	| [$1976: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$1976: ld   a,($9400)]
 	ror.b	#1,d0                            	| [$1979: rrca]
 	and.b	#0x01,d0                         	| [$197a: and  $01]
 	add.b	d1,d0                            	| [$197c: add  a,b]
@@ -3773,7 +3777,7 @@ l_1a64:
 	                               	| [$1a68: and  a]
 	jeq	l_1a87                             	| [$1a69: jr   z,$1A87]
 	subq.b	#1,(a0)                         	| [$1a6b: dec  (hl)]
-	move.b	l_9400(a6),d0                   	| [$1a6c: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$1a6c: ld   a,($9400)]
 	ror.b	#2,d0                            	| [$1a6f: rrca] * 2
 	and.b	#0x0F,d0                         	| [$1a71: and  $0F]
 	move.b	d0,d1                           	| [$1a73: ld   b,a]
@@ -3815,7 +3819,7 @@ l_1ab3:
 	jcs	l_1adc                             	| [$1abf: jr   c,$1ADC]
 	movem.w	d1/d2,-(sp)                    	| [$1ac1: push bc]
 	jbsr	l_4ebf                            	| [$1ac2: call $4EBF]
-	move.b	l_9400(a6),d0                   	| [$1ac5: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$1ac5: ld   a,($9400)]
 	ror.b	#2,d0                            	| [$1ac8: rrca] * 2
 	and.b	#0x0F,d0                         	| [$1aca: and  $0F]
 	move.b	d0,(0x02,a3)                    	| [$1acc: ld   (iy+$02),a]
@@ -4539,7 +4543,7 @@ l_22c9:
 	rts                                    	| [$22d1: ret]
 
 l_22d2:
-	move.b	l_9400(a6),d0                   	| [$22d2: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$22d2: ld   a,($9400)]
 	ror.b	#1,d0                            	| [$22d5: rrca]
 	and.b	#0x03,d0                         	| [$22d6: and  $03]
 	LEA_ROM	0x22EF,a0                          	| [$22d8: ld   hl,$22EF]
@@ -4558,7 +4562,7 @@ l_22f3:
 	jbsr	l_23b0                            	| [$22fc: call $23B0]
 	move.b	l_922E(a6),d0                   	| [$22ff: ld   a,($922E)]
 	move.b	d0,l_9605(a6)                   	| [$2302: ld   ($9605),a]
-	move.b	l_9400(a6),d0                   	| [$2305: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2305: ld   a,($9400)]
 	and.b	#0x7F,d0                         	| [$2308: and  $7F]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$230a: ret  nz] [...]
@@ -4644,7 +4648,7 @@ l_23b0:
 	lea	l_9860(a6),a3                      	| [$23b4: ld   iy,$9860]
 	READ_ROM_BYTE	0x09E7,d0                       	| [$23b8: ld   a,($09E7)]
 	move.b	d0,d1                           	| [$23bb: ld   b,a]
-	move.b	l_9400(a6),d0                   	| [$23bc: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$23bc: ld   a,($9400)]
 	ror.b	#1,d0                            	| [$23bf: rrca]
 	and.b	#0x1F,d0                         	| [$23c0: and  $1F]
 	move.b	d0,d2                           	| [$23c2: ld   c,a]
@@ -4752,7 +4756,7 @@ l_24ae:
 	addq.b	#1,(a0)                         	| [$24b2: inc  (hl)]
 	add.b	d0,d0                            	| [$24b3: add  a,a]
 	add.b	d0,d0                            	| [$24b4: add  a,a]
-	lea	ram_pointer_9611(a6),a0                 | [$24b5: ld   hl,$9611]
+	lea	first_death_ray_emitter_struct_9611(a6),a0                 | [$24b5: ld   hl,$9611]
 	add.w	d0,a0                            	| [$24b8: add  a,l]
 	                           	| [$24b9: ld   l,a]
 	move.b	d2,(a0)+                         	| [$24ba: ld   (hl),c]
@@ -4765,7 +4769,7 @@ l_24ae:
 	rts                                    	| [$24c1: ret]
 
 show_title_for_a_while_24c2:
-	move.b	l_9400(a6),d0                   	| [$24c2: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$24c2: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$24c5: and  $01]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$24c7: ret  nz] [...]
@@ -4888,7 +4892,7 @@ l_255b:
 l_256d:
 	jbsr	l_22f3                            	| [$256d: call $22F3]
 	jbsr	l_25ac                            	| [$2570: call $25AC]
-	move.b	l_9400(a6),d0                   	| [$2573: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2573: ld   a,($9400)]
 	and.b	#0x03,d0                         	| [$2576: and  $03]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$2578: ret  z] [...]
@@ -4935,7 +4939,7 @@ l_25ac:
 	add.b	d0,d0                            	| [$25b4: add  a,a]
 	LEA_ROM	0x25CF,a0                          	| [$25b5: ld   hl,$25CF]
 	jbsr	add_d0_to_a0_0018                            	| [$25b8: rst  $18]
-	move.b	l_9400(a6),d0                   	| [$25b9: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$25b9: ld   a,($9400)]
 	ror.b	#3,d0                            	| [$25bc: rrca] * 3
 	and.b	#0x03,d0                         	| [$25bf: and  $03]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$25c1: rst  $08]
@@ -5158,7 +5162,7 @@ direct_return_to_swarm_275b:
 	jbsr	l_2d81                            	| [$275b: call $2D81]
 	jbsr	l_2bb3                            	| [$275e: call $2BB3]
 	jbsr	object_movement_4f16                            	| [$2761: call $4F16]
-	move.b	l_9400(a6),d0                   	| [$2764: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2764: ld   a,($9400)]
 	and.b	#0x03,d0                         	| [$2767: and  $03]
 	move.b	d0,d1                           	| [$2769: ld   b,a]
 	move.b	(0x0f,a2),d0                    	| [$276a: ld   a,(ix+$0f)]
@@ -5537,7 +5541,7 @@ l_2a07:
 	jra	l_29db                             	| [$2a0b: jp   $29DB]
 
 l_2a0e:
-	move.b	l_9400(a6),d0                   	| [$2a0e: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2a0e: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$2a11: and  $07]
 	move.b	d0,d1                           	| [$2a13: ld   b,a]
 	move.b	(0x0f,a2),d0                    	| [$2a14: ld   a,(ix+$0f)]
@@ -5681,7 +5685,7 @@ l_2b3c:
 	rts                                    	| [$2b40: ret]
 
 l_2b41:
-	move.b	l_9400(a6),d0                   	| [$2b41: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2b41: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$2b44: and  $01]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$2b46: ret  z] [...]
@@ -5748,7 +5752,7 @@ l_2ba8:
 	jra	l_5cb2                             	| [$2bb0: jp   $5CB2]
 
 l_2bb3:
-	move.b	l_9400(a6),d0                   	| [$2bb3: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2bb3: ld   a,($9400)]
 	and.b	#0x0F,d0                         	| [$2bb6: and  $0F]
 	move.b	d0,d1                           	| [$2bb8: ld   b,a]
 	move.b	(0x0f,a2),d0                    	| [$2bb9: ld   a,(ix+$0f)]
@@ -5960,7 +5964,7 @@ l_2d14:
 	jra	l_2cfc                             	| [$2d18: jr   $2CFC]
 
 l_2d1a:
-	move.b	l_9400(a6),d0                   	| [$2d1a: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2d1a: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$2d1d: and  $07]
 	move.b	d0,d1                           	| [$2d1f: ld   b,a]
 	move.b	(0x0f,a2),d0                    	| [$2d20: ld   a,(ix+$0f)]
@@ -5991,7 +5995,7 @@ l_2d1a:
 	rts                                    	| [$2d4e: ret]
 
 l_2d5c:
-	move.b	l_9400(a6),d0                   	| [$2d5c: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2d5c: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$2d5f: and  $07]
 	move.b	d0,d1                           	| [$2d61: ld   b,a]
 	move.b	(0x0f,a2),d0                    	| [$2d62: ld   a,(ix+$0f)]
@@ -6012,7 +6016,7 @@ l_2d5c:
 	jra	l_2db4                             	| [$2d7e: jp   $2DB4]
 
 l_2d81:
-	move.b	l_9400(a6),d0                   	| [$2d81: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2d81: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$2d84: and  $07]
 	move.b	d0,d1                           	| [$2d86: ld   b,a]
 	move.b	(0x0f,a2),d0                    	| [$2d87: ld   a,(ix+$0f)]
@@ -6194,7 +6198,7 @@ new_demo_game_start_2e8f:
 	clr.b	(a0)                             	| [$2eaf: ld   (hl),$00]
 	jbsr	ldir                              	| [$2eb1: ldir]
 	clr.b	d0                               	| [$2eb3: xor  a]
-	move.b	d0,l_9400(a6)                   	| [$2eb4: ld   ($9400),a]
+	move.b	d0,general_fast_timer_9400(a6)                   	| [$2eb4: ld   ($9400),a]
 	move.b	d0,l_9476(a6)                   	| [$2eb7: ld   ($9476),a]
 	move.b	d0,l_9475(a6)                   	| [$2eba: ld   ($9475),a]
 	move.b	d0,l_9478(a6)                   	| [$2ebd: ld   ($9478),a]
@@ -6296,7 +6300,7 @@ l_2fd9:
 	addq.b	#0x04,d0                        	| [$2fdc: add  a,$04]
 	cmp.b	#0x09,d0                         	| [$2fde: cp   $09]
 	jcs	l_2fff                             	| [$2fe0: jp   c,$2FFF]
-	move.b	l_9400(a6),d0                   	| [$2fe3: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$2fe3: ld   a,($9400)]
 	LEA_ROM	0x1116,a0                          	| [$2fe6: ld   hl,$1116]
 	btst.b	#1,d0                           	| [$2fe9: bit  1,a]
 	jeq	l_2ff0                             	| [$2feb: jr   z,$2FF0]
@@ -6333,7 +6337,7 @@ l_304b:
 	rts                                    	| [$3054: ret]
 
 l_3055:
-	move.b	l_9400(a6),d0                   	| [$3055: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$3055: ld   a,($9400)]
 	clr.b	d2                               	| [$3058: ld   c,$00]
 	btst.b	#3,d0                           	| [$305a: bit  3,a]
 	jne	l_3060                             	| [$305c: jr   nz,$3060]
@@ -6375,7 +6379,7 @@ l_308e:
 	rts                                    	| [$30a0: ret]
 
 l_30c4:
-	move.b	l_9400(a6),d0                   	| [$30c4: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$30c4: ld   a,($9400)]
 	and.b	#0x06,d0                         	| [$30c7: and  $06]
 	add.b	#0x78,d0                         	| [$30c9: add  a,$78]
 	move.b	d0,(0x01,a3)                    	| [$30cb: ld   (iy+$01),a]
@@ -6386,7 +6390,7 @@ l_30c4:
 	rts                                    	| [$30da: ret]
 
 l_30db:
-	move.b	l_9400(a6),d0                   	| [$30db: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$30db: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$30de: and  $07]
 	move.b	d0,d1                           	| [$30e0: ld   b,a]
 	move.b	(0x0f,a2),d0                    	| [$30e1: ld   a,(ix+$0f)]
@@ -6465,7 +6469,7 @@ l_3136:
 
 l_3155:
 	move.b	#0x08,(0x02,a3)                 	| [$3155: ld   (iy+$02),$08]
-	move.b	l_9400(a6),d0                   	| [$3159: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$3159: ld   a,($9400)]
 	ror.b	#3,d0                            	| [$315c: rrca] * 3
 	and.b	#0x01,d0                         	| [$315f: and  $01]
 	move.b	d0,d2                           	| [$3161: ld   c,a]
@@ -6942,13 +6946,13 @@ l_3698:
 	jra	l_3694                             	| [$369a: jr   $3694]
 l_369c:
 	LOAD_D5D6_FROM_A0_RAM
-	move.b	ram_pointer_9611(a6),d0                   	| [$369c: ld   a,($9611)]
+	move.b	first_death_ray_emitter_struct_9611(a6),d0                   	| [$369c: ld   a,($9611)]
 	sub.b	d6,d0                            	| [$369f: sub  l]
 	jeq	l_3698                             	| [$36a0: jr   z,$3698]
-	move.b	ram_pointer_9615(a6),d0                   	| [$36a2: ld   a,($9615)]
+	move.b	second_death_ray_emitter_struct_9615(a6),d0                   	| [$36a2: ld   a,($9615)]
 	sub.b	d6,d0                            	| [$36a5: sub  l]
 	jeq	l_3698                             	| [$36a6: jr   z,$3698]
-	move.b	ram_pointer_9619(a6),d0                   	| [$36a8: ld   a,($9619)]
+	move.b	death_ray_struct_9619(a6),d0                   	| [$36a8: ld   a,($9619)]
 	sub.b	d6,d0                            	| [$36ab: sub  l]
 	jeq	l_3698                             	| [$36ac: jr   z,$3698]
 	add.w	d3,a0                            	| [$36ae: add  hl,de]
@@ -7209,7 +7213,7 @@ l_38ea:
 
 
 l_38ef:
-	move.b	l_9400(a6),d0                   	| [$38ef: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$38ef: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$38f2: and  $01]
 	jne	l_38fd                             	| [$38f4: jr   nz,$38FD]
 	lea	l_A138(a6),a2                          	| [$38f6: ld   ix,$A138]
@@ -7359,7 +7363,7 @@ l_3a3c:
 
 l_3a6a:
 	jbsr	exx                               	| [$3a6a: exx]
-	move.b	l_9400(a6),d0                   	| [$3a6b: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$3a6b: ld   a,($9400)]
 	move.b	d0,d5                           	| [$3a6e: ld   h,a]
 	ror.b	#3,d0                            	| [$3a6f: rrca] * 3
 	add.b	d5,d0                            	| [$3a72: add  a,h]
@@ -7655,7 +7659,7 @@ l_4191:
 
 l_4255:
 	LEA_ROM	0x4251,a0                          	| [$4255: ld   hl,$4251]
-	move.b	l_9400(a6),d0                   	| [$4258: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$4258: ld   a,($9400)]
 	ror.b	#3,d0                            	| [$425b: rrca] * 3
 	and.b	#0x03,d0                         	| [$425e: and  $03]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$4260: rst  $08]
@@ -7825,7 +7829,7 @@ l_4516:
 	subq.b	#1,(0x00,a2)                    	| [$4549: dec  (ix+$00)]
 	jbsr	l_5cfe                            	| [$454c: call $5CFE]
 	lea	l_9006(a6),a0                      	| [$454f: ld   hl,$9006]
-	move.b	l_9400(a6),d0                   	| [$4552: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$4552: ld   a,($9400)]
 	rol.b	#2,d0                            	| [$4555: rlca] * 2
 	and.b	#0x01,d0                         	| [$4557: and  $01]
 	jeq	l_455c                             	| [$4559: jr   z,$455C]
@@ -7949,7 +7953,7 @@ bonus_central_ship_appearing_463a:
 l_464f:
 	move.b	l_926E(a6),d0                   	| [$464f: ld   a,($926E)]
 	move.b	d0,(0x03,a3)                    	| [$4652: ld   (iy+$03),a]
-	move.b	l_9400(a6),d0                   	| [$4655: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$4655: ld   a,($9400)]
 	move.b	d0,d5                           	| [$4658: ld   h,a]
 	move.b	d1,d0                           	| [$4659: ld   a,b]
 	btst.b	#0,d5                           	| [$465a: bit  0,h]
@@ -7967,7 +7971,7 @@ l_4668:
 	move.b	d0,(0x00,a3)                    	| [$466d: ld   (iy+$00),a]
 	move.b	l_926E(a6),d0                   	| [$4670: ld   a,($926E)]
 	move.b	d0,d2                           	| [$4673: ld   c,a]
-	move.b	l_9400(a6),d0                   	| [$4674: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$4674: ld   a,($9400)]
 	move.b	d0,d5                           	| [$4677: ld   h,a]
 	move.b	d1,d0                           	| [$4678: ld   a,b]
 	btst.b	#0,d5                           	| [$4679: bit  0,h]
@@ -7986,7 +7990,7 @@ l_4686:
 	move.b	d0,(0x00,a3)                    	| [$468d: ld   (iy+$00),a]
 	move.b	l_926E(a6),d0                   	| [$4690: ld   a,($926E)]
 	move.b	d0,d2                           	| [$4693: ld   c,a]
-	move.b	l_9400(a6),d0                   	| [$4694: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$4694: ld   a,($9400)]
 	move.b	d0,d5                           	| [$4697: ld   h,a]
 	move.b	d1,d0                           	| [$4698: ld   a,b]
 	btst.b	#0,d5                           	| [$4699: bit  0,h]
@@ -8165,7 +8169,7 @@ l_4816:
 	move.b	death_ray_sattelites_active_92BE(a6),d0                   	| [$4816: ld   a,($92BE)]
 	                               	| [$4819: and  a]
 	jne	update_death_ray_sattelites_48ba                             	| [$481a: jp   nz,$48BA]
-	move.b	l_9605(a6),d0                   	| [$481d: ld   a,($9605)]
+	move.b	l_9605(a6),d0           | [$481d: ld   a,($9605)]
 	                               	| [$4820: and  a]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$4821: ret  z] [...]
@@ -8185,15 +8189,20 @@ l_4816:
 	bcc.b	0f                               	| [...]
 	rts                                    	| [$4831: ret  c] [...]
 0:
-	LOAD_RAM_POINTER	ram_pointer_9611(a6),a2         	| [$4832: ld   ix,($9611)]
-	LOAD_RAM_POINTER	ram_pointer_9613(a6),a3         	| [$4836: ld   iy,($9613)]
-	st.b	(0x00,a3)                 	| [$483a: ld   (iy+$00),$FF]
-	st.b	(0x01,a2)                 	| [$483e: ld   (ix+$01),$FF]
+	* init sattelites & death ray
+	* 90xx enemy structure
+	LOAD_RAM_POINTER	first_death_ray_emitter_struct_9611(a6),a2         	| [$4832: ld   ix,($9611)]
+	* 98xx sprite shadow structure
+	LOAD_RAM_POINTER	first_death_ray_emitter_sprite_9613(a6),a3         	| [$4836: ld   iy,($9613)]
+	* far away (Y axis)
+	st.b	(displayed_y_00,a3)           | [$483a: ld   (iy+$00),$FF]
+	st.b	(active_01,a2)                 	| [$483e: ld   (ix+$01),$FF]
 	clr.b	(0x04,a2)                        	| [$4842: ld   (ix+$04),$00]
 	clr.b	(0x0b,a2)                        	| [$4846: ld   (ix+$0b),$00]
 	move.b	#0x1E,(0x0c,a2)                 	| [$484a: ld   (ix+$0c),$1E]
 	move.b	#0xC0,(0x0d,a2)                 	| [$484e: ld   (ix+$0d),$C0]
-	move.b	l_9400(a6),d0                   	| [$4852: ld   a,($9400)]
+	* random
+	move.b	general_fast_timer_9400(a6),d0      | [$4852: ld   a,($9400)]
 	rol.b	#2,d0                            	| [$4855: rlca] * 2
 	and.b	#0x01,d0                         	| [$4857: and  $01]
 	clr.w	d1                               	| [$485d: ld   b,$00]
@@ -8201,55 +8210,59 @@ l_4816:
 	lea	l_900A(a6),a0                      	| [$485a: ld   hl,$900A]
 	add.w	d1,a0                            	| [$485f: add  hl,bc]
 	move.b	(a0),d0                         	| [$4860: ld   a,(hl)]
-	move.b	d0,l_932E(a6)                   	| [$4861: ld   ($932E),a]
+	* sattelite #1
+	move.b	d0,death_ray_sattelite_x_932e(a6)                   	| [$4861: ld   ($932E),a]
 	add.b	#0x10,d0                         	| [$4864: add  a,$10]
-	move.b	d0,(0x03,a3)                    	| [$4866: ld   (iy+$03),a]
-	jbsr	l_4b1c                            	| [$4869: call $4B1C]
-	LOAD_RAM_POINTER	ram_pointer_9615(a6),a2         	| [$486c: ld   ix,($9615)]
-	LOAD_RAM_POINTER	ram_pointer_9617(a6),a3         	| [$4870: ld   iy,($9617)]
-	move.b	#0xFF,(0x01,a2)                 	| [$4874: ld   (ix+$01),$FF]
-	move.b	#0x01,(0x04,a2)                 	| [$4878: ld   (ix+$04),$01]
+	move.b	d0,(displayed_x_03,a3)                    	| [$4866: ld   (iy+$03),a]
+	jbsr	update_death_ray_sattelite_size_4b1c                            	| [$4869: call $4B1C]
+	LOAD_RAM_POINTER	second_death_ray_emitter_struct_9615(a6),a2         	| [$486c: ld   ix,($9615)]
+	LOAD_RAM_POINTER	second_death_ray_emitter_sprite_9617(a6),a3         	| [$4870: ld   iy,($9617)]
+
+	st.b	(active_01,a2)                 			| [$4874: ld   (ix+$01),$FF]
+	move.b	#0x01,(orientation_04,a2)                 	| [$4878: ld   (ix+$04),$01]
 	clr.b	(0x0b,a2)                        	| [$487c: ld   (ix+$0b),$00]
 	move.b	#0x1E,(0x0c,a2)                 	| [$4880: ld   (ix+$0c),$1E]
 	move.b	#0xC0,(0x0d,a2)                 	| [$4884: ld   (ix+$0d),$C0]
-	move.b	#0xFF,(0x00,a3)                 	| [$4888: ld   (iy+$00),$FF]
-	move.b	l_932E(a6),d0                   	| [$488c: ld   a,($932E)]
+	* far away (Y axis)
+	st.b	(displayed_y_00,a3)                 	| [$4888: ld   (iy+$00),$FF]
+	move.b	death_ray_sattelite_x_932e(a6),d0                   	| [$488c: ld   a,($932E)]
+	# sattelite #2
 	add.b	#0xF0,d0                         	| [$488f: add  a,$F0]
-	move.b	d0,(0x03,a3)                    	| [$4891: ld   (iy+$03),a]
-	jbsr	l_4b1c                            	| [$4894: call $4B1C]
-	LOAD_RAM_POINTER	ram_pointer_9619(a6),a2         	| [$4897: ld   ix,($9619)]
-	LOAD_RAM_POINTER	ram_pointer_961B(a6),a3         	| [$489b: ld   iy,($961B)]
-	st.b	(0x00,a3)                 	| [$489f: ld   (iy+$00),$FF]
+	move.b	d0,(displayed_x_03,a3)                    	| [$4891: ld   (iy+$03),a]
+	jbsr	update_death_ray_sattelite_size_4b1c                            	| [$4894: call $4B1C]
+	LOAD_RAM_POINTER	death_ray_struct_9619(a6),a2         	| [$4897: ld   ix,($9619)]
+	LOAD_RAM_POINTER	death_ray_sprite_961B(a6),a3         	| [$489b: ld   iy,($961B)]
+	st.b	(displayed_y_00,a3)                 	| [$489f: ld   (iy+$00),$FF]
 	st.b	(0x01,a2)                 	| [$48a3: ld   (ix+$01),$FF]
-	move.b	#0x02,(0x04,a2)                 	| [$48a7: ld   (ix+$04),$02]
+	move.b	#0x02,(orientation_04,a2)                 	| [$48a7: ld   (ix+$04),$02]
 	st.b	d0                                	| [$48ab: ld   a,$FF]
 	move.b	d0,death_ray_sattelites_active_92BE(a6)                   	| [$48ad: ld   ($92BE),a]
-	READ_ROM_BYTE	0x3050,d0                       	| [$48b0: ld   a,($3050)]
-	move.b	d0,l_92FE(a6)                   	| [$48b3: ld   ($92FE),a]
+											| [$48b0: ld   a,($3050)]
+	move.b	#2,death_ray_visibility_counter_92fe(a6)                   	| [$48b3: ld   ($92FE),a]
 	jra	l_5d1c                             	| [$48b6: jp   $5D1C]
 
 update_death_ray_sattelites_48ba:
-	LOAD_RAM_POINTER	ram_pointer_9611(a6),a2         	| [$48ba: ld   ix,($9611)]
-	LOAD_RAM_POINTER	ram_pointer_9613(a6),a3         	| [$48be: ld   iy,($9613)]
-	jbsr	ray_generator_ship_collision_4954                            	| [$48c2: call $4954]
-	move.b	(0x00,a3),d0                    	| [$48c5: ld   a,(iy+$00)]
-	move.b	d0,l_933E(a6)                   	| [$48c8: ld   ($933E),a]
-	LOAD_RAM_POINTER	ram_pointer_9615(a6),a2         	| [$48cb: ld   ix,($9615)]
-	LOAD_RAM_POINTER	ram_pointer_9617(a6),a3         	| [$48cf: ld   iy,($9617)]
-	jbsr	ray_generator_ship_collision_4954                            	| [$48d3: call $4954]
-	LOAD_RAM_POINTER	ram_pointer_9619(a6),a2         	| [$48d6: ld   ix,($9619)]
-	LOAD_RAM_POINTER	ram_pointer_961B(a6),a3         	| [$48da: ld   iy,($961B)]
-	move.b	l_92FE(a6),d0                   	| [$48de: ld   a,($92FE)]
+	LOAD_RAM_POINTER	first_death_ray_emitter_struct_9611(a6),a2         	| [$48ba: ld   ix,($9611)]
+	LOAD_RAM_POINTER	first_death_ray_emitter_sprite_9613(a6),a3         	| [$48be: ld   iy,($9613)]
+	jbsr	update_death_ray_emitter_4954                            	| [$48c2: call $4954]
+	move.b	(displayed_y_00,a3),d0                    	| [$48c5: ld   a,(iy+$00)]
+	move.b	d0,death_ray_sattelite_y_933e(a6)                   	| [$48c8: ld   ($933E),a]
+	LOAD_RAM_POINTER	second_death_ray_emitter_struct_9615(a6),a2         	| [$48cb: ld   ix,($9615)]
+	LOAD_RAM_POINTER	second_death_ray_emitter_sprite_9617(a6),a3         	| [$48cf: ld   iy,($9617)]
+	jbsr	update_death_ray_emitter_4954                            	| [$48d3: call $4954]
+	LOAD_RAM_POINTER	death_ray_struct_9619(a6),a2         	| [$48d6: ld   ix,($9619)]
+	LOAD_RAM_POINTER	death_ray_sprite_961B(a6),a3         	| [$48da: ld   iy,($961B)]
+	move.b	death_ray_visibility_counter_92fe(a6),d0                   	| [$48de: ld   a,($92FE)]
 	cmp.b	#0x02,d0                         	| [$48e1: cp   $02]
-	jcs	l_4933                             	| [$48e3: jr   c,$4933]
-	jbsr	l_4b1c                            	| [$48e5: call $4B1C]
+	jcs	death_ray_out_of_scope_4933             | [$48e3: jr   c,$4933]
+	jbsr	update_death_ray_sattelite_size_4b1c                            	| [$48e5: call $4B1C]
 	bset.b	#4,(0x01,a3)                    	| [$48e8: set  4,(iy+$01)]
 	move.b	level_playing_flag_9000(a6),d0                   	| [$48ec: ld   a,($9000)]
 	addq.b	#1,d0                           	| [$48ef: inc  a]
 	jne	l_48fa                             	| [$48f0: jr   nz,$48FA] this is a bogus jump!
-	move.b	l_9400(a6),d0                   	| [$48f2: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$48f2: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$48f5: and  $07]
-	jne	l_4900                             	| [$48f7: jr   nz,$4900]
+	jne	handle_death_ray_4900                             	| [$48f7: jr   nz,$4900]
 	move.b	level_playing_flag_9000(a6),d0                   	| [$48f9: ld   a,($9000)]
 * game jumps here in the middle of the prev instruction ???
 * but d1 = 0 so it has no effect
@@ -8258,19 +8271,21 @@ l_48fa:
 	bne.b	0f                               	| [...]
 	jbsr	l_5d04                            	| [$48fd: call z,$5D04]
 0:
-* tests collision between the death ray itself (not the ray generators)
-l_4900:
-	move.b	l_9400(a6),d0                   	| [$4900: ld   a,($9400)]
+* animates death ray and tests collision between the death ray itself 
+* (not the ray generators)
+handle_death_ray_4900:
+	move.b	general_fast_timer_9400(a6),d0      | [$4900: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$4903: and  $07]
 	add.b	d0,d0                            	| [$4905: add  a,a]
 	add.b	d0,d0                            	| [$4906: add  a,a]
 	sub.b	#0x10,d0                         	| [$4907: sub  $10]
 	move.b	d0,d1                           	| [$4909: ld   b,a]
-	move.b	l_932E(a6),d0                   	| [$490a: ld   a,($932E)]
+	move.b	death_ray_sattelite_x_932e(a6),d0                   	| [$490a: ld   a,($932E)]
 	add.b	d1,d0                            	| [$490d: add  a,b]
-	move.b	d0,(0x03,a3)                    	| [$490e: ld   (iy+$03),a]
-	move.b	l_933E(a6),d0                   	| [$4911: ld   a,($933E)]
-	move.b	d0,(0x00,a3)                    	| [$4914: ld   (iy+$00),a]
+	* ray only moves along virtual X axis
+	move.b	d0,(displayed_x_03,a3)              | [$490e: ld   (iy+$03),a]
+	move.b	death_ray_sattelite_y_933e(a6),d0   | [$4911: ld   a,($933E)]
+	move.b	d0,(displayed_y_00,a3)              | [$4914: ld   (iy+$00),a]
 	cmp.b	#0x30,d0                         	| [$4917: cp   $30]
 	bcs.b	0f                               	| [...]
 	rts                                    	| [$4919: ret  nc] [...]
@@ -8285,7 +8300,7 @@ l_4900:
 	rts                                    	| [$4921: ret  nz] [...]
 0:
 	move.b	player_ship_angle_9001(a6),d0                   	| [$4922: ld   a,($9001)]
-	sub.b	(0x03,a3),d0                     	| [$4925: sub  (iy+$03)]
+	sub.b	(displayed_x_03,a3),d0                     	| [$4925: sub  (iy+$03)]
 	add.b	#0x09,d0                         	| [$4928: add  a,$09]
 	cmp.b	#0x13,d0                         	| [$492a: cp   $13]
 	bcs.b	0f                               	| [...]
@@ -8298,24 +8313,25 @@ l_4900:
 0:
 	rts                                    	| [$4932: ret] [uncovered]
 
-l_4933:
-	clr.b	(0x01,a2)                        	| [$4933: ld   (ix+$01),$00]
-	clr.b	(0x00,a3)                        	| [$4937: ld   (iy+$00),$00]
+death_ray_out_of_scope_4933:
+	clr.b	(active_01,a2)                        	| [$4933: ld   (ix+$01),$00]
+	clr.b	(displayed_y_00,a3)                        	| [$4937: ld   (iy+$00),$00]
 	rts                                    	| [$493b: ret]
 
-ray_generator_ship_collision_4954:
-	move.b	(0x01,a2),d0                    	| [$4954: ld   a,(ix+$01)]
+update_death_ray_emitter_4954:
+	move.b	(active_01,a2),d0                    	| [$4954: ld   a,(ix+$01)]
 	                               	| [$4957: and  a]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$4958: ret  z] [...]
 0:
 	addq.b	#1,d0                           	| [$4959: inc  a]
 	jne	l_4a37                             	| [$495a: jp   nz,$4A37]
+	* active
 	move.b	(fine_x_02,a2),d4                    	| [$495d: ld   e,(ix+$02)]
 	move.b	(displayed_y_00,a3),d0                    	| [$4960: ld   a,(iy+$00)]
 	cmp.b	#0x20,d0                         	| [$4963: cp   $20]
 	jcs	l_49b0                             	| [$4965: jp   c,$49B0]
-	*move.b	d0,d3  | useless!                           	| [$4968: ld   d,a]
+	  | useless, overwritten at 496f                	| [$4968: ld   d,a]
 	move.b	(displayed_y_00,a3),d5                    	| [$4969: ld   h,(iy+$00)]
 	move.b	(fine_y_03,a2),d6                    	| [$496c: ld   l,(ix+$03)]
 	move.w	#-0x140,d3                      	| [$496f: ld   de,$FEC0]
@@ -8323,14 +8339,16 @@ ray_generator_ship_collision_4954:
 	add.w	d3,d5                            	| [$4972: add  hl,de]
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(displayed_y_00,a3)                    	| [$4973: ld   (iy+$00),h]
-	move.b	d0,(fine_y_03,a2)                    	| [$4976: ld   (ix+$03),a]
-	jbsr	l_4b1c                            	| [$4979: call $4B1C]
-	move.b	(0x04,a2),d0                    	| [$497c: ld   a,(ix+$04)]
+	* I think it's an original game bug
+	* used to write a here, when it should be l. Not really noticeable though
+	move.b	d6,(fine_y_03,a2)                    	| [$4976: ld   (ix+$03),a]
+	jbsr	update_death_ray_sattelite_size_4b1c                            	| [$4979: call $4B1C]
+	move.b	(orientation_04,a2),d0                    	| [$497c: ld   a,(ix+$04)]
 	subq.b	#1,d0                           	| [$497f: dec  a]
 	jeq	l_498a                             	| [$4980: jr   z,$498A]
-	move.b	(0x02,a3),d0                    	| [$4982: ld   a,(iy+$02)]
+	move.b	(sprite_code_02,a3),d0                    	| [$4982: ld   a,(iy+$02)]
 	eor.b	#0xC0,d0                         	| [$4985: xor  $C0]
-	move.b	d0,(0x02,a3)                    	| [$4987: ld   (iy+$02),a]
+	move.b	d0,(sprite_code_02,a3)                    	| [$4987: ld   (iy+$02),a]
 l_498a:
 	move.b	(displayed_y_00,a3),d0                    	| [$498a: ld   a,(iy+$00)]
 	cmp.b	#0x30,d0                         	| [$498d: cp   $30]
@@ -8354,17 +8372,17 @@ l_498a:
 	move.b	d0,level_playing_flag_9000(a6)                   	| [$49a1: ld   ($9000),a] [uncovered]
 l_49a4:
 	move.b	#0x20,(0x01,a2)                 	| [$49a4: ld   (ix+$01),$20]
-	LOAD_RAM_POINTER	ram_pointer_961B(a6),a0         	| [$49a8: ld   hl,($961B)]
+	LOAD_RAM_POINTER	death_ray_sprite_961B(a6),a0         	| [$49a8: ld   hl,($961B)]
 	clr.b	(a0)                             	| [$49ab: ld   (hl),$00]
 	jra	l_5d22                             	| [$49ad: jp   $5D22]
 
 l_49b0:
-	lea	l_92FE(a6),a0                      	| [$49b0: ld   hl,$92FE]
+	lea	death_ray_visibility_counter_92fe(a6),a0                      	| [$49b0: ld   hl,$92FE]
 	subq.b	#1,(a0)                         	| [$49b3: dec  (hl)]
 	jra	l_4a86                             	| [$49b4: jp   $4A86]
 
 l_49b7:
-	move.b	l_9400(a6),d0                   	| [$49b7: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$49b7: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$49ba: and  $01]
 	move.b	d0,d1                           	| [$49bc: ld   b,a]
 	move.b	(0x04,a2),d0                    	| [$49bd: ld   a,(ix+$04)]
@@ -8460,17 +8478,17 @@ l_4a37:
 	bne.b	0f                               	| [...]
 	rts                                    	| [$4a44: ret  z] [...]
 0:
-	move.b	l_9400(a6),d0                   	| [$4a45: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$4a45: ld   a,($9400)]
 	and.b	#0x07,d0                         	| [$4a48: and  $07]
-	move.b	d0,(0x02,a3)                    	| [$4a4a: ld   (iy+$02),a]
-	move.b	(0x02,a2),d4                    	| [$4a4d: ld   e,(ix+$02)]
-	move.b	(0x00,a3),d3                    	| [$4a50: ld   d,(iy+$00)]
+	move.b	d0,(sprite_code_02,a3)                    	| [$4a4a: ld   (iy+$02),a]
+	move.b	(fine_x_02,a2),d4                    	| [$4a4d: ld   e,(ix+$02)]
+	move.b	(displayed_y_00,a3),d3                    	| [$4a50: ld   d,(iy+$00)]
 	move.w	#-0x90,d5                       	| [$4a53: ld   hl,$FF70]
 	LOAD_D3_16_FROM_D3D4
 	add.w	d3,d5                            	| [$4a56: add  hl,de]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d6,(0x02,a2)                    	| [$4a57: ld   (ix+$02),l]
-	move.b	d5,(0x00,a3)                    	| [$4a5a: ld   (iy+$00),h]
+	move.b	d6,(fine_x_02,a2)                    	| [$4a57: ld   (ix+$02),l]
+	move.b	d5,(displayed_y_00,a3)                    	| [$4a5a: ld   (iy+$00),h]
 	move.b	(0x01,a2),d0                    	| [$4a5d: ld   a,(ix+$01)]
 	cmp.b	#0x10,d0                         	| [$4a60: cp   $10]
 	jeq	l_4a7a                             	| [$4a62: jr   z,$4A7A]
@@ -8495,7 +8513,7 @@ l_4a7a:
 	jra	l_4a69                             	| [$4a7c: jr   $4A69]
 
 l_4a7e:
-	lea	l_92FE(a6),a0                      	| [$4a7e: ld   hl,$92FE]
+	lea	death_ray_visibility_counter_92fe(a6),a0                      	| [$4a7e: ld   hl,$92FE]
 	subq.b	#1,(a0)                         	| [$4a81: dec  (hl)]
 	move.w	#0x0403,d3                          	| [$4a82: ld   de,$0403]
 	jbsr	start_task_d3_0038                            	| [$4a85: rst  $38]
@@ -8505,7 +8523,7 @@ l_4a86:
 	clr.b	(0x01,a2)                        	| [$4a8d: ld   (ix+$01),$00]
 	clr.b	(0x00,a3)                        	| [$4a91: ld   (iy+$00),$00]
 	clr.b	(0x03,a3)                        	| [$4a95: ld   (iy+$03),$00]
-	move.b	l_92FE(a6),d0                   	| [$4a99: ld   a,($92FE)]
+	move.b	death_ray_visibility_counter_92fe(a6),d0                   	| [$4a99: ld   a,($92FE)]
 	                               	| [$4a9c: and  a]
 	beq.b	0f                               	| [...]
 	rts                                    	| [$4a9d: ret  nz] [...]
@@ -8514,21 +8532,23 @@ l_4a86:
 	move.b	d0,unknown_active_flag_92ce(a6)                   	| [$4aa1: ld   ($92CE),a]
 	clr.b	d0                               	| [$4aa4: xor  a]
 	move.b	d0,death_ray_sattelites_active_92BE(a6)                   	| [$4aa5: ld   ($92BE),a]
-	LOAD_RAM_POINTER	ram_pointer_9617(a6),a0         	| [$4aa8: ld   hl,($9617)]
+	LOAD_RAM_POINTER	second_death_ray_emitter_sprite_9617(a6),a0         	| [$4aa8: ld   hl,($9617)]
 	clr.b	(a0)                             	| [$4aab: ld   (hl),$00]
-	LOAD_RAM_POINTER	ram_pointer_9613(a6),a0         	| [$4aad: ld   hl,($9613)]
+	LOAD_RAM_POINTER	first_death_ray_emitter_sprite_9613(a6),a0         	| [$4aad: ld   hl,($9613)]
 	clr.b	(a0)                             	| [$4ab0: ld   (hl),$00]
 	rts                                    	| [$4ab2: ret]
 
-l_4b1c:
-	move.b	(0x03,a3),d0                    	| [$4b1c: ld   a,(iy+$03)]
+* depending on X and Y compute size and orientation of
+* satellites
+update_death_ray_sattelite_size_4b1c:
+	move.b	(displayed_x_03,a3),d0                    	| [$4b1c: ld   a,(iy+$03)]
 	move.b	d0,d1                           	| [$4b1f: ld   b,a]
 	rol.b	#2,d0                            	| [$4b20: rlca] * 2
 	and.b	#0x03,d0                         	| [$4b22: and  $03]
 	LEA_ROM	0x4B44,a0                          	| [$4b24: ld   hl,$4B44]
-	jbsr	fetch_a0_plus_d0_0008                            	| [$4b27: rst  $08]
-	move.b	d0,(0x02,a3)                    	| [$4b28: ld   (iy+$02),a]
-	move.b	(0x00,a3),d0                    	| [$4b2b: ld   a,(iy+$00)]
+	jbsr	fetch_a0_plus_d0_0008               | [$4b27: rst  $08]
+	move.b	d0,(sprite_code_02,a3)              | [$4b28: ld   (iy+$02),a]
+	move.b	(displayed_y_00,a3),d0              | [$4b2b: ld   a,(iy+$00)]
 	ror.b	#3,d0                            	| [$4b2e: rrca] * 3
 	and.b	#0x18,d0                         	| [$4b31: and  $18]
 	move.b	d0,d2                           	| [$4b33: ld   c,a]
@@ -8537,9 +8557,9 @@ l_4b1c:
 	and.b	#0x07,d0                         	| [$4b39: and  $07]
 	add.b	d2,d0                            	| [$4b3b: add  a,c]
 	LEA_ROM	0x4B48,a0                          	| [$4b3c: ld   hl,$4B48]
-	jbsr	fetch_a0_plus_d0_0008                            	| [$4b3f: rst  $08]
-	move.b	d0,(0x01,a3)                    	| [$4b40: ld   (iy+$01),a]
-	rts                                    	| [$4b43: ret]
+	jbsr	fetch_a0_plus_d0_0008               | [$4b3f: rst  $08]
+	move.b	d0,(sprite_code_01,a3)              | [$4b40: ld   (iy+$01),a]
+	rts                                    		| [$4b43: ret]
 
 l_4b68:
 	move.b	l_960B(a6),d0                   	| [$4b68: ld   a,($960B)]
@@ -8557,7 +8577,7 @@ l_4b7c:
 	move.b	l_9669(a6),d0                   	| [$4b7c: ld   a,($9669)]
 	                               	| [$4b7f: and  a]
 	jeq	l_0f4c                             	| [$4b80: jp   z,$0F4C]
-	move.b	l_9400(a6),d0                   	| [$4b83: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$4b83: ld   a,($9400)]
 	move.b	d0,d1                           	| [$4b86: ld   b,a]
 	and.b	#0x1F,d0                         	| [$4b87: and  $1F]
 	beq.b	0f                               	| [...]
@@ -9141,7 +9161,7 @@ l_590e:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$5912: ret  nz] [...]
 0:
-	move.b	l_9400(a6),d0                   	| [$5913: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$5913: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$5916: and  $01]
 	jeq	l_59d7                             	| [$5918: jp   z,$59D7]
 	jbsr	l_5921                            	| [$591b: call $5921]
@@ -9268,6 +9288,7 @@ l_59d7:
 	jeq	l_5a04                             	| [$59df: jp   z,$5A04]
 	addq.b	#1,d0                           	| [$59e2: inc  a]
 	jeq	l_5a77                             	| [$59e3: jp   z,$5A77]
+	* don't jump to pushed address
 	move.l	(sp)+,a0                        	| [$59e6: pop  hl]
 l_59e7:
 	pea		l_59f7(pc)                          	| [$59e7: ld   hl,$59F7]
@@ -9277,6 +9298,7 @@ l_59e7:
 	jeq	l_5a2a                             	| [$59ef: jp   z,$5A2A]
 	addq.b	#1,d0                           	| [$59f2: inc  a]
 	jeq	l_5a9c                             	| [$59f3: jp   z,$5A9C]
+	* don't jump to pushed address
 	move.l	(sp)+,a0                        	| [$59f6: pop  hl]
 l_59f7:
 	move.b	l_9320(a6),d0                   	| [$59f7: ld   a,($9320)]
@@ -9530,10 +9552,9 @@ bullet_vs_ship_collision_5b79:
 	add.b	d3,d0                            	| [$5b8b: add  a,d]
 	cmp.b	d4,d0                            	| [$5b8c: cp   e]
 	jcc	l_5b96                             		| [$5b8d: jr   nc,$5B96] jumps: no collision
+	jbsr	exx                               	| [$5b8f: exx]
 	tst.b	invincible_flag
 	jeq		0f
-
-	jbsr	exx                               	| [$5b8f: exx]
 	* ship shot
 
 	* check if this is the player ship or another one
@@ -9789,7 +9810,7 @@ l_5cda:
 	jra	l_5c4a                             	| [$5ce3: jp   $5C4A]
 
 l_5ce6:
-	move.b	l_9400(a6),d0                   	| [$5ce6: ld   a,($9400)]
+	move.b	general_fast_timer_9400(a6),d0                   	| [$5ce6: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$5ce9: and  $01]
 	bne.b	0f                               	| [...]
 	rts                                    	| [$5ceb: ret  z] [...]
@@ -9810,7 +9831,7 @@ l_5cfe:
 	jra	l_5c4a                             	| [$5d01: jp   $5C4A]
 
 l_5d04:
-	move.b	l_932E(a6),d0                   	| [$5d04: ld   a,($932E)]
+	move.b	death_ray_sattelite_x_932e(a6),d0                   	| [$5d04: ld   a,($932E)]
 	lea	player_ship_angle_9001(a6),a0                      	| [$5d07: ld   hl,$9001]
 	sub.b	(a0),d0                          	| [$5d0a: sub  (hl)]
 	add.b	#0x38,d0                         	| [$5d0b: add  a,$38]

@@ -1,7 +1,6 @@
-
-- optimize shifting_on_d5d6_1bc3
-- optimize 6809 code more
- 
+- sometimes enemy sprites flashing/shifting: understand better the sprite "double
+  buffering" that the game does
+- upper screen chars blue "shadow". Is that restore from wrapped lower Y?
 - player 2 starts on top of screen (cocktail mode interference??)
 - 32 colors => 16 + attached sprites? count colors of tiles & sprites independently
 - use hardware sprites for player ship maybe uses less colors
@@ -9,29 +8,25 @@
   use the sprite allocation routine)
 - highscore: letters are flipped when entered
 - add 10000 points cheat
-- sometimes enemy sprites flashing/shifting: understand better the sprite "double
-  buffering" that the game does
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
-- log coords of attacking (state 2?) ships, seem that they are
-  jumping at times
-  
-- convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
-
-
-- implement difficulty & level select
-
-- log sprites/flash when missing
-
-- reduce memory (log tiles instead of including them all?)
-  remove flip/flip+mirror from bob table, line 1331 remove "*2"
-
-- star effect: hack with pixel placement when detected in the sprite update
-  (takes too much blitter time!)
 - restore buffer: do it only in title screen and for some Y (score/credit+lives)
   do it if non-blank tile where "GAME OVER" or "X WARPS TO..."
   or "<planet name>" or "KONAMI copytight"
   if not activated, then pure delete
-- upper screen chars blue "shadow". Is that restore from wrapped lower Y?
+  
+- convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
+
+- implement difficulty
+
+- log sprites/flash when missing
+
+- reduce memory (log tiles instead of including them all?)
+
+- star effect: hack with pixel placement when detected in the sprite update
+  (takes too much blitter time!)
+
+
+---------------------
 
 to turn off stars:
 

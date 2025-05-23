@@ -105,8 +105,7 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
 #process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
-process(r"shooting",offset=0,base_address=0xA000,name_filter="player")
-process(r"laser",offset=0,base_address=0xA000,name_filter="player")
+process(r"stars",offset=0,base_address=0xA000)
 #process(r"iceberg_amiga_4040",offset=0,base_address=0x4040,name_filter="iceberg")
 #process(r"sattelites_A000",offset=0,base_address=0xA000)
 #process(r"bug_4040",offset=0,base_address=0x4040)

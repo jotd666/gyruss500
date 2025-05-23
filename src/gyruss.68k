@@ -3934,8 +3934,8 @@ l_1b86:
 	clr.b	d4                               	| [$1b94: ld   e,$00]
 	LOAD_D3_16_FROM_D3D4                        | [$1b96: and  a]
 	sub.w	d3,d5                            	| [$1b97: sbc  hl,de]
+	roxr.w	#7,d5                            	| [$1b99: call $1BC3]
 	LOAD_D5D6_FROM_D5_16
-	jbsr	shifting_on_d5d6_1bc3                            	| [$1b99: call $1BC3]
 	move.b	d5,(0x06,a2)                    	| [$1b9c: ld   (ix+$06),h]
 	move.b	d6,(0x07,a2)                    	| [$1b9f: ld   (ix+$07),l]
 	move.w	#0x8000,d5                          	| [$1ba2: ld   hl,$8000]
@@ -3943,8 +3943,8 @@ l_1b86:
 	clr.b	d4                               	| [$1ba8: ld   e,$00]
 	LOAD_D3_16_FROM_D3D4                               	| [$1baa: and  a]
 	sub.w	d3,d5                            	| [$1bab: sbc  hl,de]
-	LOAD_D5D6_FROM_D5_16			| doesn't change X, we're good
-	jbsr	shifting_on_d5d6_1bc3                            	| [$1bad: call $1BC3]
+	roxr.w	#7,d5                            	| [$1bad: call $1BC3]
+	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x08,a2)                    	| [$1bb0: ld   (ix+$08),h]
 	move.b	d6,(0x09,a2)                    	| [$1bb3: ld   (ix+$09),l]
 	clr.b	(0x0a,a2)                        	| [$1bb6: ld   (ix+$0a),$00]
@@ -3952,21 +3952,21 @@ l_1b86:
 	move.b	#0xFF,(0x0c,a2)                 	| [$1bbe: ld   (ix+$0c),$FF]
 	rts                                    	| [$1bc2: ret]
 
-shifting_on_d5d6_1bc3:
-	roxr.b	#1,d5                           	| [$1bc3: rr   h]
-	roxr.b	#1,d6                           	| [$1bc5: rr   l]
-	asr.b	#1,d5                            	| [$1bc7: sra  h]
-	roxr.b	#1,d6                           	| [$1bc9: rr   l]
-	asr.b	#1,d5                            	| [$1bcb: sra  h]
-	roxr.b	#1,d6                           	| [$1bcd: rr   l]
-	asr.b	#1,d5                            	| [$1bcf: sra  h]
-	roxr.b	#1,d6                           	| [$1bd1: rr   l]
-	asr.b	#1,d5                            	| [$1bd3: sra  h]
-	roxr.b	#1,d6                           	| [$1bd5: rr   l]
-	asr.b	#1,d5                            	| [$1bd7: sra  h]
-	roxr.b	#1,d6                           	| [$1bd9: rr   l]
-	asr.b	#1,d5                            	| [$1bdb: sra  h]
-	roxr.b	#1,d6                           	| [$1bdd: rr   l]
+	* optimized & inlined
+	                           	| [$1bc3: rr   h]
+	                           	| [$1bc5: rr   l]
+	                            	| [$1bc7: sra  h]
+	                           	| [$1bc9: rr   l]
+	                            	| [$1bcb: sra  h]
+	                           	| [$1bcd: rr   l]
+	                            	| [$1bcf: sra  h]
+	                           	| [$1bd1: rr   l]
+	                            	| [$1bd3: sra  h]
+	                           	| [$1bd5: rr   l]
+	                            	| [$1bd7: sra  h]
+	                           	| [$1bd9: rr   l]
+	                            	| [$1bdb: sra  h]
+	                           	| [$1bdd: rr   l]
 	rts                                    	| [$1bdf: ret]
 
 

@@ -35,6 +35,13 @@
 	.endm
 	.endif
 	
+	.macro	MOVE_W_D4_IN_A0
+	rol.w	#8,d4
+	move.b	d4,(a0)
+	rol.w	#8,d4
+	move.b	d4,(1,a0)
+	.endm
+	
 * this code is mainly used to convert Z80-handled coordinates to polar
 * displayable coordinates for enemy ships (not all sprites are concerned)
 *
@@ -124,9 +131,9 @@ gyruss_sub_reset:
 l_f09e:
 	GET_U_ADDRESS	0                        	| [$f09e: std    ,u++]
 	addq.w	#2,d4
-	MOVE_W_FROM_REG	d1,(a0)                	| [...]
+	move.w	d1,(a0)                	| [...]
 	subq.w	#0x1,d2                         	| [$f0a0: leax   -$1,x]
-	bne	l_f09e                             	| [$f0a2: bne    $f09e]
+	jne	l_f09e                             	| [$f0a2: bne    $f09e]
 	move.b	#0x42,d0                        	| [$f0a4: lda    #$42]
 	SET_DP_FROM_A                          	| [$f0a6: tfr    a,dp]
 
@@ -144,44 +151,6 @@ gyruss_sub_irq:
 	moveq	#0,d0
 	jbsr	set_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
 	
-*	*****************************
-** check_duplicated_sprites
-*	move.w	#sprite_ram_4040,d4             	| [$f6f8: ldu    #sprite_ram_4040]
-*	GET_U_ADDRESS	0
-*	move.l	a0,a2
-*	moveq	#0,d7
-*0:
-*	addq	#1,d7
-*	cmp.w	#0x30,d7
-*	jeq		3f
-*	move.l	(a2)+,d6
-*	tst.b	d6
-*	jeq		0b		| Y coord no need to compare!
-*	
-*	* compare with the rest of the array
-*	move.l	a2,a1
-*	move.w	#0x30-1,d5
-*	sub.w	d7,d5		| number of tests to perform
-*1:
-*	cmp.l	(a1)+,d6
-*	jne		2f
-*	move.l	d6,d4
-*	and.l	#0x00FFFF00,d4
-*	jeq		2f			| can be equal if sprite code is 0000
-*	* SAME!!!
-*	subq	#4,a1
-*	subq	#4,a2
-*	*BREAKPOINT		"same A2/A1 sprites (in D6)"
-*	move.w	#0x0F0,0xDFF180
-*	jra		3f
-*2:
-*	dbf		d5,1b
-*	jra		0b
-*3:
-*	jbsr	gyruss_sub_cpu_init
-
-	*****************************
-
 
 	GET_ADDRESS	sprite_sync_status_67ff                     	| [$f0bb: lda    $67ff]
 	move.b	(a0),d0                         	| [...]
@@ -216,10 +185,10 @@ l_f0ca:
 	move.b	#0,(a0)                         	| [...]
 	move.w	#shared_memory_6000,d4          	| [$f0e5: ldu    #shared_memory_6000]
 	GET_DP_ADDRESS	0x0f                    	| [$f0e8: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	move.w	#0x6400,d4                      	| [$f0ea: ldu    #$6400]
 	GET_DP_ADDRESS	0x11                    	| [$f0ed: stu    $11]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 l_f0ef:
 	GET_ADDRESS	queue_sprites_flag_6702                     	| [$f0ef: lda    $6702]
 	move.b	(a0),d0                         	| [...]
@@ -261,25 +230,25 @@ continue_f135:
 	move.b	#0x17,d1                        	| [$f137: ldb    #$17]
 	GET_ADDRESS	0x6400                     	| [$f139: cmpb   $6400]
 	cmp.b	(a0),d1                          	| [...]
-	bcc	l_f141                             	| [$f13c: bcc    $f141]
+	jcc	l_f141                             	| [$f13c: jcc    $f141]
 	GET_ADDRESS	0x6400                     	| [$f13e: stb    $6400] [uncovered]
 	move.b	d1,(a0)                         	| [...]
 l_f141:
 	GET_ADDRESS	0x6440                     	| [$f141: cmpa   $6440]
 	cmp.b	(a0),d0                          	| [...]
-	bcc	l_f149                             	| [$f144: bcc    $f149]
+	jcc	l_f149                             	| [$f144: jcc    $f149]
 	GET_ADDRESS	0x6440                     	| [$f146: sta    $6440] [uncovered]
 	move.b	d0,(a0)                         	| [...]
 l_f149:
 	GET_ADDRESS	0x6480                     	| [$f149: cmpa   $6480]
 	cmp.b	(a0),d0                          	| [...]
-	bcc	l_f151                             	| [$f14c: bcc    $f151]
+	jcc	l_f151                             	| [$f14c: jcc    $f151]
 	GET_ADDRESS	0x6480                     	| [$f14e: sta    $6480] [uncovered]
 	move.b	d0,(a0)                         	| [...]
 l_f151:
 	GET_ADDRESS	0x64c0                     	| [$f151: cmpb   $64c0]
 	cmp.b	(a0),d1                          	| [...]
-	bcc	l_f159                             	| [$f154: bcc    $f159]
+	jcc	l_f159                             	| [$f154: jcc    $f159]
 	GET_ADDRESS	0x64c0                     	| [$f156: stb    $64c0] [uncovered]
 	move.b	d1,(a0)                         	| [...]
 l_f159:
@@ -319,19 +288,19 @@ alternate_update_sequence_f165:
 frame_odd_f1a3:
 	jbsr	try_to_update_all_sprites_odd_f48b        	| [$f1a3: jsr    $f48b]
 	GET_ADDRESS	0x6500                     	| [$f1a6: clr    $6500]
-	move.b	#0,(a0)                         	| [...]
+	clr.b	(a0)                         	| [...]
 	GET_ADDRESS	0x6540                     	| [$f1a9: clr    $6540]
-	move.b	#0,(a0)                         	| [...]
+	clr.b	(a0)                         	| [...]
 	GET_ADDRESS	0x6580                     	| [$f1ac: clr    $6580]
-	move.b	#0,(a0)                         	| [...]
+	clr.b	(a0)                         	| [...]
 	GET_ADDRESS	0x65c0                     	| [$f1af: clr    $65c0]
-	move.b	#0,(a0)                         	| [...]
+	clr.b	(a0)                         	| [...]
 	move.w	#0x6200,d4                      	| [$f1b2: ldu    #$6200]
 	GET_DP_ADDRESS	0x0f                    	| [$f1b5: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	move.w	#0x6500,d4                      	| [$f1b7: ldu    #$6500]
 	GET_DP_ADDRESS	0x11                    	| [$f1ba: stu    $11]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 l_f1bc:
 	GET_ADDRESS	queue_sprites_flag_6702                     	| [$f1bc: lda    $6702]
 	move.b	(a0),d0                         	| [...]
@@ -377,25 +346,25 @@ continue_f202:
 	move.b	#0x17,d1                        	| [$f204: ldb    #$17]
 	GET_ADDRESS	0x6500                     	| [$f206: cmpb   $6500]
 	cmp.b	(a0),d1                          	| [...]
-	bcc	l_f20e                             	| [$f209: bcc    $f20e]
+	jcc	l_f20e                             	| [$f209: jcc    $f20e]
 	GET_ADDRESS	0x6500                     	| [$f20b: stb    $6500] [uncovered]
 	move.b	d1,(a0)                         	| [...]
 l_f20e:
 	GET_ADDRESS	0x6540                     	| [$f20e: cmpa   $6540]
 	cmp.b	(a0),d0                          	| [...]
-	bcc	l_f216                             	| [$f211: bcc    $f216]
+	jcc	l_f216                             	| [$f211: jcc    $f216]
 	GET_ADDRESS	0x6540                     	| [$f213: sta    $6540] [uncovered]
 	move.b	d0,(a0)                         	| [...]
 l_f216:
 	GET_ADDRESS	0x6580                     	| [$f216: cmpa   $6580]
 	cmp.b	(a0),d0                          	| [...]
-	bcc	l_f21e                             	| [$f219: bcc    $f21e]
+	jcc	l_f21e                             	| [$f219: jcc    $f21e]
 	GET_ADDRESS	0x6580                     	| [$f21b: sta    $6580] [uncovered]
 	move.b	d0,(a0)                         	| [...]
 l_f21e:
 	GET_ADDRESS	0x65c0                     	| [$f21e: cmpb   $65c0]
 	cmp.b	(a0),d1                          	| [...]
-	bcc	l_f226                             	| [$f221: bcc    $f226]
+	jcc	l_f226                             	| [$f221: jcc    $f226]
 	GET_ADDRESS	0x65c0                     	| [$f223: stb    $65c0] [uncovered]
 	move.b	d1,(a0)                         	| [...]
 l_f226:
@@ -449,11 +418,13 @@ compute_coords_f273:
 	move.b	d0,(a0)                         	| [...]
 	move.l	#0xe400,d2                      	| [$f27f: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f282: ldb    $3,u]
+	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
-	moveq	#0,d0                            	| [$f284: clra]
-	asl.b	#1,d1                            	| [$f285: aslb]
-	roxl.b	#1,d0                             	| [$f286: rola]
-	MAKE_D
+	add.w	d1,d1
+												| [$f284: clra]
+												| [$f285: aslb]
+													| [$f286: rola]
+					
 	add.w	d1,d2                            	| [$f287: leax   d,x]
 	GET_X_ADDRESS	0x0200                   	| [$f289: ldd    $0200,x]
 	LOAD_D                                 	| [$f289: ldd    $0200,x]
@@ -509,7 +480,7 @@ l_f2b7:
 												| [$f2c9: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f2cb: stu    $0d]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f2cd: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f2cf: lsrb]
@@ -616,7 +587,7 @@ l_f32e:
 	                    	| [$f34c: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f34e: stu    $0d]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f350: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	* divide by 4 to find sprite index
@@ -654,7 +625,7 @@ l_f368:
 												| [$f378: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f37a: stu    $0d]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f37c: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f37e: lsrb]
@@ -736,7 +707,7 @@ l_f3ca:
 	add.b	(a0),d0                          	| [...]
 	move.b	d0,(a0)                         	| [$f3dc: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f3de: stu    $0d]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f3e0: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f3e2: lsrb]
@@ -833,7 +804,7 @@ l_f43c:
 	add.b	(a0),d0                          	| [...]	                    	
 	move.b	d0,(a0)                         	| [$f455: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f457: stu    $0d]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f459: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	* convert address to index of sprite (1 sprite = 4 bytes)
@@ -854,7 +825,7 @@ l_f43c:
 	add.b	(a0),d0                          	| [...]                 	
 	move.b	d0,(a0)                         	| [$f474: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f476: stu    $0d]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f478: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f47a: lsrb]
@@ -890,7 +861,7 @@ l_f49d:
 	GET_DP_ADDRESS	0x0b                    	| [$f49d: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f49f: cmpa   #$04]
-	bcc	hide_rest_of_sprites_f4c6                             	| [$f4a1: bcc    $f4c6]
+	jcc	hide_rest_of_sprites_f4c6                             	| [$f4a1: jcc    $f4c6]
 l_f4a3:
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4a3: lda    $09]
 	move.b	(a0),d0                         	| [...]
@@ -1004,7 +975,7 @@ l_f4f6:
 	GET_DP_ADDRESS	0x0b                    	| [$f4f6: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f4f8: cmpa   #$04]
-	bcc	hide_rest_of_sprites_f51f                             	| [$f4fa: bcc    $f51f]
+	jcc	hide_rest_of_sprites_f51f                             	| [$f4fa: jcc    $f51f]
 l_f4fc:
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4fc: lda    $09]
 	move.b	(a0),d0                         	| [...]
@@ -1112,7 +1083,7 @@ l_f569:
 	cmp.b	#0x04,d1                         	| [$f582: cmpb   #$04]
 	bcs	l_f569                             	| [$f584: bcs    $f569]
 	GET_DP_ADDRESS	0x0f                    	| [$f586: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f588: rts]
 
 enemies_coordinate_transform_f589:
@@ -1127,7 +1098,7 @@ enemies_coordinate_transform_f589:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f2dc                            	| [$f598: jsr    $f2dc]
 	GET_DP_ADDRESS	0x0f                    	| [$f59b: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f59d: rts]
 
 l_f59e:
@@ -1165,7 +1136,7 @@ l_f5af:
 										| [$f5cb: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f5cd: stu    $0d]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f5cf: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f5d1: lsrb]
@@ -1183,7 +1154,7 @@ l_f5de:
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f5af                             	| [$f5e2: bne    $f5af]
 	GET_DP_ADDRESS	0x0f                    	| [$f5e4: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                	| [...]
+	MOVE_W_D4_IN_A0                	| [...]
 	rts                                    	| [$f5e6: rts]
 
 coordinate_transform_one_f5e7:
@@ -1194,7 +1165,7 @@ coordinate_transform_one_f5e7:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f5ed: jsr    $f273]
 	GET_DP_ADDRESS	0x0f                    	| [$f5f0: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                	| [...]
+	MOVE_W_D4_IN_A0                	| [...]
 	rts                                    	| [$f5f2: rts]
 
 coordinate_transform_two_f5f3:
@@ -1205,7 +1176,7 @@ coordinate_transform_two_f5f3:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f5f9: jsr    $f273]
 	GET_DP_ADDRESS	0x0f                    	| [$f5fc: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                	| [...]
+	MOVE_W_D4_IN_A0                	| [...]
 	rts                                    	| [$f5fe: rts]
 
 coordinate_transform_three_f5ff:
@@ -1216,7 +1187,7 @@ coordinate_transform_three_f5ff:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f605: jsr    $f273]
 	GET_DP_ADDRESS	0x0f                    	| [$f608: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                	| [...]
+	MOVE_W_D4_IN_A0                	| [...]
 	rts                                    	| [$f60a: rts]
 
 coordinate_transform_four_f60b:
@@ -1227,7 +1198,7 @@ coordinate_transform_four_f60b:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f611: jsr    $f273]
 	GET_DP_ADDRESS	0x0f                    	| [$f614: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f616: rts]
 
 coordinate_transform_eight_f617:
@@ -1239,7 +1210,7 @@ coordinate_transform_eight_f617:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f386                            	| [$f620: jsr    $f386]
 	GET_DP_ADDRESS	0x0f                    	| [$f623: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f625: rts]
 
 enemies_coordinate_transform_f626:
@@ -1251,7 +1222,7 @@ enemies_coordinate_transform_f626:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f386                            	| [$f630: jsr    $f386]
 	GET_DP_ADDRESS	0x0f                    	| [$f633: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f635: rts]
 
 coordinate_transform_six_f636:
@@ -1263,7 +1234,7 @@ coordinate_transform_six_f636:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f3f1                            	| [$f63f: jsr    $f3f1]
 	GET_DP_ADDRESS	0x0f                    	| [$f642: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f644: rts]
 
 coordinate_transform_seven_f645:
@@ -1274,7 +1245,7 @@ coordinate_transform_seven_f645:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f3f1                            	| [$f64b: jsr    $f3f1]
 	GET_DP_ADDRESS	0x0f                    	| [$f64e: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f650: rts]
 
 coordinate_transform_five_f651:
@@ -1286,7 +1257,7 @@ coordinate_transform_five_f651:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f670                            	| [$f65a: jsr    $f670]
 	GET_DP_ADDRESS	0x0f                    	| [$f65d: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f65f: rts]
 
 coordinate_transform_zero_f660:
@@ -1298,7 +1269,7 @@ coordinate_transform_zero_f660:
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f670                            	| [$f66a: jsr    $f670]
 	GET_DP_ADDRESS	0x0f                    	| [$f66d: stu    $0f]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f66f: rts]
 
 l_f670:
@@ -1316,7 +1287,7 @@ l_f670:
 				                    	| [$f680: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f682: stu    $0d]
-	MOVE_W_FROM_REG	d4,(a0)                         	| [...]
+	MOVE_W_D4_IN_A0                         	| [...]
 	GET_DP_ADDRESS	0x0e                    	| [$f684: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f686: lsrb]
@@ -1337,7 +1308,7 @@ race_beam_update_sprites_f695:
 	GET_DP_ADDRESS	0x0b                    	| [$f695: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f697: cmpa   #$04]
-	bcc	l_f6d4                             	| [$f699: bcc    $f6d4]
+	jcc	l_f6d4                             	| [$f699: jcc    $f6d4]
 	move.b	#0x0e,d0                        	| [$f69b: lda    #$0e]
 	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f69d: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
@@ -1410,7 +1381,7 @@ l_f6d5:
 				                    	| [$f6e7: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f6e9: cmpa   #$04]
-	bcc	l_f6b2                             	| [$f6eb: bcc    $f6b2]
+	jcc	l_f6b2                             	| [$f6eb: jcc    $f6b2]
 	rts                                    	| [$f6ed: rts]
 
 race_beam_update_sprites_f6ee:
@@ -1420,7 +1391,7 @@ race_beam_update_sprites_f6ee:
 	GET_DP_ADDRESS	0x0b                    	| [$f6ee: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f6f0: cmpa   #$04]
-	bcc	l_f72d                             	| [$f6f2: bcc    $f72d]
+	jcc	l_f72d                             	| [$f6f2: jcc    $f72d]
 	move.b	#0x0e,d0                        	| [$f6f4: lda    #$0e]
 	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f6f6: sta    $0a]
 	move.b	d0,(a0)                         	| [...]
@@ -1493,7 +1464,7 @@ l_f72e:
 				                    	| [$f740: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f742: cmpa   #$04]
-	bcc	l_f70b                             	| [$f744: bcc    $f70b]
+	jcc	l_f70b                             	| [$f744: jcc    $f70b]
 	rts                                    	| [$f746: rts]
 
 

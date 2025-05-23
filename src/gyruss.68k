@@ -638,7 +638,7 @@ l_0050:
 	* reached when completing the second level
 l_0058:
 *out  ($FF),a
-	jbsr	l_5c88                            	| [$005a: call $5C88]
+	jbsr	music_off_5c88                            	| [$005a: call $5C88]
 	rts                                    	| [$005d: ret]
 
 l_0066:
@@ -1539,7 +1539,11 @@ l_0910:
 	lea	l_961D(a6),a0                      	| [$091a: ld   hl,$961D]
 	addq.b	#1,(a0)                         	| [$091d: inc  (hl)]
 	lea	lives_9600(a6),a0                  	| [$091e: ld   hl,lives_9600]
+	
+	tst.b	infinite_lives_flag
+	jne		0f
 	subq.b	#1,(a0)                         	| [$0921: dec  (hl)]
+0:
 	sne		d7
 	move.w	d0,-(sp)                        	| [$0922: push af]
 	lea	player_1_data_9620(a6),a1                      	| [$0927: ld   de,$9620]
@@ -2017,7 +2021,7 @@ l_0c2a:
 	READ_ROM_BYTE	0x24EA,d0                       	| [$0c47: ld   a,($24EA)] [uncovered]
 	move.b	d0,l_934E(a6)                   	| [$0c4a: ld   ($934E),a] [uncovered]
 	jbsr	l_5d92                            	| [$0c4d: call $5D92] [uncovered]
-	jra	l_0c7a                             	| [$0c50: jp   $0C7A] [uncovered]
+	jra	write_10000_points_0c7a                             	| [$0c50: jp   $0C7A] [uncovered]
 
 report_chance_stage_results_0c53:
 	move.w	#0x0118,d3                          	| [$0c53: ld   de,$0118]
@@ -2033,12 +2037,12 @@ report_chance_stage_results_0c53:
 	move.b	bcd_nb_chance_ships_shot_917e(a6),d0                   	| [$0c68: ld   a,($917E)]
 	lea		0x85B2,a1                          	| [$0c6b: ld   de,$85B2]
 	jbsr	write_2_digits_05ea                            	| [$0c6e: call $05EA]
-	jbsr	l_5c88                            	| [$0c71: call $5C88]
+	jbsr	music_off_5c88                            	| [$0c71: call $5C88]
 	jbsr	l_5dd4                            	| [$0c74: call $5DD4]
 	jra	next_game_state_080b                             	| [$0c77: jp   $080B]
 
 
-l_0c7a:
+write_10000_points_0c7a:
 	READ_ROM_BYTE 0x0072,d0                       	| [$0c7a: ld   a,($0072)]
 	lea	0x85B2,a1                      	| [$0c7d: ld   de,$85B2]
 	move.b	#0x01,d2                        	| [$0c80: ld   c,$01]
@@ -2046,10 +2050,11 @@ l_0c7a:
 	move.w	#0x011B,d3                          	| [$0c85: ld   de,$011B]
 	jbsr	start_task_d3_0038                            	| [$0c88: rst  $38]
 	lea	0x85D2,a0                      	| [$0c89: ld   hl,$85D2]
+	* write the "1" of "10000" points
 	WRITE_VIDEORAM	0x17                      	| [$0c8c: ld   (hl),$17]
 	BCLR_A0  2                         	| [$0c8e: res  2,h]
 	WRITE_VIDEORAM	1                      	| [$0c90: ld   (hl),$01]
-	jbsr	l_5c88                            	| [$0c92: call $5C88]
+	jbsr	music_off_5c88                            	| [$0c92: call $5C88]
 	jra	next_game_state_080b                             	| [$0c95: jp   $080B]
 
 
@@ -2480,7 +2485,7 @@ l_0f67:
 	rts                                    	| [$0f71: ret  z] [uncovered] [...]
 0:
 	jbsr	l_0ecb                            	| [$0f72: call $0ECB] [uncovered]
-	jbsr	l_5c88                            	| [$0f75: call $5C88] [uncovered]
+	jbsr	music_off_5c88                            	| [$0f75: call $5C88] [uncovered]
 	jbsr	l_5dd4                            	| [$0f78: call $5DD4] [uncovered]
 l_0f7b:
 	move.b	copy_of_system_inputs_942E(a6),d0                   	| [$0f7b: ld   a,($942E)] [uncovered]
@@ -2922,7 +2927,7 @@ l_139d:
 	jbsr	l_4e92                            	| [$139d: call $4E92]
 	jbsr	l_0ecb                            	| [$13a0: call $0ECB]
 	jbsr	l_01d6                            	| [$13a3: call $01D6]
-	jbsr	l_5c88                            	| [$13a6: call $5C88]
+	jbsr	music_off_5c88                            	| [$13a6: call $5C88]
 	jbsr	l_5dd4                            	| [$13a9: call $5DD4]
 * another ROM checksum
 *	LEA_ROM	0x4BC7,a0                          	| [$13ac: ld   hl,$4BC7]
@@ -7766,7 +7771,7 @@ l_43f4:
 	clr.b	d0                               	| [$43f4: xor  a]
 	move.b	d0,update_sequence_control_flag_a7fd(a6)                       	| [$43f5: ld   ($A7FD),a]
 	jbsr	l_0ecb                            	| [$43f8: call $0ECB]
-	jbsr	l_5c88                            	| [$43fb: call $5C88]
+	jbsr	music_off_5c88                            	| [$43fb: call $5C88]
 	jbsr	l_5dd4                            	| [$43fe: call $5DD4]
 	jbsr	l_01d6                            	| [$4401: call $01D6]
 	* another ROM check after ship killed in the attract play
@@ -8694,7 +8699,7 @@ l_4c54:
 	beq.b	0f                               	| [...]
 	rts                                    	| [$4c5d: ret  nz] [...]
 0:
-	jbsr	l_5c88                            	| [$4c5e: call $5C88]
+	jbsr	music_off_5c88                            	| [$4c5e: call $5C88]
 	move.w	#0x0100,d3                          	| [$4c61: ld   de,$0100]
 	jbsr	start_task_d3_0038                            	| [$4c64: rst  $38]
 	addq.b	#1,d3                           	| [$4c65: inc  e]
@@ -9714,7 +9719,7 @@ l_5c4a:
 	move.l	(sp)+,a0                        	| [$5c59: pop  hl] [uncovered]
 	rts                                    	| [$5c5a: ret] [uncovered]
 
-l_5c5b:
+set_music_sequence_5c5b:
 
 	move.l	a0,-(sp)                        	| [$5c5b: push hl]
 	move.w	d0,-(sp)                        	| [$5c5c: push af]
@@ -9743,17 +9748,17 @@ l_5c72:
 	jne	l_5c67                             	| [$5c76: jr   nz,$5C67]
 l_5c78:
 	clr.b	d0                               	| [$5c78: xor  a]
-	jbsr	l_5c5b                            	| [$5c79: call $5C5B]
+	jbsr	set_music_sequence_5c5b                            	| [$5c79: call $5C5B]
 	READ_ROM_BYTE	0x098B,d0                       	| [$5c7c: ld   a,($098B)]
-	jra	l_5c5b                             	| [$5c7f: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5c7f: jp   $5C5B]
 	
 l_5c82:
 	READ_ROM_BYTE	0x0C27,d0                       	| [$5c82: ld   a,($0C27)]
 	jra	l_5c4a                             	| [$5c85: jp   $5C4A]
 
-l_5c88:
-	READ_ROM_BYTE	0x121C,d0                       	| [$5c88: ld   a,($121C)]
-	jra	l_5c5b                             	| [$5c8b: jp   $5C5B]
+music_off_5c88:
+	move.b	#0x82,d0                       	| [$5c88: ld   a,($121C)]
+	jra	set_music_sequence_5c5b                             	| [$5c8b: jp   $5C5B]
 
 l_5c8e:
 	READ_ROM_BYTE	0x0DF5,d0                       	| [$5c8e: ld   a,($0DF5)]
@@ -9765,7 +9770,7 @@ l_5c94:
 
 l_5c9a:
 	READ_ROM_BYTE	0x00F8,d0                       	| [$5c9a: ld   a,($00F8)]
-	jbsr	l_5c5b                            	| [$5c9d: call $5C5B]
+	jbsr	set_music_sequence_5c5b                            	| [$5c9d: call $5C5B]
 	READ_ROM_BYTE	0x06D4,d0                       	| [$5ca0: ld   a,($06D4)]
 	jra	l_5c3f                             	| [$5ca3: jp   $5C3F]
 
@@ -9844,7 +9849,7 @@ l_5d04:
 
 l_5d16:
 	READ_ROM_BYTE	0x1063,d0                       	| [$5d16: ld   a,($1063)]
-	jra	l_5c5b                             	| [$5d19: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5d19: jp   $5C5B]
 
 l_5d1c:
 	READ_ROM_BYTE	0x40EC,d0                       	| [$5d1c: ld   a,($40EC)]
@@ -9898,9 +9903,9 @@ l_5d68:
 
 l_5d6e:
 	READ_ROM_BYTE	0x121C,d0                       	| [$5d6e: ld   a,($121C)]
-	jbsr	l_5c5b                            	| [$5d71: call $5C5B]
+	jbsr	set_music_sequence_5c5b                            	| [$5d71: call $5C5B]
 	READ_ROM_BYTE	0x09F9,d0                       	| [$5d74: ld   a,($09F9)]
-	jbsr	l_5c5b                            	| [$5d77: call $5C5B]
+	jbsr	set_music_sequence_5c5b                            	| [$5d77: call $5C5B]
 	READ_ROM_BYTE	0x4084,d0                       	| [$5d7a: ld   a,($4084)]
 	jbsr	l_5c4a                            	| [$5d7d: call $5C4A]
 	READ_ROM_BYTE	0x390E,d0                       	| [$5d80: ld   a,($390E)]
@@ -9919,7 +9924,7 @@ l_5d92:
 	jbsr	l_5c3f                            	| [$5d95: call $5C3F]
 
 	READ_ROM_BYTE	0x1366,d0                       	| [$5d98: ld   a,($1366)]
-	jra	l_5c5b                             	| [$5d9b: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5d9b: jp   $5C5B]
 
 l_5d9e:
 	READ_ROM_BYTE	0x11BB,d0                       	| [$5d9e: ld   a,($11BB)]
@@ -9939,30 +9944,30 @@ l_5db0:
 
 l_5db6:
 	READ_ROM_BYTE	0x2255,d0                       	| [$5db6: ld   a,($2255)]
-	jra	l_5c5b                             	| [$5db9: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5db9: jp   $5C5B]
 
 l_5dbc:
 	READ_ROM_BYTE	0x24FC,d0                       	| [$5dbc: ld   a,($24FC)]
-	jra	l_5c5b                             	| [$5dbf: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5dbf: jp   $5C5B]
 
 l_5dc2:
 	READ_ROM_BYTE	0x1203,d0                       	| [$5dc2: ld   a,($1203)]
-	jra	l_5c5b                             	| [$5dc5: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5dc5: jp   $5C5B]
 
 l_5dc8:
 	READ_ROM_BYTE	0x08FF,d0                       	| [$5dc8: ld   a,($08FF)]
-	jra	l_5c5b                             	| [$5dcb: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5dcb: jp   $5C5B]
 
 l_5dce:
 	READ_ROM_BYTE	0x154F,d0                       	| [$5dce: ld   a,($154F)]
-	jra	l_5c5b                             	| [$5dd1: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5dd1: jp   $5C5B]
 
 l_5dd4:
 	READ_ROM_BYTE	0x23C5,d0                       	| [$5dd4: ld   a,($23C5)]
-	jra	l_5c5b                             	| [$5dd7: jp   $5C5B]
+	jra	set_music_sequence_5c5b                             	| [$5dd7: jp   $5C5B]
 
 title_screen_init_5e1a:
-	jbsr	l_5c88                            	| [$5e1a: call $5C88]
+	jbsr	music_off_5c88                            	| [$5e1a: call $5C88]
 	jbsr	l_5dd4                            	| [$5e1d: call $5DD4]
 	move.b	l_9440(a6),d0                   	| [$5e20: ld   a,($9440)]
 	                               	| [$5e23: and  a]

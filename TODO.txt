@@ -1,5 +1,7 @@
 - compare coords!! top left: skip level with "neptune": shifted verically!!!
 
+- optimize shifting_on_d5d6_1bc3
+
 - compare: either log moves of chance stage ships
   or fading away player ship as some shifting is noticed when rotating
 

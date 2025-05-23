@@ -3732,24 +3732,34 @@ l_19be:
 	clr.b	d0                               	| [$19c4: xor  a]
 	jra	l_19b2                             	| [$19c5: jr   $19B2]
 
+
+
+* for sprite structures (0x9800, 0xA000, 0x4040)
+displayed_y_00 = 0x00
+sprite_code_01 = 0x01
+sprite_code_02 = 0x02
+displayed_x_03 = 0x03
+
+* < A2: object structure (9000: main ship)
+* < A3: sprite shadow
 l_1a15:
 	LEA_ROM	0x5E2D,a0                          	| [$1a15: ld   hl,$5E2D]
 	jbsr	add_d0_to_a0_0018                            	| [$1a18: rst  $18]
 	move.b	(a0)+,d1                         	| [$1a19: ld   b,(hl)]
 												| [$1a1a: inc  hl]
-	move.b	(0x02,a2),d3                    	| [$1a1b: ld   d,(ix+$02)]
+	move.b	(fine_x_02,a2),d3                    	| [$1a1b: ld   d,(ix+$02)]
 	move.b	d3,d0                           	| [$1a1e: ld   a,d]
 	add.b	d1,d0                            	| [$1a1f: add  a,b]
-	move.b	d0,(0x03,a3)                    	| [$1a20: ld   (iy+$03),a]
-	move.b	d0,(0x07,a3)                    	| [$1a23: ld   (iy+$07),a]
+	move.b	d0,(displayed_x_03,a3)              | [$1a20: ld   (iy+$03),a]
+	move.b	d0,(displayed_x_03+4,a3)                    	| [$1a23: ld   (iy+$07),a]
 	move.b	(a0)+,d1                         	| [$1a26: ld   b,(hl)]
 												| [$1a27: inc  hl]
-	move.b	(0x03,a2),d4                    	| [$1a28: ld   e,(ix+$03)]
+	move.b	(fine_y_03,a2),d4                    	| [$1a28: ld   e,(ix+$03)]
 	move.b	d4,d0                           	| [$1a2b: ld   a,e]
 	add.b	d1,d0                            	| [$1a2c: add  a,b]
-	move.b	d0,(0x00,a3)                    	| [$1a2d: ld   (iy+$00),a]
+	move.b	d0,(displayed_y_00,a3)                    	| [$1a2d: ld   (iy+$00),a]
 	add.b	#0x08,d0                         	| [$1a30: add  a,$08]
-	move.b	d0,(0x04,a3)                    	| [$1a32: ld   (iy+$04),a]
+	move.b	d0,(displayed_y_00+4,a3)                    	| [$1a32: ld   (iy+$04),a]
 	move.b	(a0)+,d1                         	| [$1a35: ld   b,(hl)]
 	                           	| [$1a36: inc  hl]
 	move.b	d3,d0                           	| [$1a37: ld   a,d]
@@ -3920,7 +3930,7 @@ l_1b86:
 	lea	level_playing_flag_9000(a6),a2                      	| [$1b86: ld   ix,$9000]
 	lea	sprite_shadow_ram_9800(a6),a3      	| [$1b8a: ld   iy,sprite_shadow_ram_9800]
 	move.w	#0x8000,d5                          	| [$1b8e: ld   hl,$8000]
-	move.b	(0x02,a2),d3                    	| [$1b91: ld   d,(ix+$02)]
+	move.b	(fine_x_02,a2),d3                    	| [$1b91: ld   d,(ix+$02)]
 	clr.b	d4                               	| [$1b94: ld   e,$00]
 	LOAD_D3_16_FROM_D3D4                        | [$1b96: and  a]
 	sub.w	d3,d5                            	| [$1b97: sbc  hl,de]
@@ -3929,7 +3939,7 @@ l_1b86:
 	move.b	d5,(0x06,a2)                    	| [$1b9c: ld   (ix+$06),h]
 	move.b	d6,(0x07,a2)                    	| [$1b9f: ld   (ix+$07),l]
 	move.w	#0x8000,d5                          	| [$1ba2: ld   hl,$8000]
-	move.b	(0x03,a2),d3                    	| [$1ba5: ld   d,(ix+$03)]
+	move.b	(fine_y_03,a2),d3                    	| [$1ba5: ld   d,(ix+$03)]
 	clr.b	d4                               	| [$1ba8: ld   e,$00]
 	LOAD_D3_16_FROM_D3D4                               	| [$1baa: and  a]
 	sub.w	d3,d5                            	| [$1bab: sbc  hl,de]
@@ -3959,6 +3969,9 @@ shifting_on_d5d6_1bc3:
 	roxr.b	#1,d6                           	| [$1bdd: rr   l]
 	rts                                    	| [$1bdf: ret]
 
+
+
+
 update_player_ship_fading_away_1be0:
 	lea	sprite_shadow_ram_9800(a6),a3      	| [$1be0: ld   iy,sprite_shadow_ram_9800]
 	lea	level_playing_flag_9000(a6),a2                      	| [$1be4: ld   ix,$9000]
@@ -3966,13 +3979,13 @@ update_player_ship_fading_away_1be0:
 	move.b	d1,d0                           	| [$1beb: ld   a,b]
 	cmp.b	#0xEB,d0                         	| [$1bec: cp   $EB]
 	jeq	l_1c32                             	| [$1bee: jp   z,$1C32]
-	jcs	l_1c90                             	| [$1bf1: jp   c,$1C90]
+	jcs	move_fading_away_ship_1c90                             	| [$1bf1: jp   c,$1C90]
 	cmp.b	#0xF7,d0                         	| [$1bf4: cp   $F7]
 	jeq	l_1c61                             	| [$1bf6: jp   z,$1C61]
 l_1bf9:
 	subq.b	#1,(0x0c,a2)                    	| [$1bf9: dec  (ix+$0c)]
 	move.b	d1,d0                           	| [$1bfc: ld   a,b]
-	move.b	(0x02,a2),d5                    	| [$1bfd: ld   h,(ix+$02)]
+	move.b	(fine_x_02,a2),d5                    	| [$1bfd: ld   h,(ix+$02)]
 	move.b	(0x0a,a2),d6                    	| [$1c00: ld   l,(ix+$0a)]
 	move.b	(0x06,a2),d3                    	| [$1c03: ld   d,(ix+$06)]
 	move.b	(0x07,a2),d4                    	| [$1c06: ld   e,(ix+$07)]
@@ -3980,9 +3993,9 @@ l_1bf9:
 	LOAD_D5_16_FROM_D5D6
 	add.w	d3,d5                            	| [$1c09: add  hl,de]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x02,a2)                    	| [$1c0a: ld   (ix+$02),h]
+	move.b	d5,(fine_x_02,a2)                    	| [$1c0a: ld   (ix+$02),h]
 	move.b	d6,(0x0a,a2)                    	| [$1c0d: ld   (ix+$0a),l]
-	move.b	(0x03,a2),d5                    	| [$1c10: ld   h,(ix+$03)]
+	move.b	(fine_y_03,a2),d5                    	| [$1c10: ld   h,(ix+$03)]
 	move.b	(0x0b,a2),d6                    	| [$1c13: ld   l,(ix+$0b)]
 	move.b	(0x08,a2),d3                    	| [$1c16: ld   d,(ix+$08)]
 	move.b	(0x09,a2),d4                    	| [$1c19: ld   e,(ix+$09)]
@@ -3990,9 +4003,9 @@ l_1bf9:
 	LOAD_D5_16_FROM_D5D6
 	add.w	d3,d5                            	| [$1c1c: add  hl,de]
 	LOAD_D5D6_FROM_D5_16
-	move.b	d5,(0x03,a2)                    	| [$1c1d: ld   (ix+$03),h]
+	move.b	d5,(fine_y_03,a2)                    	| [$1c1d: ld   (ix+$03),h]
 	move.b	d6,(0x0b,a2)                    	| [$1c20: ld   (ix+$0b),l]
-	move.b	(0x01,a2),d0                    	| [$1c23: ld   a,(ix+$01)]
+	move.b	(ship_angle_01,a2),d0                    	| [$1c23: ld   a,(ix+$01)]
 	addq.b	#0x04,d0                        	| [$1c26: add  a,$04]
 	ror.b	#1,d0                            	| [$1c28: rrca]
 	and.b	#0x7C,d0                         	| [$1c29: and  $7C]
@@ -4040,7 +4053,8 @@ l_1c61:
 	move.b	d0,(0x0e,a3)                    	| [$1c8a: ld   (iy+$0e),a]
 	jra	l_1bf9                             	| [$1c8d: jp   $1BF9]
 
-l_1c90:
+move_fading_away_ship_1c90:
+	* game is using enemy slot #1 to display fading ship
 	lea	sprite_shadow_ram_9800+0x10(a6),a3          	| [$1c90: ld   iy,$9810]
 	lea	enemy_objects_9010(a6),a2                      	| [$1c94: ld   ix,$9010]
 	move.b	#0x02,d1                        	| [$1c98: ld   b,$02]

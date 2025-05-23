@@ -444,13 +444,13 @@
 	.endm
 	
 	.macro	ENABLE_REGS_LOG
-	moveq	#0,d6
-	moveq	#1,d7
+	moveq	#1,d6		| enable
+	moveq	#0,d7		| main cpu
 	jbsr	osd_cpu_logging_control	
 	.endm
 	.macro	DISABLE_REGS_LOG
-	moveq	#0,d6
-	moveq	#0,d7
+	moveq	#0,d6		| disable
+	moveq	#0,d7		| main cpu
 	jbsr	osd_cpu_logging_control	
 	.endm	
 	.endif
@@ -2052,7 +2052,7 @@ write_10000_points_0c7a:
 	lea	0x85D2,a0                      	| [$0c89: ld   hl,$85D2]
 	* write the "1" of "10000" points
 	WRITE_VIDEORAM	0x17                      	| [$0c8c: ld   (hl),$17]
-	BCLR_A0  2                         	| [$0c8e: res  2,h]
+	BCLR_A0  10                         	| [$0c8e: res  2,h]
 	WRITE_VIDEORAM	1                      	| [$0c90: ld   (hl),$01]
 	jbsr	music_off_5c88                            	| [$0c92: call $5C88]
 	jra	next_game_state_080b                             	| [$0c95: jp   $080B]
@@ -4086,12 +4086,12 @@ l_1cb7:
 	LEA_ROM	0x1D1F,a0                          	| [$1ccd: ld   hl,$1D1F]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$1cd0: rst  $08]
 	move.b	d0,d1                           	| [$1cd1: ld   b,a]
-	move.b	is_screen_flipped_9407(a6),d0                   	| [$1cd2: ld   a,($9407)]
-	                               	| [$1cd5: and  a]
-	jeq	l_1cdd                             	| [$1cd6: jr   z,$1CDD]
-	READ_ROM_BYTE	0x006D,d0                       	| [$1cd8: ld   a,($006D)] [uncovered]
-	add.b	d1,d0                            	| [$1cdb: add  a,b] [uncovered]
-	move.b	d0,d1                           	| [$1cdc: ld   b,a] [uncovered]
+	* remove cocktail mode					| [$1cd2: ld   a,($9407)]
+								| [$1cd5: and  a]
+							| [$1cd6: jr   z,$1CDD]
+							| [$1cd8: ld   a,($006D)] [uncovered]
+							| [$1cdb: add  a,b] [uncovered]
+							| [$1cdc: ld   b,a] [uncovered]
 l_1cdd:
 	move.b	(displayed_x_03,a3),d0                    	| [$1cdd: ld   a,(iy+$03)]
 	sub.b	d1,d0                            	| [$1ce0: sub  b]

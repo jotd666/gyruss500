@@ -354,9 +354,9 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
                     else:
                         raise Exception(f"height not found for {name}!!")
                     for orientation,_ in plane_orientations:
-                        f.write("* {}\n".format(orientation))
-                        f.write(f"\t.word\t{height},{width},{offset}\n")
                         if orientation in t:
+                            f.write("* {}\n".format(orientation))
+                            f.write(f"\t.word\t{height},{width},{offset}\n")
                             for bitplane_id in t[orientation]["bitplanes"]:
                                 f.write("\t.long\t")
                                 if bitplane_id:
@@ -367,9 +367,6 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
                             if len(t)==1:
                                 # optim: only standard
                                 break
-                        else:
-                            for _ in range(nb_planes+1):
-                                f.write("\t.long\t0\n")
 
     f.write("\t.section\t.datachip\n")
 

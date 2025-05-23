@@ -26,6 +26,7 @@ BORDERBLANK = 1
 
 SPRITE_X_CORRECTION = 7
 SPRITE_Y_CORRECTION = 0
+SPRITE_HEIGHT = 8
 
 Y_MAX = 256
 
@@ -1275,6 +1276,8 @@ update_one_bob:
 	move.b	(TARGET_SPRITE_CODE1,a0),d2
 	jeq		2f
 
+	move.b	#0,0x100
+
 	move.b	(TARGET_SPRITE_CODE2,a0),d3
 	and.b	#0x20,d3
 	add.w	d3,d3
@@ -1289,7 +1292,7 @@ update_one_bob:
 	move.b	(TARGET_SPRITE_CODE2,a0),d2
 	* color = m_spriteram[offs + 2] & 0x0f
 	and.b	#0xF,d2		| CLUT
-	
+
 	* here D3 is code (with bank) and D2 is clut
 	* log the usage
 	
@@ -1326,7 +1329,7 @@ update_one_bob:
 	btst	#7,d3
 	jeq		101f
 	* mirror
-	add.w	#((NB_PLAYFIELD_PLANES+1)*4+6)*2,a0
+	add.w	#((NB_PLAYFIELD_PLANES+1)*4+6),a0
 101:
 	move.w	(a0)+,d4		| height
 	move.w	(a0)+,d5		| width
@@ -1336,7 +1339,7 @@ update_one_bob:
 	* flipped: offset is different: it's 16-height-offset
 	neg.w	d2
 	sub.w	d4,d2
-	add.w	#0x10,d2
+	add.w	#SPRITE_HEIGHT,d2		| tile height is only 8 pixels
 101:
 	add.w	d2,d1
 
@@ -1354,8 +1357,8 @@ update_one_bob:
 	move.w	d1,(a6)+			| store current sprite attributes to previous ones
 	move.w	d4,(a6)+			| store height
 	move.w	d5,(a6)+			| store width in bytes
-	move.w	d5,d2			| width in bytes, 4 for 16 pixels+shift
-	moveq	#0,d5			| Y-offset
+	move.w	d5,d2			    | width in bytes, 4 for 16 pixels+shift
+	moveq	#0,d5			    | Y-offset
 
 	btst	#6,d3
 	jne		101f

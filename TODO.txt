@@ -1,21 +1,14 @@
-- compare coords!! top left: skip level with "neptune": shifted verically!!!
 
 - optimize shifting_on_d5d6_1bc3
-
-- compare: either log moves of chance stage ships
-  or fading away player ship as some shifting is noticed when rotating
-
- - optimize 6809 code more
+- optimize 6809 code more
  
-- player 2 starts on top of screen???? (cocktail mode interference??)
-- log arriving waves again, compare with MAME (98xx values)
+- player 2 starts on top of screen (cocktail mode interference??)
 - 32 colors => 16 + attached sprites? count colors of tiles & sprites independently
 - use hardware sprites for player ship maybe uses less colors
   (specially when exploding, could be done by a palette change if we just
   use the sprite allocation routine)
 - highscore: letters are flipped when entered
 - add 10000 points cheat
-- chance stage perfect = D0000 points!!! debug in MAME see where PERFECT is written
 - sometimes enemy sprites flashing/shifting: understand better the sprite "double
   buffering" that the game does
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
@@ -30,6 +23,7 @@
 - log sprites/flash when missing
 
 - reduce memory (log tiles instead of including them all?)
+  remove flip/flip+mirror from bob table, line 1331 remove "*2"
 
 - star effect: hack with pixel placement when detected in the sprite update
   (takes too much blitter time!)

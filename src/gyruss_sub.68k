@@ -84,11 +84,20 @@ number_of_sprites_to_update_total_0a = 0x0a
 * 0x01: do the full sync & coord transformation (stars appear)
 * as soon as title screen starts and never changes it
 * it may write to that flag at times but always with 1
+*
+* the 68k port obviously cannot run both codes in parallel, nor we
+* want to emulate a multiprocessing system with interrupts & switching
+* so the code is simplified:
+* - no irq
+* - removed all "semaphore" sync variables
+* - draw command called from Z80 code
+* - queue command called from Z80 code
 
 sprite_sync_status_67ff = 0x67ff
 
 	.global	gyruss_sub_reset
-	.global	gyruss_sub_irq
+	.global	gyruss_sub_draw
+	.global	gyruss_sub_queue
 	
 set_irq_flag_2000:
 	move.b	d0,m6809_interrupts_on
@@ -145,34 +154,35 @@ l_f09e:
     rts
                                	| [$f0b6: bra    $f0b6]
 
-gyruss_sub_irq:
-	jbsr	gyruss_sub_cpu_init
-* the IRQ
-	moveq	#0,d0
-	jbsr	set_irq_flag_2000              	| [$f0b8: clr    irq_flag_2000] ack IRQ
-	
-
-	GET_ADDRESS	sprite_sync_status_67ff                     	| [$f0bb: lda    $67ff]
-	move.b	(a0),d0                         	| [...]
-	jeq	sync_sprites_no_change_f54a                             	| [$f0c6: lbeq   $f54a]
-	addq.b	#1,d0                           	| [$f0be: inca]
-	jeq	get_out_immediately_f15f                             	| [$f0bf: lbeq   $f15f]
-											| [$f0c3: lda    $67ff]
+			
+			
+			
+			
+			
+			
+					| [$f0b8: clr    irq_flag_2000] ack IRQ
+			
+			
+			                     	| [$f0bb: lda    $67ff]
+					| [...]
+										| [$f0c6: lbeq   $f54a]
+					| [$f0be: inca]
+									| [$f0bf: lbeq   $f15f]
+					| [$f0c3: lda    $67ff]
+			
 	
 											| [...]
-	* wait for Z80 signal
-	GET_ADDRESS	draw_queued_sprites_flag_6701                     	| [$f0ca: lda    $6701]
+gyruss_sub_draw:
+	jbsr	gyruss_sub_cpu_init
+							| [$f0ca: lda    $6701]
 l_f0ca:
-	* TODO if zero note that semaphore failed and return
-	* direct check & jump there next time we're interrupted?
-	move.b	(a0),d0                         	| [...]
-	**beq	l_f0ca                             	| [$f0cd: beq    $f0ca]
+	                        	| [...]
+	                           	| [$f0cd: beq    $f0ca]
 	GET_ADDRESS	frame_odd_or_even_6700	| [$f0cf: lda    frame_odd_or_even_6700]
-	move.b	(a0),d0                         	| [...]
+	tst.b	(a0)                         	| [...]
 	jne	frame_odd_f1a3                             	| [$f0d2: lbne   $f1a3]
 	* frame even
 	
-
 	jbsr	try_to_update_all_sprites_even_f4e4      	| [$f0d6: jsr    $f4e4]
 	
 	GET_ADDRESS	0x6400                     	| [$f0d9: clr    $6400]
@@ -189,10 +199,20 @@ l_f0ca:
 	move.w	#0x6400,d4                      	| [$f0ea: ldu    #$6400]
 	GET_DP_ADDRESS	0x11                    	| [$f0ed: stu    $11]
 	MOVE_W_D4_IN_A0                         	| [...]
+	rts
+
+gyruss_sub_queue:
+	jbsr	gyruss_sub_cpu_init
+	GET_ADDRESS	frame_odd_or_even_6700
+	tst.b	(a0)
+	jne		sub_queue_odd	
+
+sub_queue_even:
+	
 l_f0ef:
-	GET_ADDRESS	queue_sprites_flag_6702                     	| [$f0ef: lda    $6702]
-	move.b	(a0),d0                         	| [...]
-	beq	l_f0ef                             	| [$f0f2: beq    $f0ef]
+															| [$f0ef: lda    $6702]
+											| [...]
+											| [$f0f2: beq    $f0ef]
 	GET_ADDRESS	update_sequence_control_flag_67fd                     	| [$f0f4: lda    $67fd]
 	move.b	(a0),d0                         	| [...]
 	bne	alternate_update_sequence_f165          	| [$f0f7: bne    $f165]
@@ -301,10 +321,14 @@ frame_odd_f1a3:
 	move.w	#0x6500,d4                      	| [$f1b7: ldu    #$6500]
 	GET_DP_ADDRESS	0x11                    	| [$f1ba: stu    $11]
 	MOVE_W_D4_IN_A0                         	| [...]
+	rts
+	
+sub_queue_odd:
+	
 l_f1bc:
-	GET_ADDRESS	queue_sprites_flag_6702                     	| [$f1bc: lda    $6702]
-	move.b	(a0),d0                         	| [...]
-	beq	l_f1bc                             	| [$f1bf: beq    $f1bc]
+											| [$f1bc: lda    $6702]
+							| [...]
+							| [$f1bf: beq    $f1bc]
 	* if non-zero, seems that enemy shots are not moving
 	GET_ADDRESS	update_sequence_control_flag_67fd                     	| [$f1c1: lda    $67fd]
 	move.b	(a0),d0                         	| [...]

@@ -190,6 +190,9 @@ start:
 		.global osd_read_inputs_1
 		.global osd_read_inputs_2
 		.global osd_read_system_inputs
+		
+		.global	osd_queue_sprites
+		.global	osd_draw_sprites
 		* read/write on memory
 		.ifndef	RELEASE
 		.global	osd_log_cpu
@@ -714,17 +717,25 @@ demo_game:
 	jmp			gyruss_reset					| pass control to the cpu core
 		
 	
+osd_queue_sprites:
+	movem.l	d0-a6,-(a7)
+	GET_M6809_MEMORY_BLOCKS
+	jbsr	gyruss_sub_queue
+	movem.l	(a7)+,d0-a6
+	rts
+	
+osd_draw_sprites:
+	movem.l	d0-a6,-(a7)
+	GET_M6809_MEMORY_BLOCKS
+	jbsr	gyruss_sub_draw	
+	movem.l	(a7)+,d0-a6
+	rts
+	
 do_both_gyruss_irq:
 	* set base for RAM
 	lea	rom_base,a5
 	GET_Z80_RAM_START_IN_A6
-	jsr			gyruss_irq					| pass control to the cpu core
-	tst.b	m6809_interrupts_on
-	jeq		0f
-	GET_M6809_MEMORY_BLOCKS
-	jmp		gyruss_sub_irq				| initialize the subcpu memory
-0:
-	rts
+	jra			gyruss_irq					| pass control to the cpu core
 	
 * just in case some hardware calls nmi
 _nmi:

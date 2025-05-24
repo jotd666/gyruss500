@@ -1,5 +1,7 @@
 - sometimes enemy sprites flashing/shifting: understand better the sprite "double
   buffering" that the game does
+  => debug when "NEPTUNE" is shown
+  
 - upper screen chars blue "shadow". Is that restore from wrapped lower Y?
 - player 2 starts on top of screen (cocktail mode interference??)
 - reduce memory (log tiles instead of including them all?)
@@ -14,6 +16,7 @@
   do it if non-blank tile where "GAME OVER" or "X WARPS TO..."
   or "<planet name>" or "KONAMI copytight"
   if not activated, then pure delete
+  * debug with a background color to indicate the current mode
  - implement difficulty
 - missing sounds: flash yellow
  

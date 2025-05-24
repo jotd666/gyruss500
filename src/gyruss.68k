@@ -750,22 +750,18 @@ l_0103:
 	move.l	a3,-(sp)                        	| [$010f: push iy]
 	lea		frame_odd_or_even_a700(a6),a0                          	| [$0111: ld   hl,$A700]
 	move.b	(a0),d0                         	| [$0114: ld   a,(hl)]
-	addq.b	#1,d0                           	| [$0115: inc  a]
-	and.b	#0x01,d0                         	| [$0116: and  $01]
+	eor.b	#1,d0                           	| [$0115: inc  a]
+												| [$0116: and  $01]
 	move.b	d0,(a0)                         	| [$0118: ld   (hl),a]
-	* unlocks 6809 sem wait
-	jbsr	set_active_draw_semaphore			| [$0119: ld   a,$01]                     	| [$011b: ld   ($A701),a]
-	* locks 6809 sem wait
-	clr.b	d0                               	| [$011e: xor  a]
-	jbsr	set_inactive_queue_semaphore                       	| [$011f: ld   ($A702),a]
+	* unlocks 6809 sem wait		| [$0119: ld   a,$01]                     	| [$011b: ld   ($A701),a]
+	* locks 6809 sem wait                 	| [$011e: xor  a]
+	jbsr	osd_draw_sprites                       	| [$011f: ld   ($A702),a]
 	
 	jbsr	update_sprites_0244               	| [$0122: call update_sprites_0244]
-	* locks 6809 sem wait
-	                               	| [$0125: xor  a]
-	jbsr	set_inactive_draw_semaphore                       	| [$0126: ld   ($A701),a]
-	* unlocks 6809 sem wait
-	                        	| [$0129: ld   a,$01]
-	jbsr	set_active_queue_semaphore                      	| [$012b: ld   ($A702),a]
+	jbsr	osd_queue_sprites                      	| [$012b: ld   ($A702),a]
+	* locks 6809 sem wait          	| [$0125: xor  a]
+	                       	| [$0126: ld   ($A701),a]
+	* unlocks 6809 sem wait| [$0129: ld   a,$01]
 	
 	* disable interrupts
 	clr.b	d0                               	| [$012e: xor  a]

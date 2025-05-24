@@ -126,7 +126,7 @@ mixer_error = 1
 	.endif
 	
 * Check .ifeq	software channels between 1 and 4
-	.ifeq	mixer_sw_channels<1
+	.if	mixer_sw_channels<1
 mixer_error = 1
 		.ifeq	MIXER_NO_ECHO
 			
@@ -134,7 +134,7 @@ mixer_error = 1
 		.endif
 	.endif
 	
-	.ifeq	mixer_sw_channels>4
+	.if	mixer_sw_channels>4
 mixer_error = 1
 		.ifeq	MIXER_NO_ECHO
 			
@@ -142,7 +142,7 @@ mixer_error = 1
 		.endif
 	.endif
 
-* Check .ifeq	mixer_config.i only has one mixer type selected
+* Check if mixer_config.i only has one mixer type selected
 .mxtype_check	=	MIXER_SINGLE+MIXER_MULTI+MIXER_MULTI_PAIRED
 	.ifeq	.mxtype_check
 mixer_error = 1
@@ -151,7 +151,7 @@ mixer_error = 1
 			.error "Error: no mixer type selected in mixer_config.i"
 		.endif
 	.endif
-	.ifeq	.mxtype_check>1
+	.if	.mxtype_check>1
 mixer_error = 1
 		.ifeq	MIXER_NO_ECHO
 			
@@ -159,8 +159,8 @@ mixer_error = 1
 		.endif
 	.endif
 	
-* Check .ifeq	the single mixer only has one enabled channel
-	.ifeq	mixer_output_count>1
+* Check if the single mixer only has one enabled channel
+	.if	mixer_output_count>1
 		.ifeq	MIXER_SINGLE-1
 mixer_error = 1		
 			.ifeq	MIXER_NO_ECHO
@@ -318,19 +318,19 @@ MixerSetup:
 
 		* Set buffer offset value based on PAL/NTSC flag
 		cmp.w	#MIX_NTSC,d0
-		beq.s	.mixer_ntsc
+		beq.s	loc_mixer_ntsc
 		
-.mixer_pal
+loc_mixer_pal:
 		move.l	#mixer_PAL_buffer_size,d0
 		move.w	#mixer_PAL_period,d3
-		bra.s	.fill_mixer_struct
+		bra.s	fill_mixer_struct
 		
-.mixer_ntsc
+loc_mixer_ntsc:
 		move.l	#mixer_NTSC_buffer_size,d0
 		move.w	#mixer_NTSC_period,d3
 		
 		* Fill mixer structure
-.fill_mixer_struct
+fill_mixer_struct:
 		moveq	#0,d4
 		move.w	#MIXER_STOPPED,mx_status(a3)
 		move.w	#64,mx_volume(a3)
@@ -368,10 +368,10 @@ MixerSetup:
 		lea.l	mx_mixer_entries(a3),a3
 		
 		* Loop over entries
-.mixer_entry_lp
+loc_mixer_entry_lp:
 		* Check .ifeq	current HW channel is active
 		btst	#0,d6
-		beq		.mixer_entry_lp_end
+		beq		loc_mixer_entry_lp_end
 		
 		.ifeq	MIXER_MULTI_PAIRED-1
 			* Clear active bit
@@ -384,7 +384,7 @@ MixerSetup:
 		lea.l	mxe_channels(a3),a4
 		
 		* Loop over mixer entry channels
-.mixer_channel_lp
+loc_mixer_channel_lp:
 		.ifeq	mxslength_word-1
 			move.w	d4,mch_remaining_length
 			move.w	d4,mch_length(a4)
@@ -423,16 +423,16 @@ MixerSetup:
 		and.w	#0xf0,d3
 		lsl.w	#1,d3
 		lea.l	mch_SIZEOF(a4),a4
-		dbra	d5,.mixer_channel_lp
+		dbra	d5,loc_mixer_channel_lp
 
 		* Fill mixer entry current channel & sample pointers
 		moveq	#4-1,d5
 		lea.l	mxe_active_channels(a3),a4
 		
-.mixer_pointers_lp
+loc_mixer_pointers_lp:
 		move.l	d4,16(a4)
 		move.l	d4,(a4)+
-		dbra	d5,.mixer_pointers_lp
+		dbra	d5,loc_mixer_pointers_lp
 		
 		* Fill mixer entry buffer pointers & clear buffers
 		lea.l	mxe_buffers(a3),a4
@@ -443,11 +443,11 @@ MixerSetup:
 		move.l	a0,(a4)+
 		bsr		MixerClearBuffer
 
-.mixer_entry_lp_end
+loc_mixer_entry_lp_end:
 		asr.w	#1,d6
 		asl.w	#1,d2
 		lea.l	mxe_SIZEOF(a3),a3
-		dbra	d7,.mixer_entry_lp
+		dbra	d7,loc_mixer_entry_lp
 
 		movem.l	(sp)+,d0/d2-d7/a0-a4		| Stack
 		rts
@@ -493,18 +493,18 @@ MixerInstallHandler:
 		
 		* Save interrupt vector .ifeq	needed
 		tst.w	d0
-		bne		.no_save
+		bne		0f
 		move.l	0x70(a0),(a1)+
 
 		* Save any audio interrupt bits set
 		move.w	intenar(a6),d1
-		and.w	#%11110000000,d1			| Audio = bits 7-10
+		and.w	#0x780,d1   | #%11110000000,d1			| Audio = bits 7-10
 		or.w	#0x8000,d1
 		move.w	d1,(a1)+
 		
-.no_save
+0:
 		* Disable all audio interrupts
-		move.w	#%11110000000,d1			| Audio = bits 7-10
+		move.w	#0x780,d1			| Audio = bits 7-10
 		move.w	d1,intena(a6)				| Disable audio interrupts
 		move.w	d1,intreq(a6)				| Clear any pending interrupts
 		move.w	d1,intreq(a6)				| Twice for A4000
@@ -550,7 +550,7 @@ MixerRemoveHandler:
 		lea.l	mxcustombase,a6
 
 		* Disable all audio interrupts
-		move.w	#%11110000000,d0			| Audio = bits 7-10
+		move.w	#0x780,d0			| Audio = bits 7-10
 		move.w	d0,intena(a6)				| Disable audio interrupts
 		move.w	d0,intreq(a6)				| Clear any pending interrupts
 		move.w	d0,intreq(a6)				| Twice for A4000
@@ -559,7 +559,7 @@ MixerRemoveHandler:
 		lea.l	mixer_stored_vbr(pc),a1
 		move.l	(a1)+,a0					| Get VBR
 		move.l	(a1)+,d0					| Get handler
-		beq		.no_restore
+		beq		0f
 
 		* Restore interrupt vector
 		move.l	d0,0x70(a0)					| Vector 4
@@ -568,7 +568,7 @@ MixerRemoveHandler:
 		move.w	(a1)+,intena(a6)			| Set old intena values
 		tst.w	dmaconr(a6)					| Delay for A4000
 		
-.no_restore
+0:
 		* Update mixer status
 		lea.l	mixer(pc),a1
 		move.w	#MIXER_STOPPED,mx_status(a1)
@@ -630,7 +630,7 @@ MixerStart:
 			
 			* Loop over all channels
 .lp			btst	#0,d0
-			beq		.next_channel
+			beq		next_channel1
 		.endif
 		
 		* Play silence
@@ -638,7 +638,7 @@ MixerStart:
 
 		.ifeq	MIXER_SINGLE
 		* Go to next channel
-.next_channel
+next_channel1:
 			asr.w	#1,d0
 			add.w	#ac_SIZEOF,d1
 			dbra	d7,.lp
@@ -678,8 +678,9 @@ MixerStop:
 			moveq	#4-1,d7
 			
 			* Loop over all channels
-.lp			btst	#0,d0
-			beq		.next_channel
+lp:
+			btst	#0,d0
+			beq		next_channel
 		.endif
 		
 		* Play silence & set volume to zero.
@@ -688,10 +689,10 @@ MixerStop:
 
 		.ifeq	MIXER_SINGLE
 		* Go to next channel
-.next_channel
+next_channel:
 			asr.w	#1,d0
 			add.w	#ac_SIZEOF,d1
-			dbra	d7,.lp
+			dbra	d7,lp
 		.endif
 		
 		* Disable audio DMA for the mixing channel(s)
@@ -706,17 +707,19 @@ MixerStop:
 		.else
 			moveq	#4-1,d7
 		.endif
-.enlp	lea.l	mxe_channels(a0),a6
+enlp:
+	lea.l	mxe_channels(a0),a6
 		
 		* Deactivate all mixer channels per entry
 		moveq	#4-1,d6
-.chlp	move.w	#MIXER_CHAN_INACTIVE,mch_status(a6)
+chlp:
+		move.w	#MIXER_CHAN_INACTIVE,mch_status(a6)
 		lea.l	mch_SIZEOF(a6),a6
-		dbra	d6,.chlp
+		dbra	d6,chlp
 		
 		* Loop back
 		lea.l	mxe_SIZEOF(a0),a0
-		dbra	d7,.enlp
+		dbra	d7,enlp
 		
 		movem.l	(sp)+,d6/d7/a0/a6				| Stack
 		rts
@@ -749,7 +752,7 @@ MixerVolume:
 		* priority and age.
 		*
 		* \1 channel number (or 0 in case of MIXER_68020)
-	.macro	MixChkChan
+	.macro	MixChkChan	arg
 		* Check .ifeq	the channel can be used
 		.ifeq	MIXER_68020-1
 			swap	d3
@@ -760,7 +763,7 @@ MixerVolume:
 			addq.w	#1,d0
 			add.w	d0,d0
 			add.w	d0,d0
-			jmp		.stjmp_table\1(pc,d0.w)
+			jmp		stjmp_table\arg(pc,d0.w)
 		.else
 			swap	d0
 			move.w	mch_status(a1),d7
@@ -770,55 +773,55 @@ MixerVolume:
 			addq.w	#1,d7
 			add.w	d7,d7
 			add.w	d7,d7
-			jmp		.stjmp_table\1(pc,d7.w)
+			jmp		stjmp_table\arg(pc,d7.w)
 		.endif
 
-.stjmp_table\1
+stjmp_table\arg:
 		* Jump table for the different statusses (free, in use, looping)
-		jmp		.not_free\1(pc)
-		jmp		.play_fx\1(pc)
-		jmp		.check_priority\1(pc)
+		jmp		.not_free\arg(pc)
+		jmp		.play_fx\arg(pc)
+		jmp		.check_priority\arg(pc)
 
-.play_fx\1
+play_fx\arg:
 		* This channel is free, play the sample here
 		.ifeq	MIXER_68020-1
 			moveq	#0,d6
 			bset	d7,d6					| Best channel found
 		.else
-			move.w	#MIX_CH\1,d6			| Best channel found
+			move.w	#MIX_CH\arg,d6			| Best channel found
 		.endif
 		bra		.found
 		
-.check_priority\1
+check_priority\arg:
 		* Check based on priority
 		* Check .ifeq	the priority of the new sample is equal or higher than the
 		* current channel.
 		cmp.w	mch_priority(a1),d2
-		blt.s	.not_free\1
+		blt.s	not_free\arg
 
 		* Check .ifeq	the priority of the current channel is lower than the best
 		* found priority so far.
 		cmp.w	mch_priority(a1),d4
-		bgt.s	.new_best_chan\1
+		bgt.s	new_best_chan\arg
 		
 		* Check .ifeq	the age of the current channel is higher than the best age
 		* found so far.
 		cmp.w	mch_age(a1),d5
-		bhi.s	.not_free\1
+		bhi.s	not_free\arg
 		
-.new_best_chan\1
+new_best_chan\arg:
 		* Set current channel as best found so far
 		move.w	mch_priority(a1),d4			| Best priority found
 		move.w	mch_age(a1),d5				| Reset best age found
-		.ifeq	\1-1
+		.ifeq	\arg-1
 			moveq	#0,d6
 			bset	d7,d6					| Best channel found
 		.else
-			move.w	#MIX_CH\1,d6			| Best channel found
+			move.w	#MIX_CH\arg,d6			| Best channel found
 		.endif
 		move.l	a1,a2						| Best channel found pointer
 
-.not_free\1
+not_free\arg:
 		* This channel is not free, continue with the next channel.
 		lea.l	mch_SIZEOF(a1),a1
 				.endm
@@ -842,24 +845,24 @@ MixerFetchEntry:
 			and.w	#0xf,d4
 			add.w	d4,d4
 			add.w	d4,d4
-			jmp		.enjmp_table(pc,d4.w)
+			jmp		enjmp_table(pc,d4.w)
 			
 			* Jump table
 			* The empty space included in the table is required for the 
 			* conversion between entry bit and entry number.
-.enjmp_table
+enjmp_table
 			nop
 			nop
-			jmp	.en0(pc)
-			jmp	.en1(pc)
+			jmp	en0(pc)
+			jmp	en1(pc)
 			.long	0
-			jmp	.en2(pc)
+			jmp	en2(pc)
 			.long	0,0,0
 			
-.en3		lea.l	mxe_SIZEOF(a1),a1
-.en2		lea.l	mxe_SIZEOF(a1),a1
-.en1		lea.l	mxe_SIZEOF(a1),a1
-.en0	
+en3:		lea.l	mxe_SIZEOF(a1),a1
+en2:		lea.l	mxe_SIZEOF(a1),a1
+en1:		lea.l	mxe_SIZEOF(a1),a1
+en0:	
 		.endif
 
 		* Select first channel
@@ -875,7 +878,7 @@ MixerChannelWrite:
 
 		* Test .ifeq	the mixer interrupts are running
 		move.w	mixer+mx_status(pc),d7
-		beq.s	.irq_disabled
+		beq.s	0f
 		
 		* Disable audio interrupts
 		lea.l	mxcustombase,a6
@@ -883,10 +886,10 @@ MixerChannelWrite:
 		and.w	#0x7fff,d7						| Mask out SET/CLR bit
 		move.w	d7,intena(a6)					| Disable audio interrupts
 		tst.w	dmaconr(a6)						| Wait for A4000		
-.irq_disabled
+0:
 
 		* Start of atomic part
-.write_plugin	
+write_plugin:
 		.ifeq	MIXER_ENABLE_PLUGINS-1
 			* Set pointer to plugin
 			move.l	d7,-(sp)					| Stack
@@ -937,7 +940,7 @@ MixerChannelWrite:
 		.endif
 
 		tst.w	mfx_loop(a0)
-		bmi.s	.write_loop_ptr				| Check for looping sample
+		bmi.s	write_loop_ptr				| Check for looping sample
 
 		* Not a loop, use empty buffer		
 		move.l	mixer+mx_empty_buffer(pc),mch_loop_ptr(a1)
@@ -948,7 +951,7 @@ MixerChannelWrite:
 		.endif
 		bra.s	.write_status
 		
-.write_loop_ptr
+write_loop_ptr:
 		cmp.w	#MIX_FX_LOOP_OFFSET,mfx_loop(a0)
 		beq.s	.write_loop_offset_ptr
 			
@@ -961,7 +964,7 @@ MixerChannelWrite:
 		.endif
 		bra.s	.write_status
 			
-.write_loop_offset_ptr
+write_loop_offset_ptr:
 		* Force loop offset to be in bounds of the sample here
 		move.l	d0,-(sp)
 		.ifeq	mxslength_word-1
@@ -969,13 +972,13 @@ MixerChannelWrite:
 			move.w	mfx_loop_offset+2(a0),d7
 		.else
 			move.l	mfx_loop_offset(a0),d7
-			bpl.s	.loop_offset_larger_fx
+			bpl.s	loop_offset_larger_fx
 
 			* Loop offset must be zero or higher
 			moveq	#0,d7
 		.endif
 			
-.loop_offset_larger_fx
+loop_offset_larger_fx:
 		.ifeq	mxslength_word-1
 			moveq	#0,d0
 			move.w	d1,d0
@@ -996,7 +999,7 @@ MixerChannelWrite:
 		subq.l	#4,d7				| Loop offset now in range
 		moveq	#4,d0				| Length in range
 
-.loop_offset_in_bounds_fx
+loop_offset_in_bounds_fx:
 		.ifeq	mxslength_word-1
 			move.w	d0,mch_loop_length(a1)
 		.else
@@ -1007,18 +1010,18 @@ MixerChannelWrite:
 		add.l	mfx_sample_ptr(a0),d7
 		move.l	d7,mch_loop_ptr(a1)
 
-.write_status
+write_status:
 		move.w	mfx_loop(a0),mch_status(a1)	| Set status
 
 		* Test .ifeq	the mixer interrupts are running
 		move.w	mixer+mx_status(pc),d7
-		beq.s	.irq_enabled
+		beq.s	irq_enabled
 		
 		* Re-enable audio interrupts
 		move.w	mixer+mx_irq_bits(pc),d7
 		or.w	#0x8000,d7					| Set the SET/CLR bit
 		move.w	d7,intena(a6)				| Enable audio interrupts
-.irq_enabled
+irq_enabled:
 
 		* End of atomic part
 		rts
@@ -1248,11 +1251,12 @@ MixerPlayFX:
 			swap	d7
 			move.w	#mixer_sw_channels-1,d7	| Loop counter
 			
-.chlp		swap	d7						| Channel bit
+0:
+		swap	d7						| Channel bit
 			MixChkChan 0
 			addq.w	#1,d7					| Next channel
 			swap	d7						| Loop counter
-			dbra	d7,.chlp
+			dbra	d7,0b
 			
 			swap	d0						| Swap back HW channel
 		.else
@@ -1270,17 +1274,17 @@ MixerPlayFX:
 		
 		* Check .ifeq	any channel was found based on priority
 		tst.w	d6
-		bne.s	.prio_found
+		bne.s	prio_found
 		
 		* No channels are free
 		moveq	#-1,d0
-		bra		.done
+		bra		done
 		
-.prio_found
+prio_found:
 		* Found a lower priority/older channel
 		move.l	a2,a1
 
-.found
+found:
 		* Found a free channel, add the sample
 		.ifeq	mxsize_x32-1
 			and.w	#0xffe0,d1				| Limit to multiple of 32 bytes
@@ -1295,7 +1299,7 @@ MixerPlayFX:
 		bsr		MixerChannelWrite
 		tst.w	d0							| Set condition codes
 
-.done
+done:
 		movem.l	(sp)+,d1/d4-d7/a1/a2/a6		| Stack
 		move.w	(sp)+,d2
 
@@ -1376,24 +1380,24 @@ MixerPlayChannelFX:
 		asr.w	#4,d7
 		add.w	d7,d7
 		add.w	d7,d7
-		jmp		.chjmp_table(pc,d7.w)
+		jmp		chjmp_table(pc,d7.w)
 
 		* Jump table
 		* The empty space included in the table is required for the 
 		* conversion between channel bit and channel number.
-.chjmp_table
+chjmp_table:
 		nop
 		nop
-		jmp	.ch0(pc)
-		jmp	.ch1(pc)
+		jmp	ch0(pc)
+		jmp	ch1(pc)
 		.long	0
-		jmp	.ch2(pc)
+		jmp	ch2(pc)
 		.long	0,0,0
 			
-.ch3	lea.l	mch_SIZEOF(a1),a1
-.ch2	lea.l	mch_SIZEOF(a1),a1
-.ch1	lea.l	mch_SIZEOF(a1),a1
-.ch0		
+ch3:	lea.l	mch_SIZEOF(a1),a1
+ch2:	lea.l	mch_SIZEOF(a1),a1
+ch1:	lea.l	mch_SIZEOF(a1),a1
+ch0:		
 		* Check .ifeq	the channel can be used
 		swap	d0
 		move.w	mch_status(a1),d7
@@ -1403,26 +1407,26 @@ MixerPlayChannelFX:
 		addq.w	#1,d7
 		add.w	d7,d7
 		add.w	d7,d7
-		jmp		.stjmp_table(pc,d7.w)
+		jmp		stjmp_table(pc,d7.w)
 		
 		* Jump table for the different statuses (free, in use, looping)
-.stjmp_table
-		jmp		.not_free(pc)
-		jmp		.play_fx(pc)
-		jmp		.check_priority(pc)
+stjmp_table:
+		jmp		not_free(pc)
+		jmp		play_fx(pc)
+		jmp		check_priority(pc)
 		
-.check_priority
+.check_priority:
 		* Check .ifeq	the priority of the new FX is equal or higher than the
 		* currently playing FX.
 		cmp.w	mch_priority(a1),d2
-		bge.s	.play_fx
+		bge.s	1f
 		
 		* Channel is not free
-.not_free
+.not_free:
 		moveq	#-1,d0
-		bra		.done
+		bra		0f
 		
-.play_fx
+1:
 		* Add sample to selected channel here
 		.ifeq	mxsize_x32-1
 			and.w	#0xffe0,d1				| Limit to multiple of 32 bytes
@@ -1437,7 +1441,7 @@ MixerPlayChannelFX:
 		bsr		MixerChannelWrite
 		tst.w	d0							| Set return value
 
-.done		
+0:		
 		movem.l	(sp)+,d1/d6/d7/a1/a6		| Stack
 		move.w	(sp)+,d2
 		
@@ -1491,12 +1495,12 @@ MixerStopFX:
 				moveq	#4,d2
 				moveq	#4-1,d7
 				
-.chlp			btst	d2,d0
+.chlp:			btst	d2,d0
 				beq.s	.nxt_ch
 
 				move.w	d1,mch_status(a0)
 		
-.nxt_ch			lea.l	mch_SIZEOF(a0),a0
+.nxt_ch:			lea.l	mch_SIZEOF(a0),a0
 				addq.w	#1,d2
 				dbra	d7,.chlp
 			.else
@@ -1505,21 +1509,21 @@ MixerStopFX:
 
 				move.w	d1,mch_status(a0)
 			
-.ch1			btst	#5,d0				| Check channel 1
+.ch1:			btst	#5,d0				| Check channel 1
 				beq.s	.ch2
 			
 				move.w	d1,mch_status+mch_SIZEOF(a0)
 			
-.ch2			btst	#6,d0				| Check channel 2
+.ch2:			btst	#6,d0				| Check channel 2
 				beq.s	.ch3
 			
 				move.w	d1,mch_status+(mch_SIZEOF*2)(a0)
 			
-.ch3			btst	#7,d0				| Check channel 3
+.ch3:			btst	#7,d0				| Check channel 3
 				beq.s	.stopfx_done
 			
 				move.w	d1,mch_status+(mch_SIZEOF*3)(a0)
-.stopfx_done
+.stopfx_done:
 			.endif
 		.endif
 
@@ -2568,11 +2572,11 @@ MixerStopFX:
 			move.l	d2,d1
 		.endif
 
-.\@_update_channel
+.\@_update_channel:
 		* Increase channel count
 		addq.w	#4,d0
 
-.\@_done
+.\@_done:
 		* Fetch next channel
 		lea.l	mch_SIZEOF(a2),a2
 					.endm
@@ -2774,13 +2778,13 @@ MixerStopFX:
 			MixUpdateChannel
 			dbra	d3,.mix_upd_ch_lp
 		.else
-			REPT mixer_sw_channels
+			.rept mixer_sw_channels
 				.ifeq	MIXER_SIZEXBUF-1
 					MixUpdateChannelBufSize
 				.else
 					MixUpdateChannel
 				.endif
-			ENDR
+			.endr
 		.endif
 		
 		.ifeq	MIXER_SIZEXBUF
@@ -2797,20 +2801,20 @@ MixerStopFX:
 	.macro	MixChannels
 		* Select number of channels to mix
 		jmp		.jmp_table(pc,d0.w)
-.jmp_table
+.jmp_table:
 		jmp		.mix_silence(pc)			| 0
 		jmp		.mix_copy_only(pc)			| 1
-		.ifeq	mixer_sw_channels>1
+		.if	mixer_sw_channels>1
 			jmp		.mix_2_channels(pc)		| etc
 		.endif
-		.ifeq	mixer_sw_channels>2
+		.if	mixer_sw_channels>2
 			jmp		.mix_3_channels(pc)
 		.endif
-		.ifeq	mixer_sw_channels>3
+		.if	mixer_sw_channels>3
 			jmp		.mix_4_channels(pc)
 		.endif
 		
-.mix_silence
+.mix_silence:
 		.ifeq	MIXER_SINGLE-1
 			lea.l	mxcustombase,a6
 			lea.l	mxsinglechan(a6),a6
@@ -2826,7 +2830,7 @@ MixerStopFX:
 		.endif
 		bra		.mix_done
 
-.mix_copy_only
+.mix_copy_only:
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)
 		.endif
@@ -2834,7 +2838,7 @@ MixerStopFX:
 		* Fetch source pointers
 		move.l	mxe_pointers(a1),a2
 
-.mix_1ch_start
+.mix_1ch_start:
 		* Mix the channels
 		.ifeq	MIXER_SIZEXBUF-1
 			MixBlockBufSize 1
@@ -2852,8 +2856,8 @@ MixerStopFX:
 			.endif
 		.endif
 	
-	.ifeq	mixer_sw_channels>1
-.mix_2_channels
+	.if	mixer_sw_channels>1
+.mix_2_channels:
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)
 		.endif
@@ -2861,7 +2865,7 @@ MixerStopFX:
 		* Fetch source pointers
 		movem.l	mxe_pointers(a1),a2/a3
 		
-.mix_2ch_start
+.mix_2ch_start:
 		* Mix the channels
 		.ifeq	MIXER_SIZEXBUF-1
 			MixBlockBufSize 2
@@ -2880,8 +2884,8 @@ MixerStopFX:
 		.endif
 	.endif
 		
-	.ifeq	mixer_sw_channels>2
-.mix_3_channels
+	.if	mixer_sw_channels>2
+.mix_3_channels:
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)
 		.endif
@@ -2889,7 +2893,7 @@ MixerStopFX:
 		* Fetch source pointers
 		movem.l	mxe_pointers(a1),a2/a3/a4
 		
-.mix_3ch_start
+.mix_3ch_start:
 		* Mix the channels
 		.ifeq	MIXER_SIZEXBUF-1
 			MixBlockBufSize 3
@@ -2908,8 +2912,8 @@ MixerStopFX:
 		.endif
 	.endif
 		
-	.ifeq	mixer_sw_channels>3
-.mix_4_channels
+	.if	mixer_sw_channels>3
+.mix_4_channels:
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)
 		.endif
@@ -2917,7 +2921,7 @@ MixerStopFX:
 		* Fetch source pointers
 		movem.l	mxe_pointers(a1),a2/a3/a4/a5
 		
-.mix_4ch_start
+.mix_4ch_start:
 		* Mix the channels
 		.ifeq	MIXER_SIZEXBUF-1
 			MixBlockBufSize 4
@@ -2936,7 +2940,7 @@ MixerStopFX:
 		.endif
 	.endif
 
-.mix_done
+.mix_done:
 		* End of mixing
 				.endm
 				
@@ -2946,9 +2950,9 @@ MixerStopFX:
 		* Select number of channels to mix
 		jmp		.jmp_table(pc,d0.w)
 
-.jmp_table
-		jmp		.mix_silence(pc)			| 0
-		jmp		.mix_copy_only(pc)			| 1
+.jmp_table:
+		jmp		mix_silence(pc)			| 0
+		jmp		mix_copy_only(pc)			| 1
 		.ifeq	mixer_sw_channels>1
 			jmp		.mix_2_channels(pc)		| etc
 		.endif
@@ -2959,7 +2963,7 @@ MixerStopFX:
 			jmp		.mix_4_channels(pc)
 		.endif
 		
-.mix_silence
+mix_silence:
 		.ifeq	MIXER_SINGLE-1
 			lea.l	mxcustombase,a6
 			lea.l	mxsinglechan(a6),a6
@@ -2973,9 +2977,9 @@ MixerStopFX:
 				move.w	#0,mxe_active(a1)
 			.endif
 		.endif
-		bra		.mix_done
+		bra		mix_done
 
-.mix_copy_only
+mix_copy_only:
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)
 		.endif
@@ -2983,7 +2987,7 @@ MixerStopFX:
 		* Setup
 		move.l	mxe_pointers(a1),a2			| Fetch pointer
 
-.mix_1ch_start		
+mix_1ch_start:	
 		* Mix channels
 		.ifeq	MIXER_HQ_MODE-1
 			MixLoopHQ 1
@@ -2992,8 +2996,8 @@ MixerStopFX:
 		.endif
 		MixCalcRem4 1
 
-	.ifeq	mixer_sw_channels>1
-.mix_2_channels
+	.if	mixer_sw_channels>1
+.mix_2_channels:
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)
 		.endif
@@ -3001,7 +3005,7 @@ MixerStopFX:
 		* Setup
 		movem.l	mxe_pointers(a1),a2/a3		| Fetch pointers
 
-.mix_2ch_start		
+.mix_2ch_start:	
 		* Mix channels
 		.ifeq	MIXER_HQ_MODE-1
 			MixLoopHQ 2
@@ -3012,7 +3016,7 @@ MixerStopFX:
 	.endif
 		
 	.ifeq	mixer_sw_channels>2
-.mix_3_channels
+.mix_3_channels:
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)
 		.endif
@@ -3259,33 +3263,33 @@ MixerGetChannelStatus:
 		asr.w	#4,d4
 		add.w	d4,d4
 		add.w	d4,d4
-		jmp		.chjmp_table(pc,d4.w)
+		jmp		0f(pc,d4.w)
 
 		* Jump table
 		* The empty space included in the table is required for the 
 		* conversion between channel bit and channel number.
-.chjmp_table
+0:
 		nop
 		nop
-		jmp	.ch0(pc)
-		jmp	.ch1(pc)
+		jmp	0f(pc)
+		jmp	1f(pc)
 		.long	0
-		jmp	.ch2(pc)
+		jmp	2f(pc)
 		.long	0,0,0
 			
-.ch3	lea.l	mch_SIZEOF(a1),a1
-.ch2	lea.l	mch_SIZEOF(a1),a1
-.ch1	lea.l	mch_SIZEOF(a1),a1
-.ch0	
+3:	lea.l	mch_SIZEOF(a1),a1
+2:	lea.l	mch_SIZEOF(a1),a1
+1:	lea.l	mch_SIZEOF(a1),a1
+0:	
 
 		* Test .ifeq	given channel is in use
 		moveq	#MIX_CH_FREE,d0
 		tst.w	mch_status(a1)
-		beq.s	.done
+		beq.s	0f
 		
 		moveq	#MIX_CH_BUSY,d0
 		
-.done
+0:
 		movem.l	(sp)+,d2/d4/a1				| Stack
 		rts
 
@@ -3495,26 +3499,26 @@ MixerGetCounter:
 		rts
 
 * Mixer data
-		cnop	0,4
-mixer					blk.b	mx_SIZEOF
+		.align  4
+mixer					.skip	mx_SIZEOF
 		.ifeq	MIXER_68020-1
-			cnop	0,4
+			.align  4
 		.endif
-mixer_fx_struct			blk.b	mfx_SIZEOF
+mixer_fx_struct			.skip	mfx_SIZEOF
 		.ifeq	MIXER_68020-1
-			cnop	0,4
+			.align  4
 		.endif
-mixer_stored_vbr		.long	0
-mixer_stored_handler	.long	0
-mixer_stored_intena		.short	0
+mixer_stored_vbr:		.long	0
+mixer_stored_handler:	.long	0
+mixer_stored_intena:		.short	0
 		.ifeq	MIXER_CIA_TIMER-1
-mixer_stored_cia		.short	0
-mixer_ticks_last		.short	0
-mixer_ticks_best		.short	0
-mixer_ticks_worst		.short	0xffff
-mixer_ticks_average		.short	0
-mixer_ticks_storage_off	.short	0
-mixer_ticks_storage		blk.w	128
+mixer_stored_cia:		.short	0
+mixer_ticks_last:		.short	0
+mixer_ticks_best:		.short	0
+mixer_ticks_worst:		.short	0xffff
+mixer_ticks_average:		.short	0
+mixer_ticks_storage_off:	.short	0
+mixer_ticks_storage:		.skip	128*2
 		.endif
 		
 		.ifeq	MIXER_C_DEFS-1

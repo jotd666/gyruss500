@@ -116,7 +116,7 @@ mxsize_x32			= 1
 *-----------------------------------------------------------------------------
 mixer_error	=	0
 
-* Check .ifeq	mixer count>=1
+* Check .if	mixer count>=1
 	.ifeq	mixer_output_count
 mixer_error = 1
 		.ifeq	MIXER_NO_ECHO
@@ -949,11 +949,11 @@ write_plugin:
 		.else
 			move.l	d1,mch_loop_length(a1)
 		.endif
-		bra.s	.write_status
+		jra	.write_status
 		
 write_loop_ptr:
 		cmp.w	#MIX_FX_LOOP_OFFSET,mfx_loop(a0)
-		beq.s	.write_loop_offset_ptr
+		jeq	.write_loop_offset_ptr
 			
 		move.l	mfx_sample_ptr(a0),mch_loop_ptr(a1)	| Set sample pointer
 
@@ -962,7 +962,7 @@ write_loop_ptr:
 		.else
 			move.l	d1,mch_loop_length(a1)
 		.endif
-		bra.s	.write_status
+		jra	.write_status
 			
 write_loop_offset_ptr:
 		* Force loop offset to be in bounds of the sample here
@@ -993,7 +993,7 @@ loop_offset_larger_fx:
 		.endif
 		
 		sub.l	d7,d0
-		bgt.s	.loop_offset_in_bounds_fx
+		jgt		.loop_offset_in_bounds_fx
 		
 		move.l	d0,d7
 		subq.l	#4,d7				| Loop offset now in range
@@ -1261,10 +1261,10 @@ MixerPlayFX:
 			swap	d0						| Swap back HW channel
 		.else
 			MixChkChan 0					| Check MIX_CH0
-			.ifeq	mixer_sw_channels>-2
+			.if	mixer_sw_channels>-2
 				MixChkChan 1				| Check MIX_CH1
 			.endif
-			.ifeq	mixer_sw_channels>-3
+			.if	mixer_sw_channels>-3
 				MixChkChan 2				| Check MIX_CH2
 			.endif
 			.ifeq	mixer_sw_channels-4
@@ -1811,13 +1811,13 @@ MixerStopFX:
 		*
 		* \1 - destination register number
 		* \2 - number of channels to mix
-	.macro	MixSingleLongWord
-		add.l	(a3)+,\1
-		.ifeq	\2>2
-			add.l	(a4)+,\1
+	.macro	MixSingleLongWord	arg1,arg2
+		add.l	(a3)+,\arg1
+		.if	\arg2>2
+			add.l	(a4)+,\arg1
 		.endif
-		.ifeq	\2>3
-			add.l	(a5)+,\1
+		.ifeq	\arg2>3
+			add.l	(a5)+,\arg1
 		.endif
 					.endm
 
@@ -1826,15 +1826,15 @@ MixerStopFX:
 		* across the given number of channels.
 		*
 		* \1 number of channels to mix
-	.macro	MixLongWords
-		MixSingleLongWord d0,\1
-		MixSingleLongWord d1,\1
-		MixSingleLongWord d2,\1
-		MixSingleLongWord d3,\1
-		MixSingleLongWord d4,\1
-		MixSingleLongWord d5,\1
-		MixSingleLongWord d6,\1
-		MixSingleLongWord d7,\1
+	.macro	MixLongWords	nb_channels
+		MixSingleLongWord d0,\nb_channels
+		MixSingleLongWord d1,\nb_channels
+		MixSingleLongWord d2,\nb_channels
+		MixSingleLongWord d3,\nb_channels
+		MixSingleLongWord d4,\nb_channels
+		MixSingleLongWord d5,\nb_channels
+		MixSingleLongWord d6,\nb_channels
+		MixSingleLongWord d7,\nb_channels
 					.endm
 					
 		* Macro: MixJump32
@@ -1842,7 +1842,7 @@ MixerStopFX:
 		* (up to mx_buffer_size)
 		*
 		* \1 - number of channels
-	.macro	MixJump32
+	.macro	MixJump32	arg
 		* Push remaining length/bytes to process on stack
 		move.w	d1,-(sp)
 		move.w	d7,-(sp)
@@ -1854,48 +1854,50 @@ MixerStopFX:
 		
 		* Calculate position in the jumptable
 		asr.w	#3,d6
-		jmp		.mix_\1ch_jmp_table32(pc,d6.w)
+		jmp		.mix_\arg\()ch_jmp_table32(pc,d6.w)
 			.endm
 
 		* Macro: MixBlock32
 		* 	.macro	This mixes in blocks of 32 bytes (up to mx_buffer_size)
 		*
 		* \1 - number of channels
-	.macro	MixBlock32
+	.macro	MixBlock32	arg
 		* The jump table below is dynamically generated based on the sample
 		* buffer size & the size of a 32 byte mixing block.
-.mix_\1ch_jmp_table32
+.mix_\arg\()ch_jmp_table32:
 		* Calculate maximum offset
-.mix_\1ch_jmpoff32	= .mix_\1ch_32b+((mixer_32b_cnt-1)*.mix_\1ch_32b_sz)
+.mix_\arg\()ch_jmpoff32	= .mix_\arg\()ch_32b+((mixer_32b_cnt-1)*.mix_\arg\()ch_32b_sz)
 		* Generate jump table
 		.ifeq	mxsize_x32-1
-			jmp	.mix_\1ch_calcrem4_st(pc)
+			jmp	.mix_\arg\()ch_calcrem4_st(pc)
 		.else
-			jmp	.mix_\1ch_4b_setup_st(pc)
+			jmp	.mix_\arg\()ch_4b_setup_st(pc)
 		.endif
-		REPT mixer_32b_cnt-1
-		jmp	.mix_\1ch_jmpoff32-(REPTN*.mix_\1ch_32b_sz)(pc)
-		ENDR
+		.set REPTN,0
+		.rept mixer_32b_cnt-1
+		jmp	.mix_\arg\()ch_jmpoff32-(REPTN*.mix_\arg\()ch_32b_sz)(pc)
+		.set	REPTN,REPTN+1
+		.endr
 		
 		* 1st block: 32 byte increments
-.mix_\1ch_32b
+.mix_\arg\()ch_32b:
 		movem.l	(a2)+,d0-d7
-		.ifeq	\1>1
-			MixLongWords \1
+		.ifeq	\arg>1
+			MixLongWords \arg
 		.endif
 		movem.l	d0-d7,(a0)
 		lea.l	32(a0),a0
-.mix_\1ch_32b_single
-.mix_\1ch_32b_sz	SET .mix_\1ch_32b_single-.mix_\1ch_32b
+.mix_\arg\()ch_32b_single:
+.mix_\arg\()ch_32b_sz = .mix_\arg\()ch_32b_single-.mix_\arg\()ch_32b
 		
-		REPT mixer_32b_cnt-1
+		.rept mixer_32b_cnt-1
 		movem.l	(a2)+,d0-d7
-		.ifeq	\1>1
-			MixLongWords \1
+		.ifeq	\arg>1
+			MixLongWords \arg
 		.endif
 		movem.l	d0-d7,(a0)
 		lea.l	32(a0),a0		
-		ENDR
+		.endr
 			.endm
 
 		* Macro: MixChkRem32
@@ -1903,16 +1905,16 @@ MixerStopFX:
 		* blocks of 32 bytes.
 		*
 		* \1 - number of channels
-	.macro	MixChkRem32
-.mix_\1ch_chkrem32
+	.macro	MixChkRem32	arg
+.mix_\arg\()ch_chkrem32:
 		* Pull remaining length/remaining bytes to mix of the stack
 		move.w	(sp)+,d7
 		move.w	(sp)+,d1
 		
 		* Check processed byte count vs smallest remaining byte count
 		cmp.w	a6,d1
-		bne.s	.mix_\1ch_4b_setup
-		bra		.mix_\1ch_calcrem4
+		bne.s	.mix_\arg\()ch_4b_setup
+		bra		.mix_\arg\()ch_calcrem4
 				.endm
 
 		* Macro: MixJump4
@@ -1920,58 +1922,62 @@ MixerStopFX:
 		* to 32 bytes)
 		*
 		* \1 - number of channels
-	.macro	MixJump4
-.mix_\1ch_4b_setup_st
+	.macro	MixJump4	arg
+.mix_\arg\()ch_4b_setup_st:
 		* Update stack position
 		lea.l	4(sp),sp
 
-.mix_\1ch_4b_setup
+.mix_\arg\()ch_4b_setup:
 		* Set up for the 4 byte blocks
 		move.w	d1,d6
 		sub.w	a6,d6						| Determine remaining amount of
 											* bytes to proces.
 
 		* Jump to the correct position in the jumptable
-		jmp		.mix_\1ch_jmp_table4(pc,d6.w)
+		jmp		.mix_\arg\()ch_jmp_table4(pc,d6.w)
 			.endm
 
 		* Macro: MixBlock4
 		* 	.macro	This mixes up to 32 bytes of sample data.
 		*
 		* \1 - number of channels
-	.macro	MixBlock4
-.mix_\1ch_jmp_table4
+	.macro	MixBlock4	arg
+.mix_\arg\()ch_jmp_table4:
 		* Calculate maximum offset
-.mix_\1ch_jmpoff4	= .mix_\1ch_4b+(6*.mix_\1ch_4b_sz)
+.mix_\arg\()ch_jmpoff4	= .mix_\arg\()ch_4b+(6*.mix_\arg\()ch_4b_sz)
 		* Generate jump table
-		jmp	.mix_\1ch_calcrem4(pc)
-		REPT 6
-		jmp	.mix_\1ch_jmpoff4-(REPTN*.mix_\1ch_4b_sz)(pc)
-		ENDR
+		jmp	.mix_\arg\()ch_calcrem4(pc)
+		.rept 6
+		.set	REPTN,0
+		jmp	.mix_\arg\()ch_jmpoff4-(REPTN*.mix_\arg\()ch_4b_sz)(pc)
+		.set	REPTN,REPTN+1
+		.endr
 
 		* 2nd block: 4 byte increments
-.mix_\1ch_4b
-		.ifeq	\1-1
+.mix_\arg\()ch_4b:
+		.ifeq	\arg-1
 			move.l	(a2)+,(a0)+
 		.endif
-		.ifeq	\1>1
+		.ifeq	\arg>1
 			move.l	(a2)+,d0
-			MixSingleLongWord d0,\1
+			MixSingleLongWord d0,\arg
 			move.l	d0,(a0)+
 		.endif
-.mix_\1ch_4b_single
-.mix_\1ch_4b_sz	SET .mix_\1ch_4b_single-.mix_\1ch_4b
+.mix_\arg\()ch_4b_single:
+.mix_\arg\()ch_4b_sz	= .mix_\arg\()ch_4b_single-.mix_\arg\()ch_4b
 
-		REPT 6
-		.ifeq	\1-1
+		.rept 6
+		.set	REPTN,0
+		.ifeq	\arg-1
 			move.l	(a2)+,(a0)+
 		.endif
-		.ifeq	\1>1
+		.ifeq	\arg>1
 			move.l	(a2)+,d0
-			MixSingleLongWord d0,\1
+			MixSingleLongWord d0,\arg
 			move.l	d0,(a0)+
 		.endif
-		ENDR
+		.set	REPTN,REPTN+1
+		.endr
 			.endm
 
 		* Macro: MixCalcRem4
@@ -1979,13 +1985,13 @@ MixerStopFX:
 		* checks & updates channels .ifeq	needed.
 		*
 		* \1 - number of channels
-	.macro	MixCalcRem4
-.mix_\1ch_calcrem4_st
+	.macro	MixCalcRem4	arg
+.mix_\arg\()ch_calcrem4_st:
 		.ifeq	mxsize_x32-1
 			move.w	(sp)+,d7
 			move.w	(sp)+,d1
 		.endif
-.mix_\1ch_calcrem4
+.mix_\arg\()ch_calcrem4:
 		* Update remaining bytes & smallest remaining length
 		.ifeq	mxslength_word-1
 			move.w	d1,d2
@@ -2003,19 +2009,19 @@ MixerStopFX:
 
 		* Check all active channels
 		MixCheckChannel a2
-		.ifeq	\1>1
+		.ifeq	\arg>1
 			MixCheckChannel a3
 		.endif
-		.ifeq	\1>2
+		.ifeq	\arg>2
 			MixCheckChannel a4
 		.endif
-		.ifeq	\1>3
+		.ifeq	\arg>3
 			MixCheckChannel a5
 		.endif
 		
 		* Check .ifeq	any bytes still need to be mixed
 		tst.w	d1
-		bne		.mix_\1ch_start
+		bne		.mix_\arg\()ch_start
 		bra		.mix_done
 			.endm
 			
@@ -2025,22 +2031,22 @@ MixerStopFX:
 		* cache.
 		*
 		* \1 - number of channels
-	.macro	MixLoop020
+	.macro	MixLoop020	arg
 		* Set up for loop
 		move.w	d1,d3
 		asr.w	#2,d3						| Convert to number of longwords
 		subq.w	#1,d3
 		
-.mix_\1ch_lp
-		.ifeq	\1-1
+.mix_\arg\()ch_lp:
+		.ifeq	\arg-1
 			move.l	(a2)+,(a0)+
 		.endif
-		.ifeq	\1>1
+		.ifeq	\arg>1
 			move.l	(a2)+,d0
-			MixSingleLongWord d0,\1
+			MixSingleLongWord d0,\arg
 			move.l	d0,(a0)+
 		.endif
-		dbra	d3,.mix_\1ch_lp
+		dbra	d3,.mix_\arg\()ch_lp
 			.endm
 
 		* Macro: MixHQInnerLP
@@ -2048,44 +2054,44 @@ MixerStopFX:
 		*
 		* \1 - number of channels
 		* \2 - overflow postfix (68000 only)
-	.macro	MixHQInnerLP
+	.macro	MixHQInnerLP	arg
 		.ifeq	MIXER_68020-1
 			moveq	#4-1,d7
-.mix_\1ch_ilp
+.mix_\arg\()ch_ilp:
 			add.b	d2,d0
-			bvs.s	.mix_\1ch_overflow
-			.ifeq	\1>2
+			bvs.s	.mix_\arg\()ch_overflow
+			.ifeq	\arg>2
 				add.b	d5,d0
-				bvs.s	.mix_\1ch_overflow
+				bvs.s	.mix_\arg\()ch_overflow
 			.endif
-			.ifeq	\1>3
+			.ifeq	\arg>3
 				add.b	d6,d0
-				bvs.s	.mix_\1ch_overflow
+				bvs.s	.mix_\arg\()ch_overflow
 			.endif
 				
-.mix_\1ch_ilp_done
+.mix_\arg\()ch_ilp_done:
 			ror.l	#8,d0
 			lsr.l	#8,d2
-			.ifeq	\1>2
+			.ifeq	\arg>2
 				lsr.l	#8,d5
 			.endif
-			.ifeq	\1>3
+			.ifeq	\arg>3
 				lsr.l	#8,d6
 			.endif
-			dbra	d7,.mix_\1ch_ilp
+			dbra	d7,.mix_\arg\()ch_ilp
 		.else
 			move.b	(a2)+,d0
 			add.b	(a3)+,d0
-			bvs.s	.mix_\1ch_overflow_1_\<REPTN>
-			.ifeq	\1>2
+			bvs.s	.mix_\arg\()ch_overflow_1_\<REPTN>
+			.ifeq	\arg>2
 				add.b	(a4)+,d0
-				bvs.s	.mix_\1ch_overflow_2_\<REPTN>
+				bvs.s	.mix_\arg\()ch_overflow_2_\<REPTN>
 			.endif
-			.ifeq	\1>3
+			.ifeq	\arg>3
 				add.b	(a5)+,d0
-				bvs.s	.mix_\1ch_overflow_3_\<REPTN>
+				bvs.s	.mix_\arg\()ch_overflow_3_\<REPTN>
 			.endif
-.mix_\1ch_ilp_done_\<REPTN>
+.mix_\arg\()ch_ilp_done_\<REPTN>
 			move.b	d0,(a0)+
 		.endif
 				.endm
@@ -2094,34 +2100,34 @@ MixerStopFX:
 		* 	.macro	This forms the overflow checking part of the HQ mixer
 		*
 		* \1 - number of channels
-	.macro	MixHQOverflow
+	.macro	MixHQOverflow	arg
 		.ifeq	MIXER_68020-1
-.mix_\1ch_overflow
+.mix_\arg\()ch_overflow
 			smi		d0						| 0xff .ifeq	negative, 0x0 .ifeq	positive
 			add.b	d4,d0					| 0x0+0x80 = 0x80, 0xff+0x80 = 0x7f
-			bra.s	.mix_\1ch_ilp_done
+			bra.s	.mix_\arg\()ch_ilp_done
 		.else
-.mix_\1ch_overflow_1_\<REPTN>
+.mix_\arg\()ch_overflow_1_\<REPTN>
 			smi		d0						| 0xff .ifeq	negative, 0x0 .ifeq	positive
 			add.b	d4,d0					| 0x0+0x80 = 0x80, 0xff+0x80 = 0x7f
-			.ifeq	\1>2
+			.ifeq	\arg>2
 				move.b	(a4)+,d2
 			.endif
-			.ifeq	\1>3
+			.ifeq	\arg>3
 				move.b	(a5)+,d2
 			.endif
-			bra.s	.mix_\1ch_ilp_done_\<REPTN>
-.mix_\1ch_overflow_2_\<REPTN>
+			bra.s	.mix_\arg\()ch_ilp_done_\<REPTN>
+.mix_\arg\()ch_overflow_2_\<REPTN>
 			smi		d0						| 0xff .ifeq	negative, 0x0 .ifeq	positive
 			add.b	d4,d0					| 0x0+0x80 = 0x80, 0xff+0x80 = 0x7f
-			.ifeq	\1>3
+			.ifeq	\arg>3
 				move.b	(a5)+,d2
 			.endif
-			bra.s	.mix_\1ch_ilp_done_\<REPTN>
-.mix_\1ch_overflow_3_\<REPTN>
+			bra.s	.mix_\arg\()ch_ilp_done_\<REPTN>
+.mix_\arg\()ch_overflow_3_\<REPTN>
 			smi		d0						| 0xff .ifeq	negative, 0x0 .ifeq	positive
 			add.b	d4,d0					| 0x0+0x80 = 0x80, 0xff+0x80 = 0x7f
-				bra.s	.mix_\1ch_ilp_done_\<REPTN>
+				bra.s	.mix_\arg\()ch_ilp_done_\<REPTN>
 		.endif
 				.endm
 		
@@ -2131,7 +2137,7 @@ MixerStopFX:
 		* loop. This is the HQ mode version, which can handle overflow.
 		*
 		* \1 - number of channels
-	.macro	MixLoopHQ
+	.macro	MixLoopHQ	arg
 		movem.l	d2/d4-d7,-(sp)				| Stack
 
 		* Set up for loop
@@ -2140,36 +2146,36 @@ MixerStopFX:
 		asr.w	#2,d3						| Convert to number of longwords
 		subq.w	#1,d3
 		
-.mix_\1ch_lp
-		.ifeq	\1-1
+.mix_\arg\()ch_lp
+		.ifeq	\arg-1
 			move.l	(a2)+,(a0)+
 		.endif
-		.ifeq	\1>1
+		.ifeq	\arg>1
 			.ifeq	MIXER_68020-1
 				move.l	(a2)+,d0
 				move.l	(a3)+,d2
-				.ifeq	\1>2
+				.ifeq	\arg>2
 					move.l	(a4)+,d5
 				.endif
-				.ifeq	\1>3
+				.ifeq	\arg>3
 					move.l	(a5)+,d6
 				.endif
 				
-				MixHQInnerLP \1
+				MixHQInnerLP \arg
 				
 				move.l	d0,(a0)+
 			.else
 				REPT 4
-					MixHQInnerLP \1
+					MixHQInnerLP \arg
 				ENDR
 			.endif
 		.endif
-		dbra	d3,.mix_\1ch_lp
-		.ifeq	\1>1
-			bra.s	.mix_\1ch_lp_done
+		dbra	d3,.mix_\arg\()ch_lp
+		.ifeq	\arg>1
+			bra.s	.mix_\arg\()ch_lp_done
 		.endif
 		
-		.ifeq	\1>1
+		.ifeq	\arg>1
 			.ifeq	MIXER_68020-1
 				MixHQOverflow \1
 			.else
@@ -2179,7 +2185,7 @@ MixerStopFX:
 			.endif
 		.endif
 
-.mix_\1ch_lp_done
+.mix_\arg\()ch_lp_done:
 		movem.l	(sp)+,d2/d4-d7			| Stack
 			.endm
 			
@@ -2189,59 +2195,59 @@ MixerStopFX:
 		* size in one go.
 		*
 		* \1 - number of channels
-	.macro	MixBlockBufSize
+	.macro	MixBlockBufSize	arg
 		* Calculate block repetition counts
-.mix_\1ch_pal_size_32		SET mixer_PAL_buffer_size&0xffe0
-.mix_\1ch_ntsc_size_32		SET mixer_NTSC_buffer_size&0xffe0
-.mix_\1ch_pal_diff_4		SET mixer_PAL_buffer_size-.mix_\1ch_pal_size_32
-.mix_\1ch_ntsc_diff_4		SET mixer_NTSC_buffer_size-.mix_\1ch_ntsc_size_32
+.mix_\arg\()ch_pal_size_32		= mixer_PAL_buffer_size&0xffe0
+.mix_\arg\()ch_ntsc_size_32		= mixer_NTSC_buffer_size&0xffe0
+.mix_\arg\()ch_pal_diff_4		= mixer_PAL_buffer_size-.mix_\arg\()ch_pal_size_32
+.mix_\arg\()ch_ntsc_diff_4		= mixer_NTSC_buffer_size-.mix_\arg\()ch_ntsc_size_32
 
 		* Check PAL/NTSC flag
 		move.w	mixer+mx_vidsys(pc),d0
-		bne		.mix_\1ch_blk_ntsc
+		bne		.mix_\arg\()ch_blk_ntsc
 
 		* PAL block (32 bytes)
-		REPT (.mix_\1ch_pal_size_32)/32
+		REPT (.mix_\arg\()ch_pal_size_32)/32
 			movem.l	(a2)+,d0-d7
-			.ifeq	\1>1
-				MixLongWords \1
+			.ifeq	\arg>1
+				MixLongWords \arg
 			.endif
 			movem.l	d0-d7,(a0)
 			lea.l	32(a0),a0	
 		ENDR
 		.ifeq	mxsize_x32
 			* PAL block (4 bytes)
-			REPT (.mix_\1ch_pal_diff_4)/4
-				.ifeq	\1-1
+			REPT (.mix_\arg\()ch_pal_diff_4)/4
+				.ifeq	\arg-1
 					move.l	(a2)+,(a0)+
 				.endif
-				.ifeq	\1>1
+				.ifeq	\arg>1
 					move.l	(a2)+,d0
-					MixSingleLongWord d0,\1
+					MixSingleLongWord d0,\arg
 					move.l	d0,(a0)+
 				.endif
 			ENDR
 		.endif
 		bra		.mix_done
 
-.mix_\1ch_blk_ntsc
+.mix_\arg\()ch_blk_ntsc:
 		* NTSC block
-		REPT (.mix_\1ch_ntsc_size_32)/32
+		REPT (.mix_\arg\()ch_ntsc_size_32)/32
 			movem.l	(a2)+,d0-d7
-			.ifeq	\1>1
-				MixLongWords \1
+			.ifeq	\arg>1
+				MixLongWords \arg
 			.endif
 			movem.l	d0-d7,(a0)
 			lea.l	32(a0),a0
 		ENDR
 		.ifeq	mxsize_x32
-			REPT (.mix_\1ch_ntsc_diff_4)/4
-				.ifeq	\1-1
+			REPT (.mix_\arg\()ch_ntsc_diff_4)/4
+				.ifeq	\arg-1
 					move.l	(a2)+,(a0)+
 				.endif
-				.ifeq	\1>1
+				.ifeq	\arg>1
 					move.l	(a2)+,d0
-					MixSingleLongWord d0,\1
+					MixSingleLongWord d0,\arg
 					move.l	d0,(a0)+
 				.endif
 			ENDR
@@ -2254,8 +2260,8 @@ MixerStopFX:
 		* on remaining size.
 		*
 		* \1 - pointer to use
-	.macro	MixCheckChannel
-.\@_chkch_wlen_dist	SET	MIXER_ENABLE_PLUGINS+MIXER_ENABLE_CALLBACK
+	.macro	MixCheckChannel	arg
+.\@_chkch_wlen_dist	=	MIXER_ENABLE_PLUGINS+MIXER_ENABLE_CALLBACK
 		* Update sample remaining length and check for underflows
 		move.l	mxe_active_channels(a1,d0.w),a6
 		.ifeq	mxslength_word-1
@@ -2305,26 +2311,26 @@ MixerStopFX:
 			tst.w	mch_status(a6)
 			bmi.s	.\@_run_plugin
 			
-.\@_no_plugin
-			move.l	mch_loop_ptr(a6),\1		| No plugin in use
+.\@_no_plugin:
+			move.l	mch_loop_ptr(a6),\arg		| No plugin in use
 			bra.s	.\@_plugin_done
 			
-.\@_no_data_plugin
+.\@_no_data_plugin:
 			move.l	d0,d4
 			move.l	d1,d5
 			movem.l	a0-a1/a6,-(sp)
 			move.l	mch_loop_ptr(a6),a0
 			bra.s	.\@_plugin_address_set
 			
-.\@_run_plugin
+.\@_run_plugin:
 			* Run the plugin
 			move.l	d0,d4
 			move.l	d1,d5
 			movem.l	a0-a1/a6,-(sp)
 			move.l	mch_plugin_output_buffer(a6),a0
 
-.\@_plugin_address_set
-			move.l	a0,\1					| Update pointer
+.\@_plugin_address_set:
+			move.l	a0,\arg					| Update pointer
 
 			* Set up parameters
 			.ifeq	mxslength_word-1
@@ -2342,7 +2348,7 @@ MixerStopFX:
 				move.l	mch_loop_length(a6),d0
 			.endif
 			
-.\@_plugin_len_set
+.\@_plugin_len_set:
 			move.l	mch_plugin_data_ptr(a6),a1	| Fetch data
 			
 			* Set loop status
@@ -2360,13 +2366,13 @@ MixerStopFX:
 			move.l	d4,d0
 			move.l	d5,d1
 
-.\@_plugin_done
+.\@_plugin_done:
 			move.l	d6,d7
 			.ifeq	MIXER_TIMING_BARS-1
 				move.w	#MIXER_AUD_COLOUR,0xdff180
 			.endif
 		.else
-			move.l	mch_loop_ptr(a6),\1			| Update pointer
+			move.l	mch_loop_ptr(a6),\arg		| Update pointer
 		.endif
 		
 		.ifeq	MIXER_ENABLE_CALLBACK-1
@@ -2414,7 +2420,7 @@ MixerStopFX:
 .\@_no_callback
 		.endif
 
-.\@_write_remaining
+.\@_write_remaining:
 		.ifeq	mxslength_word-1
 			move.w	d3,mch_remaining_length(a6)	| Write remaining length
 		.else
@@ -2433,7 +2439,7 @@ MixerStopFX:
 			bpl.s	.\@_write_rem_std
 			
 			* Check .ifeq	sample position reset
-			move.l	\1,d6
+			move.l	\arg,d6
 			sub.l	mch_plugin_output_buffer(a6),d6
 			beq.s	.\@_write_rem_sam_reset
 			
@@ -2441,18 +2447,18 @@ MixerStopFX:
 			add.l	d6,mch_sample_ptr(a6)		| Write sample pointer
 			bra.s	.\@_write_rem_done
 			
-.\@_write_rem_sam_reset
+.\@_write_rem_sam_reset:
 			move.l	mch_loop_ptr(a6),mch_sample_ptr(a6)	| Write sample pointer
 			bra.s	.\@_write_rem_done
 			
-.\@_write_rem_std
-			move.l	\1,mch_sample_ptr(a6)		| Write sample pointer
-.\@_write_rem_done
+.\@_write_rem_std:
+			move.l	\arg,mch_sample_ptr(a6)		| Write sample pointer
+.\@_write_rem_done:
 			.ifeq	MIXER_TIMING_BARS-1
 				move.w	#MIXER_AUD_COLOUR,0xdff180
 			.endif
 		.else
-			move.l	\1,mch_sample_ptr(a6)		| Write sample pointer
+			move.l	\arg,mch_sample_ptr(a6)		| Write sample pointer
 		.endif
 
 		* Check .ifeq	remaining length <= smallest remaining length
@@ -2468,7 +2474,7 @@ MixerStopFX:
 			move.l	d3,d1
 		.endif
 
-.\@_next_channel
+.\@_next_channel:
 		addq.w	#4,d0
 				.endm
 				
@@ -2499,7 +2505,7 @@ MixerStopFX:
 			move.l	mch_sample_ptr(a2),(a4)+		| No plugin in use
 			bra.s	.\@_plugin_done
 			
-.\@_run_plugin
+.\@_run_plugin:
 			* Run plugin
 			move.l	d0,d4
 			move.l	d1,d5
@@ -2511,17 +2517,17 @@ MixerStopFX:
 			moveq	#1,d1							| D1 = loop indicator
 			move.b	d1,mch_status+1(a2)				| Reset loop for plugins						
 
-.\@_check_plugin_type			
+.\@_check_plugin_type:			
 			tst.w	mch_plugin_type(a2)
 			beq.s	.\@_std_plugin
 			
 			move.l	mch_sample_ptr(a2),a0			| A0 = sample pointer
 			bra.s	.\@_nodata_plugin
 
-.\@_std_plugin
+.\@_std_plugin:
 			move.l	mch_plugin_output_buffer(a2),a0	| A0 = sample pointer
 
-.\@_nodata_plugin		
+.\@_nodata_plugin:		
 			move.l	a0,(a4)+
 			
 			* Set up parameters
@@ -2541,7 +2547,7 @@ MixerStopFX:
 				move.l	mch_remaining_length(a2),d0
 			.endif
 
-.\@_plugin_len_set
+.\@_plugin_len_set:
 			move.l	mch_plugin_data_ptr(a2),a1		| Fetch data
 			move.l	d7,a5
 			jsr		(a5)							| Call plugin
@@ -2550,7 +2556,7 @@ MixerStopFX:
 			move.l	d4,d0
 			move.l	d5,d1
 			
-.\@_plugin_done
+.\@_plugin_done:
 			.ifeq	MIXER_TIMING_BARS-1
 				move.w	#MIXER_CHUPD_COLOUR,0xdff180
 			.endif
@@ -3034,7 +3040,7 @@ mix_1ch_start:
 		MixCalcRem4 3
 	.endif
 	
-	.ifeq	mixer_sw_channels>3		
+	.if	mixer_sw_channels>3		
 .mix_4_channels
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)
@@ -3219,7 +3225,8 @@ MixerGetSampleMinSize:
 		* NTSC value
 		move.l	#mixer_NTSC_multiple,d0
 
-.done	move.l	(sp)+,a0					| Stack
+.done:
+		move.l	(sp)+,a0					| Stack
 		rts
 		
 		* Routine: MixerGetTotalChannelCount
@@ -3390,8 +3397,9 @@ MixerClearBuffer:
 		subq.w	#1,d7
 		
 		* Loop over longwords in the buffer
-.lp		move.l	d0,(a0)+
-		dbra	d7,.lp
+0:		
+		move.l	d0,(a0)+
+		dbra	d7,0b
 		
 		movem.l	(sp)+,d0/d7/a0/a1			| Stack
 		rts
@@ -3411,8 +3419,9 @@ MixerClearPluginData:
 		subq.w	#1,d0
 		
 		* Loop over words in the structure
-.lp		move.w	d1,(a0)+
-		dbra	d0,.lp
+0:
+		move.w	d1,(a0)+
+		dbra	d0,0b
 		
 		movem.l	(sp)+,d0/d1/a0				| Stack
 		rts
@@ -3500,11 +3509,13 @@ MixerGetCounter:
 
 * Mixer data
 		.align  4
-mixer					.skip	mx_SIZEOF
+mixer:
+					.skip	mx_SIZEOF
 		.ifeq	MIXER_68020-1
 			.align  4
 		.endif
-mixer_fx_struct			.skip	mfx_SIZEOF
+mixer_fx_struct:
+			.skip	mfx_SIZEOF
 		.ifeq	MIXER_68020-1
 			.align  4
 		.endif

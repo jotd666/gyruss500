@@ -13,6 +13,7 @@ EXEC_TYPES_I = 1
 	.endm
 	
 	.macro		STRUCT	arg,offset
+\arg = _soffset
 	.set		_soffset,_soffset+\offset
 	.endm
 	

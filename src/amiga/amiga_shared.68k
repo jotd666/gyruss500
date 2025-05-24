@@ -10,7 +10,7 @@
 
 * sound engine and also highscore management, common to all versions
 	
-.include "dos_lvos.i"
+.include "lvo/dos_lvos.i"
 .include "gyruss.inc"
 .include "sounds.inc"
 

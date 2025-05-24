@@ -8,10 +8,10 @@
 
 .include "../src/gyruss.inc"
 .include "../src/data.inc"
-.include "custom.i"
-.include "exec_lvos.i"
-.include "dos_lvos.i"
-.include "graphics_lvos.i"
+.include "hardware/custom.i"
+.include "lvo/exec_lvos.i"
+.include "lvo/dos_lvos.i"
+.include "lvo/graphics_lvos.i"
 
 AttnFlags = 0x128
 AFB_68010 = 0
@@ -73,7 +73,7 @@ TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
 NB_BYTES_PER_ROW = 40
 
 
-NB_LINES = 256
+NB_LINES = 264
 NB_PLAYFIELD_LINES = NB_LINES
 
 

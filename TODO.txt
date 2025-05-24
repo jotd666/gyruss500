@@ -2,6 +2,7 @@
   buffering" that the game does
 - upper screen chars blue "shadow". Is that restore from wrapped lower Y?
 - player 2 starts on top of screen (cocktail mode interference??)
+- reduce memory (log tiles instead of including them all?)
 - 32 colors => 16 + attached sprites? count colors of tiles & sprites independently
 - use hardware sprites for player ship maybe uses less colors
   (specially when exploding, could be done by a palette change if we just
@@ -13,14 +14,14 @@
   do it if non-blank tile where "GAME OVER" or "X WARPS TO..."
   or "<planet name>" or "KONAMI copytight"
   if not activated, then pure delete
-  
+ - implement difficulty
+- missing sounds: flash yellow
+ 
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
-- implement difficulty
 
 - log sprites/flash when missing
 
-- reduce memory (log tiles instead of including them all?)
 
 - star effect: hack with pixel placement when detected in the sprite update
   (takes too much blitter time!)

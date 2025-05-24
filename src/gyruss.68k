@@ -1913,7 +1913,7 @@ init_end_of_level_sequence_planet_0b71:
 	move.b	#0x96,d0                        	| [$0b87: ld   a,$96]
 	move.b	d0,distance_to_center_9465(a6)                   	| [$0b89: ld   ($9465),a]
 	jbsr	l_5dce                            	| [$0b8c: call $5DCE]
-	jbsr	l_1b86                            	| [$0b8f: call $1B86]
+	jbsr	fading_away_computation_start_1b86                            	| [$0b8f: call $1B86]
 	move.b	#0xFB,d0                        	| [$0b92: ld   a,$FB]
 	move.b	d0,l_943B(a6)                   	| [$0b94: ld   ($943B),a]
 	jra	next_game_state_080b                             	| [$0b97: jp   $080B]
@@ -3926,7 +3926,8 @@ l_1b4d:
 *	jne	l_cc0000                             	| [$1b82: jp   nz,$0000]
 	rts                                    	| [$1b85: ret]
 
-l_1b86:
+* used at start of the fade away sequence when player ends a level
+fading_away_computation_start_1b86:
 	lea	level_playing_flag_9000(a6),a2                      	| [$1b86: ld   ix,$9000]
 	lea	sprite_shadow_ram_9800(a6),a3      	| [$1b8a: ld   iy,sprite_shadow_ram_9800]
 	move.w	#0x8000,d5                          	| [$1b8e: ld   hl,$8000]
@@ -3934,7 +3935,7 @@ l_1b86:
 	clr.b	d4                               	| [$1b94: ld   e,$00]
 	LOAD_D3_16_FROM_D3D4                        | [$1b96: and  a]
 	sub.w	d3,d5                            	| [$1b97: sbc  hl,de]
-	roxr.w	#7,d5                            	| [$1b99: call $1BC3]
+	jbsr	shifting_on_d5d6_1bc3                            	| [$1b99: call $1BC3]
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(0x06,a2)                    	| [$1b9c: ld   (ix+$06),h]
 	move.b	d6,(0x07,a2)                    	| [$1b9f: ld   (ix+$07),l]
@@ -3943,8 +3944,8 @@ l_1b86:
 	clr.b	d4                               	| [$1ba8: ld   e,$00]
 	LOAD_D3_16_FROM_D3D4                               	| [$1baa: and  a]
 	sub.w	d3,d5                            	| [$1bab: sbc  hl,de]
-	roxr.w	#7,d5                            	| [$1bad: call $1BC3]
-	LOAD_D5D6_FROM_D5_16
+	jbsr	shifting_on_d5d6_1bc3                            	| [$1bad: call $1BC3]
+	LOAD_D5D6_FROM_D5_16			| doesn't change X, we're good
 	move.b	d5,(0x08,a2)                    	| [$1bb0: ld   (ix+$08),h]
 	move.b	d6,(0x09,a2)                    	| [$1bb3: ld   (ix+$09),l]
 	clr.b	(0x0a,a2)                        	| [$1bb6: ld   (ix+$0a),$00]
@@ -3952,10 +3953,13 @@ l_1b86:
 	move.b	#0xFF,(0x0c,a2)                 	| [$1bbe: ld   (ix+$0c),$FF]
 	rts                                    	| [$1bc2: ret]
 
-	* optimized & inlined
-	                           	| [$1bc3: rr   h]
+* optimized to only 1 roxr and a multi-bit asr
+* (not really important as it's only used to fade out player ship)
+
+shifting_on_d5d6_1bc3:
+	roxr.w	#1,d5                           	| [$1bc3: rr   h]
 	                           	| [$1bc5: rr   l]
-	                            	| [$1bc7: sra  h]
+	asr.w	#6,d5                            	| [$1bc7: sra  h]
 	                           	| [$1bc9: rr   l]
 	                            	| [$1bcb: sra  h]
 	                           	| [$1bcd: rr   l]
@@ -7532,7 +7536,7 @@ init_end_of_level_sequence_404e:
 	jbsr	l_3af2                            	| [$4051: call $3AF2]
 	move.b	#0x5A,d0                        	| [$4054: ld   a,$5A]
 	move.b	d0,distance_to_center_9465(a6)                   	| [$4056: ld   ($9465),a]
-	jbsr	l_1b86                            	| [$4059: call $1B86]
+	jbsr	fading_away_computation_start_1b86                            	| [$4059: call $1B86]
 *  ROM checksum
 *	clr.b	d1                               	| [$405c: ld   b,$00]
 *	LEA_ROM	0x2DED,a0                          	| [$405e: ld   hl,$2DED]

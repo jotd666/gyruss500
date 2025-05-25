@@ -206,7 +206,15 @@ for j,sprite_sheet_dict in enumerate(sprite_sheet_dicts):
 ##    hw_sprite_set_list.append(hw_sprite_set)
 
 
-full_palette = sorted(sprite_palette | tile_palette)
+# add sprite palette first. As it's 16 colors, we can use only 4 blits per sprite
+# which saves blitter bandwidth
+full_palette = sorted(sprite_palette)
+full_palette_colors = set(full_palette)
+for c in sorted(tile_palette):
+    if c not in full_palette_colors:
+        full_palette.append(c)
+        full_palette_colors.add(c)
+
 
 #full_palette_rgb4 = {(x>>4,y>>4,z>>4) for x,y,z in full_palette}
 #actually_used_colors_rgb4 = {(x>>4,y>>4,z>>4) for x,y,z in actually_used_colors}
@@ -239,11 +247,12 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
                         wtile = plane_func(tile)
 
                         if is_bob:
+                            # only 4 planes + mask => 5 planes
                             y_start,wtile = bitplanelib.autocrop_y(wtile)
                             height = wtile.size[1]
-                            actual_nb_planes += 1
                             bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=True,blit_pad=True)
                         else:
+                            # 5 planes, no mask
                             height = 8
                             y_start = 0
                             bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette)
@@ -283,7 +292,7 @@ tile_plane_cache = {}
 tile_table = read_tileset(tile_set_list,full_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False)
 
 bob_plane_cache = {}
-sprite_table = read_tileset(sprite_set_list,full_palette,[True,False,True,False],cache=bob_plane_cache, is_bob=True)
+sprite_table = read_tileset(sprite_set_list,full_palette[:16],[True,False,True,False],cache=bob_plane_cache, is_bob=True)
 
 with open(os.path.join(src_dir,"palette.68k"),"w") as f:
     bitplanelib.palette_dump(full_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)

@@ -42,7 +42,7 @@ _config
 	dc.b	"C1:X:invincible:0;"
 	dc.b	"C1:X:infinite lives:1;"
 	dc.b	"C1:X:cheat keys:4;"
-	dc.b	"C3:X:25 Hz update:1;"
+	dc.b	"C3:X:25 Hz update:0;"
 	IFD		CHIP_ONLY
 	dc.b	"C3:X:break at startup:31;"
 	ENDC

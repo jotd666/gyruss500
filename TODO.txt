@@ -4,7 +4,6 @@
      pieces log the memory with A701/A702 values
   
 - highscore save
-- reduce memory (log tiles instead of including them all?)
 - 32 colors => 16 + attached sprites? count colors of tiles & sprites independently
 - use hardware sprites for player ship maybe uses less colors
   (specially when exploding, could be done by a palette change if we just

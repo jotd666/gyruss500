@@ -1047,14 +1047,6 @@ osd_wait:
 *}
 	
 	
-osd_update_sprites:
-	movem.l	a0-a6/d0-d7,-(a7)
-	bsr		update_bobs_and_hw_sprites
-
-	movem.l	(a7)+,a0-a6/d0-d7
-	rts
-	
-
 	
 * 2 conditions I can think of:
 
@@ -1077,10 +1069,10 @@ add_10000_points:
 	move.l	a6,-(a7)
 	GET_Z80_RAM_START_IN_A6
 	movem.w	d0/d7,-(a7)
-	*move.b	player_1_score_88A4(a6),d0
+	move.b	player_1_score_9663+2(a6),d0
 	MOVEQ	#1,d7
 	abcd	d7,d0
-	*move.b	d0,player_1_score_88A4(a6)
+	move.b	d0,player_1_score_9663+2(a6)
 	movem.w	(a7)+,d0/d7
 	move.l	(a7)+,a6
 	rts
@@ -1478,6 +1470,12 @@ osd_dump_logs:
 	move.l	#16*512,d0
 	jbsr	resload_SaveFile(a2)
 	
+	move.l	_resload(pc),a2
+	lea		character_log_table,a1
+	lea		character_log_name(pc),a0
+	move.l	#16*512,d0
+	jbsr	resload_SaveFile(a2)
+	
 	GET_M6809_MEMORY_BLOCKS
   	lea		(0x40,a6),a1
 	lea		sprites_ram_name_4040(pc),a0
@@ -1532,6 +1530,8 @@ sprites_ram_name_A200:
 	.asciz	"sprite_ram_A200"
 sprite_log_name:
 	.asciz	"used_sprites"
+character_log_name:
+	.asciz	"used_tiles"
 cpu_log_name:
 	.asciz	"cpu_log"
 sub_cpu_log_name:
@@ -2104,6 +2104,22 @@ update_bg_tile:
 	moveq	#0,d3
 	move.b	d1,d3			| CLUT & tile code & flags
 	
+	btst	#5,d3
+	jeq		13f
+	* add 0x100 to code
+	bset	#8,d2
+13:
+	
+	.ifne	OPT_ENABLE_LOGGING
+	lea		character_log_table,a0
+	movem.w	d2-d3,-(a7)
+	and.w	#0xF,d3
+	lsl.w	#4,d2		| 16 cluts
+	add.w	d2,d3		| clut offset
+
+	st.b	(a0,d3.l)
+	movem.w	(a7)+,d2-d3
+	.endif
 
 	bsr		compute_tile_xy
 	
@@ -2124,23 +2140,18 @@ update_bg_tile:
 	add.w	d0,a1
 	add.w	d0,a3
 
-	btst	#5,d3
-	jeq		13f
-	* add 0x100 to code
-	bset	#8,d2
-13:
 
 	
 	add.w	d2,d2
 	add.w	d2,d2	
 	move.l	(a0,d2.w),d0		| tile pointer
-	.ifndef	RELEASE
+	.ifdef	RELEASE
+	jeq		11f					| clear tile, no error (release)
+	.else
 	jne		12f
 	add.w	#0x8400,d7
 	lsr.w	#2,d2
-	lea		game_tile_not_registered_error,a0	
-
-	jbsr	osd_break
+	move.w	#0xF0F,_custom+color
 	jra		11f
 12:
 	.endif
@@ -2150,8 +2161,17 @@ update_bg_tile:
 	add.w	d3,d3
 	add.w	d3,d3
 	move.l	(a2,d3.w),d0			| pointer on tile bitplanes for that CLUT
+	.ifdef	RELEASE
 	jeq		11f						| not necessarily a problem
-
+	.else
+	jne		12f
+	add.w	#0x8400,d7
+	lsr.w	#2,d2
+	lsr.w	#2,d3
+	move.w	#0xF0F,_custom+color
+	jra		11f
+	.endif
+12:
 	move.l	d0,a2					| pointer on bitplanes
 	ror.b	#6,d1			        | modifiers on first bits
 	and.w	#3,d1
@@ -2699,11 +2719,7 @@ write_videoram_out_of_range_error:
 	.asciz	"write videoram out of range (D7)"
 write_colorram_out_of_range_error:
 	.asciz	"write colorram out of range (D7)"
-unregistered_sprite_clut_error:
-	.asciz	"unregistered sprite clut (D1=code, D2=clut)"
-game_tile_not_registered_error:
-	.asciz	"game tile (in D2) not registered"
-	
+
 	.align	2
 	.endif
 
@@ -2893,6 +2909,10 @@ cpu_log_enable:
 	.section	.bss
 
 sprite_log_table:
+	* 16 cluts, 512 tiles
+	* a lot of combinations aren't used (fortunately!)
+	ds.b	16*512
+character_log_table:
 	* 16 cluts, 512 tiles
 	* a lot of combinations aren't used (fortunately!)
 	ds.b	16*512

@@ -18,7 +18,7 @@ SCORE_FILE_SIZE = 3+30*3
 
 .macro	GET_RAM_START_IN_A6	
 	.ifdef	RELEASE
-	lea		ram_buffer,a6
+	lea		z80_ram_buffer,a6
 	.else
 	move.l		ram_start_8000,a6
 	.endif

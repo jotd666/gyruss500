@@ -7,6 +7,7 @@ from shared import *
 sprite_names = get_sprite_names()
 
 NB_SPRITES = 0x200
+NB_TILES = 0x200
 
 dump_it = True
 
@@ -52,7 +53,7 @@ def load_tileset(image_name,palette_index,width,height,tileset_name,dumpdir,dump
     for j in range(nb_rows):
         for i in range(nb_cols):
 
-            if cluts and palette_index not in cluts[tile_number]:
+            if cluts and (tile_number not in cluts or palette_index not in cluts[tile_number]):
                 # no clut declared for that tile
                 tileset_1.append(None)
             else:
@@ -78,7 +79,7 @@ def load_tileset(image_name,palette_index,width,height,tileset_name,dumpdir,dump
 
     return sorted(set(palette)),tileset_1
 
-
+all_tile_cluts = False
 
 sprite_cluts = [[] for _ in range(NB_SPRITES)]
 ##hw_sprite_cluts = [[] for _ in range(64)]
@@ -91,25 +92,55 @@ colors_to_remove = {(104, 0, 251), (0, 255, 171)}
 
 
 
-def add_sprite(index,cluts=[0]):
+def add_tile(table,index,cluts=[0]):
     if isinstance(index,range):
         pass
     elif not isinstance(index,(list,tuple)):
         index = [index]
     for idx in index:
-        sprite_cluts[idx] = cluts
+        table[idx] = cluts
+
+sprite_cluts = {}
+tile_cluts = {}
 
 with open(used_graphics_dir / "used_sprites","rb") as f:
     for index in range(NB_SPRITES):
         d = f.read(16)
         cluts = [i for i,c in enumerate(d) if c]
         if cluts:
-            add_sprite(index,cluts=cluts)
+            add_tile(sprite_cluts,index,cluts=cluts)
+
+if all_tile_cluts:
+    tile_cluts = None
+else:
+    with open(used_graphics_dir / "used_tiles","rb") as f:
+        for index in range(NB_TILES):
+            d = f.read(16)
+            cluts = [i for i,c in enumerate(d) if c]
+            if cluts:
+                add_tile(tile_cluts,index,cluts=cluts)
+
+    # now gather all cluts used by letter/digit tiles, logging probably
+    # missed some
+    used_cluts = set()
+    for atc in alphanum_tile_codes:
+        cluts = tile_cluts.get(atc)
+        if cluts:
+            used_cluts.update(cluts)
+    # now set cluts for all alphanum tiles
+    for atc in alphanum_tile_codes:
+        tile_cluts[atc] = sorted(used_cluts)
+
+
 
 if dump_it:
     with open(dump_dir / "used_sprites.json","w") as f:
         sprite_cluts_dict = {hex(k):v for k,v in enumerate(sprite_cluts) if v}
         json.dump(sprite_cluts_dict,f,indent=2)
+    if not all_tile_cluts:
+        with open(dump_dir / "used_tiles.json","w") as f:
+            tile_cluts_dict = {hex(k):v for k,v in enumerate(tile_cluts) if v}
+            json.dump(tile_cluts_dict,f,indent=2)
 
 def add_hw_sprite(index,name,cluts=[0]):
     if isinstance(index,range):
@@ -146,7 +177,9 @@ tile_palette = set()
 tile_set_list = []
 
 for i,tsd in tile_sheet_dict.items():
-    tp,tile_set = load_tileset(tsd,i,8,8,"tiles",dump_dir,dump=dump_it,name_dict=None)
+    tp,tile_set = load_tileset(tsd,i,8,8,"tiles",dump_dir,dump=dump_it,
+    cluts=tile_cluts,
+    name_dict=None)
     tile_set_list.append(tile_set)
     tile_palette.update(tp)
 
@@ -263,14 +296,14 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
 
     for i,tile_entry in enumerate(tile_table):
         f.write("\t.long\t")
-        if tile_entry:
+        if tile_entry and any(tile_entry):
             f.write(f"tile_{i:02x}")
         else:
             f.write("0")
         f.write("\n")
 
     for i,tile_entry in enumerate(tile_table):
-        if tile_entry:
+        if tile_entry and any(tile_entry):
             f.write(f"tile_{i:02x}:\n")
             for j,t in enumerate(tile_entry):
                 f.write("\t.long\t")
@@ -282,7 +315,7 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
 
 
     for i,tile_entry in enumerate(tile_table):
-        if tile_entry:
+        if tile_entry and any(tile_entry):
             for j,t in enumerate(tile_entry):
                 if t:
                     name = f"tile_{i:02x}_{j:02x}"

@@ -5360,9 +5360,7 @@ l_2895:
 	move.b	l_900A(a6),d0                   	| [$2895: ld   a,($900A)]
 	move.b	d0,d5                           	| [$2898: ld   h,a]
 	move.b	#0xB0,d6                        	| [$2899: ld   l,$B0]
-	LOG_REGS	289b
 	jbsr	l_4001                            	| [$289b: call $4001]
-	LOG_REGS	289e
 	move.b	d0,(0x01,a2)                    	| [$289e: ld   (ix+$01),a]
 	bset.b	#0,(0x06,a2)                    	| [$28a1: set  0,(ix+$06)]
 	move.b	#0xB0,(0x07,a2)                 	| [$28a5: ld   (ix+$07),$B0]

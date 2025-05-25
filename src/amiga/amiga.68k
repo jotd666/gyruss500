@@ -1182,27 +1182,47 @@ really_update_tiles:
 	jne		3b
 	rts
 	
+
+is_forced_restore:
+	GET_Z80_RAM_START_IN_A6
+	move.b	#0x83,d0
+	* 4 locations where text could be printed, which means
+	* that the game is not playing at full rate ("game over",
+	* "ready", "2 warps to xxx", "planet name" displayed
+	* probably not a lot of sprites displaying right now)
 	
-* < A6: hw sprite flag table
-* < A4: hw sprite table
-* < A2: copperlist (hw sprite part)
-* < A1: sprite pos table (Y) for 16-high sprites
+	cmp.b	(0x60A,a6),d0
+	jne		1f
+	cmp.b	(0x614,a6),d0
+	jne		1f
+	cmp.b	(0x633,a6),d0
+	jne		1f
+	cmp.b	(0x670,a6),d0
+	jne		1f
+	
+	
+	moveq	#0,d0
+	rts
+1:
+	* some text is above the playfield: force restore
+	st	d0
+	rts
+	
 * < A0: target sprite pointer
 
-	
 really_update_sprites:
 update_bobs_and_hw_sprites:
 
+	jbsr	is_forced_restore
+	move.b	d0,d6			| D6 = $FF: do restore anytime
 	
 	***********************
 	* erase previous BOBs *
 	***********************
 	
-
 	move.l	bob_previous_drawed_sprites(pc),a4
 	lea		_custom,a5
 	
-
 	* clear previous positions
 	lea	background_restore_buffer,a0
 	move.l	playfield_drawed_screen_ptr(pc),a1
@@ -1217,7 +1237,25 @@ update_bobs_and_hw_sprites:
 	move.w	(a4),d4			| height
 	move.w	(2,a4),d2		| width
 	clr.l	(a4)+			| ack deletion
-	bsr		blit_background
+	tst.b	d6
+	jne		2f				| forced restore
+	* not forced restore. That depends on sprite Y pos
+	cmp.b	#24,d1
+	jcs		2f
+	cmp.b	#248,d1
+	jcc		2f
+	* 24 <= Y < 248 and no forced restore: we can just clear the background
+	move.w	d6,-(a7)
+	move.l	a1,a3
+	moveq	#NB_BOB_PLANES,d3
+	jbsr	clear_planes_any_blitter_internal
+	move.l	a3,a1
+	move.w	(a7)+,d6
+	jra		4f
+2:
+	jbsr		blit_background
+	jra		4f
+4:
 	dbf		d7,1b	
 	bra.b	12f
 11:
@@ -1696,6 +1734,75 @@ start_process_1_plane:
 	
 	GEN_MINTERM_TABLE	cookie_cut_blit,0x0FCA
 	GEN_MINTERM_TABLE_2	cookie_cut_mask_blit,0x0BCA
+
+
+* < D0,D1: x,y
+* < A1: foreground plane pointer (often first plane!)
+* < D2: width in bytes (inc. 2 extra for shifting)
+* < D3: number of planes to clear
+* < D4: blit height
+
+* trashes D0-D6/A2
+clear_planes_any_blitter_internal:
+    * pre-compute the maximum of shit here
+	move.w	d1,d6
+    beq.b   1f    | optim
+	* check if y start + height > Y_MAX
+	* (ignores case where y = 0, no risk)
+	add.w	d4,d6
+	sub.w	#Y_MAX,d6
+	bmi.b	0f
+	* y start + height > Y_MAX: clip height
+	sub.w	d6,d4
+	beq.b	10f
+	bpl.b	0f
+10:
+	* null or negative height after clipping: out
+	rts
+0:
+    lea mulNB_BYTES_PER_ROW_table(pc),a2
+    add.w   d1,d1
+    move.w  (a2,d1.w),d1
+1:
+	moveq	#1,d5
+	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
+    and.w   #0x1F0,d0
+    beq.b   2f				| zero X optimization
+    lsr.w   #3,d0
+    add.w   d0,d1
+2:   
+    add.w   d1,a1       | plane position (always even)
+
+	move.w #NB_BYTES_PER_ROW,d0
+	bclr	#0,d2		| make sure D2 is even (else strange things occur!)
+    sub.w   d2,d0       | blit width
+
+    lsl.w   #6,d4
+    lsr.w   #1,d2
+    add.w   d2,d4       | blit height
+
+    * now just wait for blitter ready to write all registers
+	WAIT_BLIT
+    
+	
+	move.l d5,bltcon0(a5)	
+    move.w  d0,bltdmod(a5)	|D modulo
+	
+	subq	#1,d3
+	jeq		4f
+	subq	#1,d3
+3:
+	move.l a1,bltdpt(a5)	|destination top left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	lea		(SCREEN_PLANE_SIZE,a1),a1
+	WAIT_BLIT
+	dbf		d3,3b
+4:
+	move.l a1,bltdpt(a5)	|destination top left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	
+    rts
+
 
 
 * 2 words: first shift (as bplcon value), then

@@ -4,18 +4,10 @@
      pieces log the memory with A701/A702 values
   
 - highscore save
-- 32 colors => 16 + attached sprites? count colors of tiles & sprites independently
-- use hardware sprites for player ship maybe uses less colors
-  (specially when exploding, could be done by a palette change if we just
-  use the sprite allocation routine)
-- highscore: letters are flipped when entered
+- highscore: letters are flipped when entered: seems fixed
 
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
-- restore buffer: do it only in title screen and for some Y (score/credit+lives)
-  do it if non-blank tile where "GAME OVER" or "X WARPS TO..."
-  or "<planet name>" or "KONAMI copytight"
-  if not activated, then pure delete
-  * debug with a background color to indicate the current mode
+- restore buffer: TODO: force if "KONAMI copyright"
 
 - missing sounds: flash yellow
  
@@ -26,7 +18,10 @@
 
 
 - star effect: hack with pixel placement when detected in the sprite update
-  (takes too much blitter time!)
+  (takes too much blitter time!):
+  when updating sprites, if star found, then just bset. Color palette must be
+  adjusted to have star colors in strategic positions 1,2,4,8
+  when clearing, just clear byte
 
 
 ---------------------

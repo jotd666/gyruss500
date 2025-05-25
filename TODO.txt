@@ -1,9 +1,9 @@
 - sometimes enemy sprites flashing/shifting: understand better the sprite "double
   buffering" that the game does
-  => debug when "NEPTUNE" is shown
+  => debug when "NEPTUNE" is shown: write to 0x100 during sprite update, find the disappearing
+     pieces log the memory with A701/A702 values
   
-- upper screen chars blue "shadow". Is that restore from wrapped lower Y?
-- player 2 starts on top of screen (cocktail mode interference??)
+- highscore save
 - reduce memory (log tiles instead of including them all?)
 - 32 colors => 16 + attached sprites? count colors of tiles & sprites independently
 - use hardware sprites for player ship maybe uses less colors

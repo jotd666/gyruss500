@@ -47,7 +47,7 @@ _config
 	dc.b	"C3:X:break at startup:31;"
 	ENDC
 	dc.b	"C4:L:start lives:3,4,5;"
-	dc.b	"C5:L:difficulty level:1,2,3,4,5,6,7,8;"
+	dc.b	"C5:L:difficulty level:1 (easiest),2,3,4,5 (average),6,7,8 (hardest);"
 	dc.b	0
 
 	IFD BARFLY

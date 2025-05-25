@@ -10,14 +10,14 @@
   (specially when exploding, could be done by a palette change if we just
   use the sprite allocation routine)
 - highscore: letters are flipped when entered
-- add 10000 points cheat
+
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
 - restore buffer: do it only in title screen and for some Y (score/credit+lives)
   do it if non-blank tile where "GAME OVER" or "X WARPS TO..."
   or "<planet name>" or "KONAMI copytight"
   if not activated, then pure delete
   * debug with a background color to indicate the current mode
- - implement difficulty
+
 - missing sounds: flash yellow
  
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3

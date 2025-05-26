@@ -62,6 +62,7 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
 
     print("*"*50)
     nb_active = 0
+    nb_stars = 0
 
     for offs in range(0xBC,-4,-4):
         raw_code_and_clut = (m_spriteram[offs+1]<<8)+m_spriteram[offs+2]
@@ -73,6 +74,8 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
             gfx_bank = m_spriteram[offs + 1] & 0x01
             code = ((m_spriteram[offs + 2] & 0x20) << 2) | (m_spriteram[offs + 1] >> 1)
             if code:
+                if code == 0x13:
+                    nb_stars += 1
                 color = m_spriteram[offs + 2] & 0x0f
                 flip_x = bool(~m_spriteram[offs + 2] & 0x40)
                 flip_y = bool(m_spriteram[offs + 2] & 0x80)
@@ -101,11 +104,11 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
                 # paste would require masking, well, never mind
                 result.paste(im,(y,x))
 
-    print(f"NB ACTIVE: {nb_active}")
+    print(f"NB ACTIVE: {nb_active}, NB_STARS: {nb_stars}")
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-#process(r"../../sprite_ram_A000",offset=0,base_address=0xA000)
-process(r"stars",offset=0,base_address=0xA000)
+process(r"neptune_fail_a000",offset=0,base_address=0x4040,name_filter="neptune")
+
 #process(r"iceberg_amiga_4040",offset=0,base_address=0x4040,name_filter="iceberg")
 #process(r"sattelites_A000",offset=0,base_address=0xA000)
 #process(r"bug_4040",offset=0,base_address=0x4040)

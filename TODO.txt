@@ -1,8 +1,19 @@
 - sometimes enemy sprites flashing/shifting: understand better the sprite "double
   buffering" that the game does
+  it's related to stars as if stars are off it doesn't happen
   => debug when "NEPTUNE" is shown: write to 0x100 during sprite update, find the disappearing
      pieces log the memory with A701/A702 values
-  
+     W $100 $DE
+	 writes to 101
+	 
+	 
+- neptune planet fails to display: save A000=>A800
+  and load memory in MAME at 6000, see if 4040 ends up trashed
+    - if so => 6809 code issue
+	- if not => Z80 code issue
+	
+- lives erased maybe 248 is too low!
+	 
 - highscore save
 - highscore: letters are flipped when entered: seems fixed
 

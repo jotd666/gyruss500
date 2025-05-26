@@ -184,7 +184,6 @@ start:
 		.global osd_break		| for debug	
 		.global osd_blitz		| for debug
 		.global osd_w_videoram
-		.global osd_update_sprites
 		.global osd_read_dsw_1
 		.global osd_read_dsw_2
 		.global osd_read_dsw_3
@@ -1318,8 +1317,6 @@ update_one_bob:
 	move.b	(TARGET_SPRITE_CODE1,a0),d2
 	jeq		2f
 
-	move.b	#0,0x100
-
 	move.b	(TARGET_SPRITE_CODE2,a0),d3
 	and.b	#0x20,d3
 	add.w	d3,d3
@@ -1329,7 +1326,9 @@ update_one_bob:
 	bset	#8,d3			| sprite bank 1 (add 0x100)
 0:
 	or.b	d2,d3
-	
+	* no stars displayed
+*	cmp.b	#0x13,d3
+*	jeq		2f
 	
 	move.b	(TARGET_SPRITE_CODE2,a0),d2
 	* color = m_spriteram[offs + 2] & 0x0f

@@ -61,7 +61,7 @@ def get_sprite_names():
     add_dual_range(0x71,0x77,"blue_saucer")
     add_dual_range(0x18,0x1f,"player_laser")
     add_dual_range(0x1f,0x23,"enemy_bomb")
-    add_dual_range(0x78,0x7A,"neptune")
+    add_dual_range(0x78,0x7B,"neptune")
 
     return rval
 

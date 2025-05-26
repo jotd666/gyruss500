@@ -178,10 +178,35 @@ gyruss_sub_draw:
 l_f0ca:
 	                        	| [...]
 	                           	| [$f0cd: beq    $f0ca]
+
+*	*TEMP
+*	GET_ADDRESS	shared_memory_6000+0x200          	| [$f0e5: ldu    #shared_memory_6000]
+*	lea	neptune_fail_a000,a1
+*	move.w	#0xC0/4-1,d4
+*1:
+*	move.l	(a1)+,(a0)+
+*	dbf		d4,1b
+*	bra		0f
+*	.include 	"neptune_fail_a000.s"
+*0:
+*	*TEMP
+*	*TEMP
+*	GET_ADDRESS	shared_memory_6000          	| [$f0e5: ldu    #shared_memory_6000]
+*	lea	neptune_fail_a000,a1
+*	move.w	#0xC0/4-1,d4
+*1:
+*	move.l	(a1)+,(a0)+
+*	dbf		d4,1b
+*
+*	*TEMP
+
+
 	GET_ADDRESS	frame_odd_or_even_6700	| [$f0cf: lda    frame_odd_or_even_6700]
 	tst.b	(a0)                         	| [...]
 	jne	frame_odd_f1a3                             	| [$f0d2: lbne   $f1a3]
 	* frame even
+
+	move.b	#1,0x101
 	
 	jbsr	try_to_update_all_sprites_even_f4e4      	| [$f0d6: jsr    $f4e4]
 	
@@ -906,29 +931,7 @@ l_f4a3:
 
 	move.l	(a0),d6
 	
-	
-	
-*	* temp
-*	move.l	d6,d7
-*	and.l	#0x00FFFF00,d7
-*	lsr.l	#8,d7
-*	moveq	#0,d5
-*	move.b	d7,d5
-*	and.b	#0x20,d5
-*	add.w	d5,d5
-*	add.w	d5,d5
-*	lsr.w	#8,d7
-*	lsr.w	#1,d7
-*	jcc		0f
-*	bset	#8,d5
-*0:
-*	or.b	d7,d5
-*	* D5: sprite code!!
-*	cmp.b	#0x38,d5
-*	jne		0f
-*	breakpoint	"iceberg!!"
-*0:
-	
+
 	
 	addq.w	#4,d2
 	                                 	| [$f4b5: ldd    ,x++]
@@ -944,8 +947,8 @@ l_f4a3:
 	GET_DP_ADDRESS	0x01                    	| [$f4bd: inc    $01]
 	addq.b	#1,(a0)                         	| [...]  increase 4201 (lsb of pointer on 64xx)
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4bf: dec    $09]
-	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f4c1: dec    $0a]
+	subq.b	#1,(a0)+                         	| [...]
+												| [$f4c1: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f4a3                             	| [$f4c3: bne    $f4a3]
 	rts                                    	| [$f4c5: rts]
@@ -958,7 +961,7 @@ l_f4c7:
 	addq.w	#0x4,d4                         	| [$f4c9: leau   $4,u]
 	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f4cb: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
-	bne	l_f4c7                             	| [$f4cd: bne    $f4c7]
+	jne	l_f4c7                             	| [$f4cd: bne    $f4c7]
 	rts                                    	| [$f4cf: rts]
 
 l_f4d0:
@@ -1029,8 +1032,8 @@ l_f4fc:
 	GET_DP_ADDRESS	0x01                    	| [$f516: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f518: dec    $09]
-	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a   	| [$f51a: dec    $0a]
+	subq.b	#1,(a0)+                         	| [...]
+												| [$f51a: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f4fc                             	| [$f51c: bne    $f4fc]
 	rts                                    	| [$f51e: rts]
@@ -1051,7 +1054,7 @@ l_f529:
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f52b: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f52d: suba   #$40]
-	GET_DP_ADDRESS	0x01                    	| [$f52f: sta    $01]
+												| [$f52f: sta    $01]
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f531: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]

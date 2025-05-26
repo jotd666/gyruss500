@@ -2903,7 +2903,7 @@ l_135a:
 	jbsr	write_bcd_byte_to_screen_077f                            	| [$1362: call $077F]
 	rts                                    	| [$1365: ret]
 
-l_1381:
+randomize_direction_1381:
 	jbsr	exx                               	| [$1381: exx]
 	lea	l_94BF(a6),a0                      	| [$1382: ld   hl,$94BF]
 	lea	l_94C0(a6),a1                      	| [$1385: ld   de,$94C0]
@@ -4075,7 +4075,12 @@ l_1cb7:
 	move.b	(displayed_y_00,a3),d5                    	| [$1cb7: ld   h,(iy+$00)]
 	move.b	(fine_y_03,a2),d6                    	| [$1cba: ld   l,(ix+$03)]
 	LOAD_D5_16_FROM_D5D6
+	* this makes the ship zoom away after it has migrated from
+	* untransformed coordinates to transformed ones
+	cmp.b	#0xDE,0x100
+	jeq		0f
 	add.w	d3,d5                            	| [$1cbd: add  hl,de]
+0:
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(displayed_y_00,a3)                    	| [$1cbe: ld   (iy+$00),h]
 	move.b	d6,(fine_y_03,a2)                    	| [$1cc1: ld   (ix+$03),l]
@@ -6897,7 +6902,7 @@ l_3623:
 	                                    	| [$362e: nop]
 	clr.b	d0                               	| [$362f: ld   a,$00]
 	move.b	d0,l_947B(a6)                   	| [$3631: ld   ($947B),a]
-	jbsr	l_1381                            	| [$3634: call $1381]
+	jbsr	randomize_direction_1381                            	| [$3634: call $1381]
 l_3637:
 	move.b	d0,d1                           	| [$3637: ld   b,a]
 	and.w	#0x07,d0                         	| [$3638: and  $07]
@@ -7078,12 +7083,12 @@ l_37f3:
 
 * starfield during game (less available sprites means less stars)
 update_starfield_in_game_3804:
-	jbsr	l_38ef                            	| [$3804: call $38EF]
+	jbsr	select_stars_buffer_38ef            | [$3804: call $38EF]
 	move.b	#0xFD,d5                        	| [$3807: ld   h,$FD]
 	move.b	#0xC0,d2                        	| [$3809: ld   c,$C0]
 	jbsr	update_starfield_3A37             	| [$380b: call update_starfield_3A37]
-	READ_ROM_BYTE	0x0CC2,d0                       	| [$380e: ld   a,($0CC2)]
-	move.b	d0,d1                           	| [$3811: ld   b,a]
+												| [$380e: ld   a,($0CC2)]
+	move.b	#3,d1                           	| [$3811: ld   b,a]
 	move.b	#0xFC,d5                        	| [$3812: ld   h,$FC]
 	jbsr	update_starfield_3A37             	| [$3814: call update_starfield_3A37]
 	move.b	#0xFE,d6                        	| [$3817: ld   l,$FE]
@@ -7118,13 +7123,13 @@ update_starfield_inter_levels_3831:
 	.ifne	OPT_NO_STARS
 	rts
 	.endif
-	jbsr	l_38ef                            	| [$3831: call $38EF]
+	jbsr	select_stars_buffer_38ef                            	| [$3831: call $38EF]
 	move.b	l_943B(a6),d0                   	| [$3834: ld   a,($943B)]
 	move.b	d0,d5                           	| [$3837: ld   h,a]
 	move.b	#0xC0,d2                        	| [$3838: ld   c,$C0]
 	jbsr	update_starfield_3A37             	| [$383a: call update_starfield_3A37]
-	READ_ROM_BYTE	0x17FA,d0                       	| [$383d: ld   a,($17FA)]
-	move.b	d0,d1                           	| [$3840: ld   b,a]
+												| [$383d: ld   a,($17FA)]
+	move.b	#3,d1                           	| [$3840: ld   b,a]
 	move.b	l_943B(a6),d0                   	| [$3841: ld   a,($943B)]
 	subq.b	#1,d0                           	| [$3844: dec  a]
 	move.b	d0,d5                           	| [$3845: ld   h,a]
@@ -7231,14 +7236,15 @@ l_38ea:
 	rts                                    	| [$38ee: ret]
 
 
-l_38ef:
-	move.b	general_fast_timer_9400(a6),d0                   	| [$38ef: ld   a,($9400)]
+select_stars_buffer_38ef:
+	move.b	general_fast_timer_9400(a6),d0   | [$38ef: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$38f2: and  $01]
 	jne	l_38fd                             	| [$38f4: jr   nz,$38FD]
+	* same as even frame (A700=0)
 	lea	l_A138(a6),a2                          	| [$38f6: ld   ix,$A138]
 	jra	l_3901                             	| [$38fa: jp   $3901]
-
 l_38fd:
+	* same as odd frame (A700=1)
 	lea	l_A338(a6),a2                          	| [$38fd: ld   ix,$A338]
 l_3901:
 	lea	l_9938(a6),a3                      	| [$3901: ld   iy,$9938]
@@ -7289,7 +7295,7 @@ l_3941:
 	add.b	d5,d0                            	| [$394a: add  a,h]
 	cmp.b	#0x18,d0                         	| [$394b: cp   $18]
 	bcc.b	0f                               	| [...]
-	jbsr	l_3aae                            	| [$394d: call c,$3AAE]
+	jbsr	random_stuff_3aae                            	| [$394d: call c,$3AAE]
 0:
 	move.b	d0,(0x00,a3)                    	| [$3950: ld   (iy+$00),a]
 	not.b	d0                               	| [$3953: cpl]
@@ -7308,6 +7314,8 @@ l_3960:
 	jne	l_3941                             	| [$396a: djnz $3941]
 	rts                                    	| [$396c: ret]
 
+* < D6
+
 update_starfield_39B1:
 	.ifne	OPT_NO_STARS
 	rts
@@ -7318,8 +7326,8 @@ update_starfield_39B1:
 	move.w	#0x0004,d1                      	| [$39bc: ld   bc,$0004]
 	move.b	#0x80,d5                        	| [$39bf: ld   h,$80]
 	jbsr	exx                               	| [$39c1: exx]
-	READ_ROM_BYTE	0x00A3,d0                       	| [$39c2: ld   a,($00A3)]
-	move.b	d0,d1                           	| [$39c5: ld   b,a]
+												| [$39c2: ld   a,($00A3)]
+	move.b	#6,d1                           	| [$39c5: ld   b,a]
 l_39c6:
 	jbsr	exx                               	| [$39c6: exx]
 	move.b	(0x00,a2),d0                    	| [$39c7: ld   a,(ix+$00)]
@@ -7332,7 +7340,7 @@ l_39c6:
 	add.b	d6,d0                            	| [$39d8: add  a,l]
 	cmp.b	#0x18,d0                         	| [$39d9: cp   $18]
 	bcc.b	0f                               	| [...]
-	jbsr	l_3a6a                            	| [$39db: call c,$3A6A]
+	jbsr	random_stuff_3a6a                            	| [$39db: call c,$3A6A]
 0:
 	move.b	d0,(0x00,a3)                    	| [$39de: ld   (iy+$00),a]
 	not.b	d0                               	| [$39e1: cpl]
@@ -7349,6 +7357,9 @@ l_39ef:
 	jne	l_39c6                             	| [$39f4: djnz $39C6]
 	rts                                    	| [$39f6: ret]
 
+* < D1: number of star couples to move (symmetrically)
+* < A2: A138/A338
+* < A3: 9938
 update_starfield_3A37:
 	.ifne	OPT_NO_STARS
 	rts
@@ -7363,7 +7374,7 @@ l_3a3c:
 	add.b	d5,d0                            	| [$3a47: add  a,h]
 	cmp.b	#0x18,d0                         	| [$3a48: cp   $18]
 	bcc.b	0f                               	| [...]
-	jbsr	l_3aae                            	| [$3a4a: call c,$3AAE]
+	jbsr	random_stuff_3aae                   | [$3a4a: call c,$3AAE]
 0:
 	move.b	d0,(0x00,a3)                    	| [$3a4d: ld   (iy+$00),a]
 	not.b	d0                               	| [$3a50: cpl]
@@ -7374,13 +7385,13 @@ l_3a3c:
 	move.b	d0,(0x22,a2)                    	| [$3a5a: ld   (ix+$22),a]
 	move.b	d6,(0x01,a2)                    	| [$3a5d: ld   (ix+$01),l]
 	move.b	d6,(0x21,a2)                    	| [$3a60: ld   (ix+$21),l]
-	add.w	d3,a3                            	| [$3a63: add  iy,de]
-	add.w	d3,a2                            	| [$3a65: add  ix,de]
+	add.w	d3,a3                            	| [$3a63: add  iy,de] next entry
+	add.w	d3,a2                            	| [$3a65: add  ix,de] next entry
 	subq.b	#1,d1                           	| [...]
 	jne	l_3a3c                             	| [$3a67: djnz $3A3C]
 	rts                                    	| [$3a69: ret]
 
-l_3a6a:
+random_stuff_3a6a:
 	jbsr	exx                               	| [$3a6a: exx]
 	move.b	general_fast_timer_9400(a6),d0                   	| [$3a6b: ld   a,($9400)]
 	move.b	d0,d5                           	| [$3a6e: ld   h,a]
@@ -7392,8 +7403,8 @@ l_3a6a:
 	jbsr	exx                               	| [$3a7a: exx]
 	rts                                    	| [$3a7b: ret]
 
-l_3aae:
-	jbsr	l_1381                            	| [$3aae: call $1381]
+random_stuff_3aae:
+	jbsr	randomize_direction_1381           | [$3aae: call $1381]
 	move.b	d0,(0x03,a3)                    	| [$3ab1: ld   (iy+$03),a]
 	and.b	#0x3F,d0                         	| [$3ab4: and  $3F]
 	add.b	d2,d0                            	| [$3ab6: add  a,c]
@@ -7425,7 +7436,7 @@ l_3ada:
 	rts                                    	| [$3ae3: ret]
 
 l_3ae4:
-	jbsr	l_1381                            	| [$3ae4: call $1381]
+	jbsr	randomize_direction_1381                            	| [$3ae4: call $1381]
 	move.b	d0,(0x00,a3)                    	| [$3ae7: ld   (iy+$00),a]
 	ror.b	#4,d0                            	| [$3aea: rrca] * 4
 	move.b	d0,(0x03,a3)                    	| [$3aee: ld   (iy+$03),a]

@@ -1077,6 +1077,47 @@ add_10000_points:
 	move.l	(a7)+,a6
 	rts
 
+* put/clear pixel on one bitplane of the screen
+* D0: X
+* D1: Y
+* D2: plane number (0-4)
+* D3: nonzero: set, zero: clear
+* A1: bitplanes (changed on exit)
+
+set_pixel:
+	movem.l	d0-d4/a2,-(a7)
+	move.b	d0,d4
+	lsr.w	#3,d0
+	lea		mulNB_BYTES_PER_ROW_table,a2
+	add.w	d1,d1
+	move.w	(a2,d1.w),d1		| offset
+	add.w	d0,d1
+	add.w	d1,a1
+	* add bitplane offset
+	and.w	#0x7,d2
+	add.w	d2,d2
+	lea		mulPLANE_table(pc),a2
+	add.w	(a2,d2.w),a1
+
+	* select proper bit
+	neg.b	d4
+	add.b	#7,d4
+	tst.b	d3
+	jeq		2f
+	bset	d4,(a1)
+	jra		3f
+2:
+	bclr	d4,(a1)
+3:
+	movem.l	(a7)+,d0-d4/a2
+	rts
+	
+mulPLANE_table:
+	.word	0
+	.word	SCREEN_PLANE_SIZE
+	.word	SCREEN_PLANE_SIZE*2
+	.word	SCREEN_PLANE_SIZE*3
+	.word	SCREEN_PLANE_SIZE*4
 	
 * what: blits data on bg plane, no horizontal shifting (erase)
 * args:

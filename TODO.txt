@@ -1,24 +1,15 @@
-- sometimes enemy sprites flashing/shifting: understand better the sprite "double
-  buffering" that the game does
-  it's related to stars as if stars are off it doesn't happen
-  => debug when "NEPTUNE" is shown: write to 0x100 during sprite update, find the disappearing
-     pieces log the memory with A701/A702 values
-     W $100 $DE
-	 writes to 101
-	 
-	 
-- neptune planet fails to display: save A000=>A800
-  and load memory in MAME at 6000, see if 4040 ends up trashed
-    - if so => 6809 code issue
-	- if not => Z80 code issue
+- stars interfere with other sprites / replacing them in the final
+  sprite buffer. Very difficult to debug with all the pseudo-randomness
+  and multi-cpu & double-buffered sprite system and different coordinate
+  system on top of it.... so backup solution would probably be to turn off star management
+  by the game and re-write the starfield on the amiga side
 	
-- lives erased maybe 248 is too low!
-	 
-- highscore save
-- highscore: letters are flipped when entered: seems fixed
+- lives erased maybe 248 is too low! => 240 in test
 
+- implement putpixel for stars with plane selection (0-4) for stars (to prepare reimplementation)	 
+- highscore save
+- still missing sprites, track red flashes
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
-- restore buffer: TODO: force if "KONAMI copyright"
 
 - missing sounds: flash yellow
  

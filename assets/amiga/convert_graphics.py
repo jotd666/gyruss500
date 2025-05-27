@@ -110,6 +110,14 @@ with open(used_graphics_dir / "used_sprites","rb") as f:
         if cluts:
             add_tile(sprite_cluts,index,cluts=cluts)
 
+# force all cluts for some sprites (ship explosion where colors
+# keep up changing. Logging is not really efficient as sometimes
+# game misses some colors and there are a lot of angles)
+all_cluts = range(16)
+for idx in range(0x1,0x13):
+    add_tile(sprite_cluts,idx,all_cluts)
+    add_tile(sprite_cluts,idx+0x100,all_cluts)
+
 if all_tile_cluts:
     tile_cluts = None
 else:
@@ -135,11 +143,11 @@ else:
 
 if dump_it:
     with open(dump_dir / "used_sprites.json","w") as f:
-        sprite_cluts_dict = {hex(k):v for k,v in enumerate(sprite_cluts) if v}
+        sprite_cluts_dict = {hex(k):[hex(x) for x in v] for k,v in sprite_cluts.items() if v}
         json.dump(sprite_cluts_dict,f,indent=2)
     if not all_tile_cluts:
         with open(dump_dir / "used_tiles.json","w") as f:
-            tile_cluts_dict = {hex(k):v for k,v in enumerate(tile_cluts) if v}
+            tile_cluts_dict = {hex(k):[hex(x) for x in v] for k,v in tile_cluts.items() if v}
             json.dump(tile_cluts_dict,f,indent=2)
 
 def add_hw_sprite(index,name,cluts=[0]):

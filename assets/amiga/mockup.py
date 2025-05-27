@@ -25,8 +25,9 @@ def load_tileset(image_name,width,height,set_subdir,dump_prefix=""):
     nb_rows = tiles_1.size[1] // height
     nb_cols = tiles_1.size[0] // width
 
-    dumpdir = pathlib.Path("dumps_")
-    dumpdir.mkdir(exist_ok=True)
+    if dump_prefix:
+        dumpdir = pathlib.Path("dumps")
+        dumpdir.mkdir(exist_ok=True)
 
     tileset_1 = []
     k=0
@@ -107,7 +108,7 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
     print(f"NB ACTIVE: {nb_active}, NB_STARS: {nb_stars}")
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-process(r"neptune_fail_a000",offset=0,base_address=0x4040,name_filter="neptune")
+process(r"s9800",offset=0,base_address=0x9800,name_filter="star")
 
 #process(r"iceberg_amiga_4040",offset=0,base_address=0x4040,name_filter="iceberg")
 #process(r"sattelites_A000",offset=0,base_address=0xA000)

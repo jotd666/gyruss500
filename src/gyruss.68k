@@ -1177,16 +1177,17 @@ l_066e:
 	clr.b	d0                               	| [$0681: xor  a]
 	jra	l_008b                             	| [$0682: jp   $008B]
 
+* < D0: score to add (divided by 50). D0 = 1 => 50 points
 add_to_score_0685:
 	move.b	d0,d2                           	| [$0685: ld   c,a]
-	clr.b	d1                               	| [$0686: ld   b,$00]
+	clr.w	d1                               	| [$0686: ld   b,$00]
 	move.b	l_9669(a6),d0                   	| [$0688: ld   a,($9669)]
 	                               	| [$068b: and  a]
 	jeq	l_06dd                             	| [$068c: jp   z,$06DD]
 	move.b	d2,d0                           	| [$068f: ld   a,c]
 	                               	| [$0690: and  a]
 	jeq	l_06f7                             	| [$0691: jp   z,$06F7]
-	LOAD_D1_16_FROM_D1D2
+	move.b	d2,d1
 	LEA_ROM	0x413D,a0                          	| [$0694: ld   hl,$413D]
 	add.w	d1,a0                            	| [$0697: add  hl,bc]
 	add.w	d1,a0                            	| [$0698: add  hl,bc]
@@ -1200,7 +1201,7 @@ l_06a6:
 	CLEAR_XC_FLAGS
 	move.b	(a1),d0                         	| [$06a6: ld   a,(de)]
 	move.b	(a0)+,d7                          	| [$06a7: add  a,(hl)]
-	abcd	d0,d7								| daa
+	abcd	d7,d0								| daa
 	move.b	d0,(a1)+                         	| [$06a9: ld   (de),a]
 	                           	| [$06aa: inc  de]
 	                           	| [$06ab: inc  hl]
@@ -1591,7 +1592,7 @@ l_0993:
 	jbsr	start_task_d3_0038                            	| [$0997: rst  $38]
 	move.b	#0xB4,d0                        	| [$0998: ld   a,$B4]
 	move.b	d0,distance_to_center_9465(a6)                   	| [$099a: ld   ($9465),a]
-	jbsr	l_3af2                            	| [$099d: call $3AF2]
+	jbsr	randomize_18_star_positions_3af2                            	| [$099d: call $3AF2]
 	jbsr	disable_game_objects_0e43                            	| [$09a0: call $0E43]
 	jra	next_game_state_080b                             	| [$09a3: jp   $080B]
 
@@ -1689,7 +1690,7 @@ l_0a14:
 
 l_0a1a:
 	move.b	#0xFC,d0                        	| [$0a1a: ld   a,$FC]
-	move.b	d0,l_943B(a6)                   	| [$0a1c: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$0a1c: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$0a1f: call $3831]
 	move.b	general_fast_timer_9400(a6),d0                   	| [$0a22: ld   a,($9400)]
 	and.b	#0x01,d0                         	| [$0a25: and  $01]
@@ -1767,7 +1768,7 @@ l_0a82:
 	LOAD_VIDEO_POINTER	video_address_9413(a6),a1         	| [$0a8c: ld   de,($9413)]
 	jbsr	write_videoram_a1                         	| [$0a90: ld   (de),a]
 	move.b	d0,(a0)                         	| [$0a91: ld   (hl),a]
-	move.b	saved_character_9410(a6),d0                   	| [$0a92: ld   a,($9410)]
+	move.b	saved_character_attribute_9410(a6),d0                   	| [$0a92: ld   a,($9410)]
 	BCLR_A1	10                           	| [$0a95: res  2,d]
 	jbsr	write_videoram_a1                         	| [$0a97: ld   (de),a]
 	BSET_A1	10                           	| [$0a98: set  2,d]
@@ -1898,7 +1899,7 @@ l_0b42:
 init_end_of_level_sequence_planet_0b71:
 	jbsr	update_starfield_in_game_3804                            	| [$0b71: call $3804]
 	jbsr	l_4b68                            	| [$0b74: call $4B68]
-	jbsr	l_3af2                            	| [$0b77: call $3AF2]
+	jbsr	randomize_18_star_positions_3af2                            	| [$0b77: call $3AF2]
 	move.b	l_960B(a6),d0                   	| [$0b7a: ld   a,($960B)]
 	ror.b	#2,d0                            	| [$0b7d: rrca] * 2
 	and.b	#0x07,d0                         	| [$0b7f: and  $07]
@@ -1911,7 +1912,7 @@ init_end_of_level_sequence_planet_0b71:
 	jbsr	l_5dce                            	| [$0b8c: call $5DCE]
 	jbsr	fading_away_computation_start_1b86                            	| [$0b8f: call $1B86]
 	move.b	#0xFB,d0                        	| [$0b92: ld   a,$FB]
-	move.b	d0,l_943B(a6)                   	| [$0b94: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$0b94: ld   ($943B),a]
 	jra	next_game_state_080b                             	| [$0b97: jp   $080B]
 
 update_end_of_level_sequence_0b9a:
@@ -1940,7 +1941,7 @@ l_0bb1:
 
 l_0bb9:
 	move.b	#0xFC,d0                        	| [$0bb9: ld   a,$FC]
-	move.b	d0,l_943B(a6)                   	| [$0bbb: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$0bbb: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$0bbe: call $3831]
 	lea	distance_to_center_9465(a6),a0                      	| [$0bc1: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$0bc4: dec  (hl)]
@@ -1964,7 +1965,7 @@ l_0bb9:
 
 l_0be7:
 	move.b	#0xFD,d0                        	| [$0be7: ld   a,$FD]
-	move.b	d0,l_943B(a6)                   	| [$0be9: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$0be9: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$0bec: call $3831]
 	jbsr	move_player_ship_1857                            	| [$0bef: call $1857]
 	jbsr	l_0cb6                            	| [$0bf2: call $0CB6]
@@ -2056,7 +2057,7 @@ write_10000_points_0c7a:
 
 l_0c98:
 	move.b	#0xFC,d0                        	| [$0c98: ld   a,$FC]
-	move.b	d0,l_943B(a6)                   	| [$0c9a: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$0c9a: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$0c9d: call $3831]
 	jbsr	move_player_ship_1857                            	| [$0ca0: call $1857]
 	jbsr	update_player_shots_1f30                            	| [$0ca3: call $1F30]
@@ -2099,7 +2100,7 @@ l_0cd1:
 
 l_0cf7:
 	move.b	#0xFC,d0                        	| [$0cf7: ld   a,$FC]
-	move.b	d0,l_943B(a6)                   	| [$0cf9: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$0cf9: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$0cfc: call $3831]
 	jbsr	l_0cb6                            	| [$0cff: call $0CB6]
 	jbsr	move_player_ship_1857                            	| [$0d02: call $1857]
@@ -2275,7 +2276,7 @@ l_0e08:
 	move.b	#0x78,(a0)                      	| [$0e35: ld   (hl),$78]
 	lea	sub_state_942C(a6),a0                      	| [$0e37: ld   hl,$942C]
 	move.b	#0x14,(a0)                      	| [$0e3a: ld   (hl),$14]
-	jbsr	l_3af2                            	| [$0e3c: call $3AF2]
+	jbsr	randomize_18_star_positions_3af2                            	| [$0e3c: call $3AF2]
 	jra	l_5c9a                             	| [$0e3f: jp   $5C9A]
 
 disable_game_objects_0e43:
@@ -2941,7 +2942,7 @@ l_139d:
 
 l_13bd:
 	move.b	#0xFB,d0                        	| [$13bd: ld   a,$FB]
-	move.b	d0,l_943B(a6)                   	| [$13bf: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$13bf: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$13c2: call $3831]
 	lea	distance_to_center_9465(a6),a0                      	| [$13c5: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$13c8: dec  (hl)]
@@ -4077,10 +4078,7 @@ l_1cb7:
 	LOAD_D5_16_FROM_D5D6
 	* this makes the ship zoom away after it has migrated from
 	* untransformed coordinates to transformed ones
-	cmp.b	#0xDE,0x100
-	jeq		0f
 	add.w	d3,d5                            	| [$1cbd: add  hl,de]
-0:
 	LOAD_D5D6_FROM_D5_16
 	move.b	d5,(displayed_y_00,a3)                    	| [$1cbe: ld   (iy+$00),h]
 	move.b	d6,(fine_y_03,a2)                    	| [$1cc1: ld   (ix+$03),l]
@@ -4234,7 +4232,7 @@ l_1fc2:
 l_1fce:
 	jbsr	l_22f3                            	| [$1fce: call $22F3]
 	move.b	#0xFB,d0                        	| [$1fd1: ld   a,$FB]
-	move.b	d0,l_943B(a6)                   	| [$1fd3: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$1fd3: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$1fd6: call $3831]
 	move.b	current_player_9662(a6),d0                   	| [$1fd9: ld   a,($9662)]
 	                               	| [$1fdc: and  a]
@@ -4246,7 +4244,7 @@ l_1fe5:
 	move.w	#0x0020,d1                      	| [$1fe8: ld   bc,$0020]
 	jbsr	ldir                              	| [$1feb: ldir]
 	jbsr	l_172e                            	| [$1fed: call $172E]
-	jbsr	l_3af2                            	| [$1ff0: call $3AF2]
+	jbsr	randomize_18_star_positions_3af2                            	| [$1ff0: call $3AF2]
 	* another ROM checksum that changes sub state if fails
 *	LEA_ROM	0x1556,a0                          	| [$1ff3: ld   hl,$1556]
 *	move.b	#0x80,d2                        	| [$1ff6: ld   c,$80]
@@ -7082,17 +7080,18 @@ l_37f3:
 	rts                                    	| [$3803: ret]
 
 * starfield during game (less available sprites means less stars)
+* with 3 slightly different speeds
 update_starfield_in_game_3804:
 	jbsr	select_stars_buffer_38ef            | [$3804: call $38EF]
 	move.b	#0xFD,d5                        	| [$3807: ld   h,$FD]
 	move.b	#0xC0,d2                        	| [$3809: ld   c,$C0]
-	jbsr	update_starfield_3A37             	| [$380b: call update_starfield_3A37]
+	jbsr	update_starfield_pass_1_3A37        | [$380b: call update_starfield_pass_1_3A37]
 												| [$380e: ld   a,($0CC2)]
 	move.b	#3,d1                           	| [$3811: ld   b,a]
 	move.b	#0xFC,d5                        	| [$3812: ld   h,$FC]
-	jbsr	update_starfield_3A37             	| [$3814: call update_starfield_3A37]
+	jbsr	update_starfield_pass_1_3A37        | [$3814: call update_starfield_pass_1_3A37]
 	move.b	#0xFE,d6                        	| [$3817: ld   l,$FE]
-	jra	update_starfield_39B1              	| [$3819: jp   update_starfield_39B1]
+	jra	update_starfield_pass_2_39B1              	| [$3819: jp   update_starfield_pass_2_39B1]
 
 
 
@@ -7118,37 +7117,39 @@ l_3826:
 	jbsr	sub_20_to_a1_0020                            	| [$382e: rst  $20]
 	jra	l_3826                             	| [$382f: jr   $3826]
 
-* probably able to throw in more stars since most sprites aren't used otherwise
+* able to throw in more stars since most sprites aren't used otherwise
 update_starfield_inter_levels_3831:
 	.ifne	OPT_NO_STARS
 	rts
 	.endif
 	jbsr	select_stars_buffer_38ef                            	| [$3831: call $38EF]
-	move.b	l_943B(a6),d0                   	| [$3834: ld   a,($943B)]
+	move.b	stars_speed_943B(a6),d0                   	| [$3834: ld   a,($943B)]
 	move.b	d0,d5                           	| [$3837: ld   h,a]
 	move.b	#0xC0,d2                        	| [$3838: ld   c,$C0]
-	jbsr	update_starfield_3A37             	| [$383a: call update_starfield_3A37]
+	jbsr	update_starfield_pass_1_3A37        | [$383a: call update_starfield_pass_1_3A37]
 												| [$383d: ld   a,($17FA)]
 	move.b	#3,d1                           	| [$3840: ld   b,a]
-	move.b	l_943B(a6),d0                   	| [$3841: ld   a,($943B)]
+	move.b	stars_speed_943B(a6),d0                   	| [$3841: ld   a,($943B)]
 	subq.b	#1,d0                           	| [$3844: dec  a]
 	move.b	d0,d5                           	| [$3845: ld   h,a]
-	jbsr	update_starfield_3A37             	| [$3846: call update_starfield_3A37]
-	move.b	l_943B(a6),d0                   	| [$3849: ld   a,($943B)]
+	jbsr	update_starfield_pass_1_3A37        | [$3846: call update_starfield_pass_1_3A37]
+	move.b	stars_speed_943B(a6),d0                   	| [$3849: ld   a,($943B)]
 	subq.b	#0x02,d0                        	| [$384c: sub  $02]
 	move.b	d0,d6                           	| [$384e: ld   l,a]
-	jbsr	update_starfield_39B1             	| [$384f: call update_starfield_39B1]
-	lea	l_9860(a6),a3                      	| [$3852: ld   iy,$9860]
-	lea	l_90B0(a6),a2                      	| [$3856: ld   ix,$90B0]
-	move.b	l_943B(a6),d0                   	| [$385a: ld   a,($943B)]
+	jbsr	update_starfield_pass_2_39B1        | [$384f: call update_starfield_pass_2_39B1]
+	
+	* extra stars buffer for inter levels
+	lea	l_9860(a6),a3                      		| [$3852: ld   iy,$9860]
+	lea	l_90B0(a6),a2                      		| [$3856: ld   ix,$90B0]
+	move.b	stars_speed_943B(a6),d0                   	| [$385a: ld   a,($943B)]
 	subq.b	#0x03,d0                        	| [$385d: sub  $03]
 	move.b	d0,d5                           	| [$385f: ld   h,a]
 	move.b	#0xC0,d2                        	| [$3860: ld   c,$C0]
-	jra	l_3938                             	| [$3862: jp   $3938]
+	jra	update_starfield_inter_levels_3938      | [$3862: jp   $3938]
 
 l_3865:
 	move.b	#0xFB,d0                        	| [$3865: ld   a,$FB]
-	move.b	d0,l_943B(a6)                   	| [$3867: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$3867: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$386a: call $3831]
 	jbsr	l_22f3                            	| [$386d: call $22F3]
 	move.w	#0x0400,d3                          	| [$3870: ld   de,$0400]
@@ -7282,31 +7283,35 @@ show_highscores_for_a_while_3909:
 *	nop                                    	| [$3934: nop]
 	jra	next_game_state_080b                             	| [$3935: jp   $080B]
 
-l_3938:
-	READ_ROM_BYTE	0x1222,d0                       	| [$3938: ld   a,($1222)]
-	move.b	d0,d1                           	| [$393b: ld   b,a]
-	move.b	#0x26,d6                        	| [$393c: ld   l,$26]
+* < A2: stars structure (always 90B0)
+* < A3: star sprite structure (always 9860)
+* < D2: ??
+
+update_starfield_inter_levels_3938:
+												| [$3938: ld   a,($1222)]
+	move.b	#0x12,d1                           	| [$393b: ld   b,a] 18 stars to update
+	move.b	#0x26,d6                        	| [$393c: ld   l,$26] 13<<1 star code
 	move.w	#0x0004,d3                      	| [$393e: ld   de,$0004]
 l_3941:
-	move.b	(0x00,a2),d0                    	| [$3941: ld   a,(ix+$00)]
+	move.b	(enemy_active_00,a2),d0                    	| [$3941: ld   a,(ix+$00)]
 	                               	| [$3944: and  a]
 	jne	l_3960                             	| [$3945: jr   nz,$3960]
-	move.b	(0x00,a3),d0                    	| [$3947: ld   a,(iy+$00)]
+	move.b	(displayed_y_00,a3),d0                    	| [$3947: ld   a,(iy+$00)]
 	add.b	d5,d0                            	| [$394a: add  a,h]
 	cmp.b	#0x18,d0                         	| [$394b: cp   $18]
 	bcc.b	0f                               	| [...]
 	jbsr	random_stuff_3aae                            	| [$394d: call c,$3AAE]
 0:
-	move.b	d0,(0x00,a3)                    	| [$3950: ld   (iy+$00),a]
+	move.b	d0,(displayed_y_00,a3)                    	| [$3950: ld   (iy+$00),a]
 	not.b	d0                               	| [$3953: cpl]
 	rol.b	#2,d0                            	| [$3954: rlca] * 2
 	and.b	#0x03,d0                         	| [$3956: and  $03]
 	addq.b	#0x04,d0                        	| [$3958: add  a,$04]
-	move.b	d0,(0x02,a3)                    	| [$395a: ld   (iy+$02),a]
-	move.b	d6,(0x01,a3)                    	| [$395d: ld   (iy+$01),l]
+	move.b	d0,(sprite_code_02,a3)                    	| [$395a: ld   (iy+$02),a]
+	move.b	d6,(sprite_code_01,a3)                    	| [$395d: ld   (iy+$01),l]
 l_3960:
-	add.w	d3,a3                            	| [$3960: add  iy,de]
-	add.w	d3,a2                            	| [$3962: add  ix,de]
+	add.w	d3,a3                            	| [$3960: add  iy,de] next sprite
+	add.w	d3,a2                            	| [$3962: add  ix,de] next structure (*4)
 	add.w	d3,a2                            	| [$3964: add  ix,de]
 	add.w	d3,a2                            	| [$3966: add  ix,de]
 	add.w	d3,a2                            	| [$3968: add  ix,de]
@@ -7316,96 +7321,101 @@ l_3960:
 
 * < D6
 
-update_starfield_39B1:
+update_starfield_pass_2_39B1:
 	.ifne	OPT_NO_STARS
 	rts
-	.endif
+	.else
 	lea	l_9330(a6),a2                      	| [$39b1: ld   ix,$9330]
 	lea	l_9918(a6),a3                      	| [$39b5: ld   iy,$9918]
-	move.w	#0x0010,d3                      	| [$39b9: ld   de,$0010]
-	move.w	#0x0004,d1                      	| [$39bc: ld   bc,$0004]
+											| [$39b9: ld   de,$0010]
+											| [$39bc: ld   bc,$0004]
 	move.b	#0x80,d5                        	| [$39bf: ld   h,$80]
-	jbsr	exx                               	| [$39c1: exx]
+	                               	| [$39c1: exx]
 												| [$39c2: ld   a,($00A3)]
-	move.b	#6,d1                           	| [$39c5: ld   b,a]
+	move.b	#6,d1                           	| [$39c5: ld   b,a] 6 stars
 l_39c6:
-	jbsr	exx                               	| [$39c6: exx]
-	move.b	(0x00,a2),d0                    	| [$39c7: ld   a,(ix+$00)]
+												| [$39c6: exx]
+	move.b	(enemy_active_00,a2),d0             | [$39c7: ld   a,(ix+$00)]
 	                               	| [$39ca: and  a]
 	jne	l_39ef                             	| [$39cb: jp   nz,$39EF]
-	move.b	(0x03,a3),d0                    	| [$39ce: ld   a,(iy+$03)]
+	move.b	(displayed_x_03,a3),d0                    	| [$39ce: ld   a,(iy+$03)]
 	add.b	d5,d0                            	| [$39d1: add  a,h]
-	move.b	d0,(0x03,a3)                    	| [$39d2: ld   (iy+$03),a]
-	move.b	(0x00,a3),d0                    	| [$39d5: ld   a,(iy+$00)]
+	move.b	d0,(displayed_x_03,a3)                    	| [$39d2: ld   (iy+$03),a]
+	move.b	(displayed_y_00,a3),d0                    	| [$39d5: ld   a,(iy+$00)]
 	add.b	d6,d0                            	| [$39d8: add  a,l]
 	cmp.b	#0x18,d0                         	| [$39d9: cp   $18]
 	bcc.b	0f                               	| [...]
 	jbsr	random_stuff_3a6a                            	| [$39db: call c,$3A6A]
 0:
-	move.b	d0,(0x00,a3)                    	| [$39de: ld   (iy+$00),a]
+	move.b	d0,(displayed_y_00,a3)                    	| [$39de: ld   (iy+$00),a]
 	not.b	d0                               	| [$39e1: cpl]
+	* pick kind of random color
 	rol.b	#2,d0                            	| [$39e2: rlca] * 2
 	and.b	#0x03,d0                         	| [$39e4: and  $03]
 	addq.b	#0x04,d0                        	| [$39e6: add  a,$04]
-	move.b	d0,(0x02,a3)                    	| [$39e8: ld   (iy+$02),a]
-	move.b	#0x26,(0x01,a3)                 	| [$39eb: ld   (iy+$01),$26]
+	move.b	d0,(sprite_code_02,a3)              | [$39e8: ld   (iy+$02),a] color
+	move.b	#0x26,(sprite_code_01,a3)           | [$39eb: ld   (iy+$01),$26]
 l_39ef:
-	add.w	d1,a3                            	| [$39ef: add  iy,bc]
-	add.w	d3,a2                            	| [$39f1: add  ix,de]
-	jbsr	exx                               	| [$39f3: exx]
+	addq.w	#0x0004,a3                            	| [$39ef: add  iy,bc] next sprite
+	add.w	#0x0010,a2                            	| [$39f1: add  ix,de] next struct *4
+												| [$39f3: exx]
 	subq.b	#1,d1                           	| [...]
 	jne	l_39c6                             	| [$39f4: djnz $39C6]
 	rts                                    	| [$39f6: ret]
-
+	.endif
+	
 * < D1: number of star couples to move (symmetrically)
 * < A2: A138/A338
 * < A3: 9938
-update_starfield_3A37:
+update_starfield_pass_1_3A37:
 	.ifne	OPT_NO_STARS
 	rts
-	.endif
-	move.b	#0x26,d6                        	| [$3a37: ld   l,$26]
+	.else
+	move.b	#0x26,d6                        	| [$3a37: ld   l,$26] star code 13<<1
 	move.w	#0x0004,d3                      	| [$3a39: ld   de,$0004]
 l_3a3c:
-	move.b	(0x03,a3),d0                    	| [$3a3c: ld   a,(iy+$03)]
+	move.b	(displayed_x_03,a3),d0              | [$3a3c: ld   a,(iy+$03)]
 	add.b	#0x80,d0                         	| [$3a3f: add  a,$80]
-	move.b	d0,(0x03,a3)                    	| [$3a41: ld   (iy+$03),a]
-	move.b	(0x00,a3),d0                    	| [$3a44: ld   a,(iy+$00)]
+	move.b	d0,(displayed_x_03,a3)              | [$3a41: ld   (iy+$03),a]
+	move.b	(displayed_y_00,a3),d0              | [$3a44: ld   a,(iy+$00)]
 	add.b	d5,d0                            	| [$3a47: add  a,h]
 	cmp.b	#0x18,d0                         	| [$3a48: cp   $18]
 	bcc.b	0f                               	| [...]
 	jbsr	random_stuff_3aae                   | [$3a4a: call c,$3AAE]
 0:
-	move.b	d0,(0x00,a3)                    	| [$3a4d: ld   (iy+$00),a]
+	move.b	d0,(displayed_y_00,a3)              | [$3a4d: ld   (iy+$00),a]
+	* randomize the color
 	not.b	d0                               	| [$3a50: cpl]
 	rol.b	#2,d0                            	| [$3a51: rlca] * 2
 	and.b	#0x03,d0                         	| [$3a53: and  $03]
 	addq.b	#0x04,d0                        	| [$3a55: add  a,$04]
-	move.b	d0,(0x02,a2)                    	| [$3a57: ld   (ix+$02),a]
-	move.b	d0,(0x22,a2)                    	| [$3a5a: ld   (ix+$22),a]
-	move.b	d6,(0x01,a2)                    	| [$3a5d: ld   (ix+$01),l]
-	move.b	d6,(0x21,a2)                    	| [$3a60: ld   (ix+$21),l]
+	move.b	d0,(sprite_code_02,a2)              | [$3a57: ld   (ix+$02),a] color
+	move.b	d0,(sprite_code_02+0x20,a2)         | [$3a5a: ld   (ix+$22),a]
+	move.b	d6,(sprite_code_01,a2)				| [$3a5d: ld   (ix+$01),l]
+	move.b	d6,(sprite_code_01+0x20,a2)                    	| [$3a60: ld   (ix+$21),l]
 	add.w	d3,a3                            	| [$3a63: add  iy,de] next entry
 	add.w	d3,a2                            	| [$3a65: add  ix,de] next entry
 	subq.b	#1,d1                           	| [...]
 	jne	l_3a3c                             	| [$3a67: djnz $3A3C]
 	rts                                    	| [$3a69: ret]
-
+	.endif
+	
 random_stuff_3a6a:
 	jbsr	exx                               	| [$3a6a: exx]
 	move.b	general_fast_timer_9400(a6),d0                   	| [$3a6b: ld   a,($9400)]
 	move.b	d0,d5                           	| [$3a6e: ld   h,a]
 	ror.b	#3,d0                            	| [$3a6f: rrca] * 3
 	add.b	d5,d0                            	| [$3a72: add  a,h]
-	move.b	d0,(0x03,a3)                    	| [$3a73: ld   (iy+$03),a]
+	move.b	d0,(displayed_x_03,a3)              | [$3a73: ld   (iy+$03),a]
 	and.b	#0x0F,d0                         	| [$3a76: and  $0F]
 	add.b	#0xEC,d0                         	| [$3a78: add  a,$EC]
 	jbsr	exx                               	| [$3a7a: exx]
 	rts                                    	| [$3a7b: ret]
 
+* < D2
 random_stuff_3aae:
 	jbsr	randomize_direction_1381           | [$3aae: call $1381]
-	move.b	d0,(0x03,a3)                    	| [$3ab1: ld   (iy+$03),a]
+	move.b	d0,(displayed_x_03,a3)                    	| [$3ab1: ld   (iy+$03),a]
 	and.b	#0x3F,d0                         	| [$3ab4: and  $3F]
 	add.b	d2,d0                            	| [$3ab6: add  a,c]
 	rts                                    	| [$3ab7: ret]
@@ -7417,47 +7427,48 @@ starfield_related_3ab8:
 	move.b	d0,d1                           	| [$3ac3: ld   b,a]
 	move.w	#0x0004,d3                      	| [$3ac4: ld   de,$0004]
 l_3ac7:
-	jbsr	l_3ae4                            	| [$3ac7: call $3AE4]
+	jbsr	randomize_star_pos_3ae4                            	| [$3ac7: call $3AE4]
 	add.w	d3,a3                            	| [$3aca: add  iy,de]
 	add.w	d3,a2                            	| [$3acc: add  ix,de]
 	subq.b	#1,d1                           	| [...]
 	jne	l_3ac7                             	| [$3ace: djnz $3AC7]
+	* next slot (skip 1 slot)
 	add.w	d3,a2                            	| [$3ad0: add  ix,de]
 	add.w	d3,a2                            	| [$3ad2: add  ix,de]
 	add.w	d3,a3                            	| [$3ad4: add  iy,de]
 	add.w	d3,a3                            	| [$3ad6: add  iy,de]
 	move.b	#0x08,d1                        	| [$3ad8: ld   b,$08]
 l_3ada:
-	jbsr	l_3ae4                            	| [$3ada: call $3AE4]
+	jbsr	randomize_star_pos_3ae4                            	| [$3ada: call $3AE4]
 	add.w	d3,a2                            	| [$3add: add  ix,de]
 	add.w	d3,a3                            	| [$3adf: add  iy,de]
 	subq.b	#1,d1                           	| [...]
 	jne	l_3ada                             	| [$3ae1: djnz $3ADA]
 	rts                                    	| [$3ae3: ret]
 
-l_3ae4:
+randomize_star_pos_3ae4:
 	jbsr	randomize_direction_1381                            	| [$3ae4: call $1381]
-	move.b	d0,(0x00,a3)                    	| [$3ae7: ld   (iy+$00),a]
+	move.b	d0,(displayed_y_00,a3)             | [$3ae7: ld   (iy+$00),a]
 	ror.b	#4,d0                            	| [$3aea: rrca] * 4
-	move.b	d0,(0x03,a3)                    	| [$3aee: ld   (iy+$03),a]
+	move.b	d0,(displayed_x_03,a3)           | [$3aee: ld   (iy+$03),a]
 	rts                                    	| [$3af1: ret]
 
-l_3af2:
+randomize_18_star_positions_3af2:
 	lea	l_9860(a6),a3                      	| [$3af2: ld   iy,$9860]
 	lea	l_90B0(a6),a2                      	| [$3af6: ld   ix,$90B0]
-	READ_ROM_BYTE	0x0664,d0                       	| [$3afa: ld   a,($0664)]
-	move.b	d0,d1                           	| [$3afd: ld   b,a]
+	                       	| [$3afa: ld   a,($0664)]
+	move.b	#0x12,d1                           	| [$3afd: ld   b,a] 18 stars
 	move.w	#0x0004,d3                      	| [$3afe: ld   de,$0004]
 l_3b01:
-	move.b	(0x00,a2),d0                    	| [$3b01: ld   a,(ix+$00)]
+	move.b	(enemy_active_00,a2),d0                    	| [$3b01: ld   a,(ix+$00)]
 	                               	| [$3b04: and  a]
 	jne	l_3b12                             	| [$3b05: jr   nz,$3B12]
-	jbsr	l_3ae4                            	| [$3b07: call $3AE4]
-	clr.b	(0x01,a3)                        	| [$3b0a: ld   (iy+$01),$00]
-	clr.b	(0x02,a3)                        	| [$3b0e: ld   (iy+$02),$00]
+	jbsr	randomize_star_pos_3ae4          | [$3b07: call $3AE4]
+	clr.b	(sprite_code_01,a3)                 | [$3b0a: ld   (iy+$01),$00]
+	clr.b	(sprite_code_02,a3)                | [$3b0e: ld   (iy+$02),$00]
 l_3b12:
-	add.w	d3,a3                            	| [$3b12: add  iy,de]
-	add.w	d3,a2                            	| [$3b14: add  ix,de]
+	add.w	d3,a3                            	| [$3b12: add  iy,de] advance 1 sprite slot
+	add.w	d3,a2                            	| [$3b14: add  ix,de] advance 4 star structures
 	add.w	d3,a2                            	| [$3b16: add  ix,de]
 	add.w	d3,a2                            	| [$3b18: add  ix,de]
 	add.w	d3,a2                            	| [$3b1a: add  ix,de]
@@ -7540,7 +7551,7 @@ l_4049:
 
 init_end_of_level_sequence_404e:
 	jbsr	update_starfield_in_game_3804                            	| [$404e: call $3804]
-	jbsr	l_3af2                            	| [$4051: call $3AF2]
+	jbsr	randomize_18_star_positions_3af2   | [$4051: call $3AF2]
 	move.b	#0x5A,d0                        	| [$4054: ld   a,$5A]
 	move.b	d0,distance_to_center_9465(a6)                   	| [$4056: ld   ($9465),a]
 	jbsr	fading_away_computation_start_1b86                            	| [$4059: call $1B86]
@@ -7557,7 +7568,7 @@ init_end_of_level_sequence_404e:
 *	add.b	#0x40,d0                         	| [$4066: add  a,$40]
 *	jne	l_0192                             	| [$4068: jp   nz,$0192]
 	move.b	#0xFB,d0                        	| [$406b: ld   a,$FB]
-	move.b	d0,l_943B(a6)                   	| [$406d: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$406d: ld   ($943B),a]
 	jra	next_game_state_080b                             	| [$4070: jp   $080B]
 
 * < D4/D5/D6 (byte)
@@ -7702,7 +7713,7 @@ l_4269:
 	subq.b	#1,d1                           	| [...]
 	jne	l_4269                             	| [$426b: djnz $4269]
 	move.b	#0xFD,d0                        	| [$426d: ld   a,$FD]
-	move.b	d0,l_943B(a6)                   	| [$426f: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$426f: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$4272: call $3831]
 	lea	distance_to_center_9465(a6),a0                      	| [$4275: ld   hl,$9465]
 	subq.b	#1,(a0)                         	| [$4278: dec  (hl)]
@@ -7947,7 +7958,7 @@ l_45a3:
 
 l_45e0:
 	move.b	#0xFC,d0                        	| [$45e0: ld   a,$FC]
-	move.b	d0,l_943B(a6)                   	| [$45e2: ld   ($943B),a]
+	move.b	d0,stars_speed_943B(a6)                   	| [$45e2: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$45e5: call $3831]
 	jbsr	l_01d6                            	| [$45e8: call $01D6]
 	jra	next_game_state_080b                             	| [$45eb: jp   $080B]
@@ -8754,14 +8765,16 @@ l_4c84:
 	subq.b	#1,d1                           	| [...]
 	jne	l_4c84                             	| [$4c86: djnz $4C84]
 	move.b	#0x03,(a0)                      	| [$4c88: ld   (hl),$03]
-	LOAD_VIDEO_POINTER	video_address_9413(a6),a1         	| [$4c8a: ld   de,($9413)]
+	LOAD_VIDEO_POINTER	video_address_9413(a6),a1   | [$4c8a: ld   de,($9413)]
 	move.b	l_9419(a6),d0                   	| [$4c8e: ld   a,($9419)]
 	LEA_ROM	0x4DDC,a0                          	| [$4c91: ld   hl,$4DDC]
-	jbsr	fetch_a0_plus_d0_0008                            	| [$4c94: rst  $08]
+	jbsr	fetch_a0_plus_d0_0008               | [$4c94: rst  $08]
 	jbsr	write_videoram_a1                  	| [$4c95: ld   (de),a]
 	BCLR_A1	10                           	| [$4c96: res  2,d]
-	move.b	(a1),d0                         	| [$4c98: ld   a,(de)]
-	move.b	d0,saved_character_9410(a6)                   	| [$4c99: ld   ($9410),a]
+	* save color (high score entry area)
+	sub.l	#0x8000,a1
+	move.b	(a6,a1.w),d0                         	| [$4c98: ld   a,(de)]
+	move.b	d0,saved_character_attribute_9410(a6)  | [$4c99: ld   ($9410),a]
 	jra	next_game_state_080b                             	| [$4c9c: jp   $080B]
 
 l_4c9f:
@@ -9633,13 +9646,15 @@ l_5b9e:
 	add.b	d3,d0                            	| [$5ba8: add  a,d]
 	cmp.b	d4,d0                            	| [$5ba9: cp   e]
 	jcc	l_5bba                             	| [$5baa: jr   nc,$5BBA]
+	* enemy shot in swarm (far away)
 	jbsr	exx                               	| [$5bac: exx]
+	* mark enemy as dead (0xF0 is the flag used for that)
 	move.b	#0xF0,d0                        	| [$5bad: ld   a,$F0]
 	move.b	d0,(a0)                         	| [$5baf: ld   (hl),a]
 	jbsr	exx                               	| [$5bb0: exx]
 	movem.w	d3/d4,-(sp)                    	| [$5bb1: push de]
-	move.w	#0x0401,d3                          	| [$5bb2: ld   de,$0401]
-	jbsr	start_task_d3_0038                            	| [$5bb5: rst  $38]
+	move.w	#0x0401,d3                      | [$5bb2: ld   de,$0401]
+	jbsr	start_task_d3_0038              | [$5bb5: rst  $38]
 	movem.w	(sp)+,d3/d4                    	| [$5bb6: pop  de]
 	tst.b	d0                               	| [$5bb7: and  a]
 	rts                                    	| [$5bb8: ret]
@@ -10054,7 +10069,7 @@ l_5f96:
 	move.b	#0x5A,d0                        	| [$5fb2: ld   a,$5A]
 	move.b	d0,distance_to_center_9465(a6)                   	| [$5fb4: ld   ($9465),a]
 	jbsr	disable_game_objects_0e43                            	| [$5fb7: call $0E43]
-	jbsr	l_3af2                            	| [$5fba: call $3AF2]
+	jbsr	randomize_18_star_positions_3af2                            	| [$5fba: call $3AF2]
 	jra	next_game_state_080b                             	| [$5fbd: jp   $080B]
 
 * < D0: byte possibly containing lowernibble > 9

@@ -66,6 +66,7 @@ shared_memory_6000 = 0x6000
 frame_odd_or_even_6700 = 0x6700
 draw_queued_sprites_flag_6701 = 0x6701
 queue_sprites_flag_6702 = 0x6702
+beamy_value_6710 = 0x6710    | just written to, no read by any cpu
 update_sequence_control_flag_67fc = 0x67fc
 update_sequence_control_flag_67fd = 0x67fd
 pointer_4200 = 0x4200
@@ -179,27 +180,6 @@ l_f0ca:
 	                        	| [...]
 	                           	| [$f0cd: beq    $f0ca]
 
-*	*TEMP
-*	GET_ADDRESS	shared_memory_6000+0x200          	| [$f0e5: ldu    #shared_memory_6000]
-*	lea	neptune_fail_a000,a1
-*	move.w	#0xC0/4-1,d4
-*1:
-*	move.l	(a1)+,(a0)+
-*	dbf		d4,1b
-*	bra		0f
-*	.include 	"neptune_fail_a000.s"
-*0:
-*	*TEMP
-*	*TEMP
-*	GET_ADDRESS	shared_memory_6000          	| [$f0e5: ldu    #shared_memory_6000]
-*	lea	neptune_fail_a000,a1
-*	move.w	#0xC0/4-1,d4
-*1:
-*	move.l	(a1)+,(a0)+
-*	dbf		d4,1b
-*
-*	*TEMP
-
 
 	GET_ADDRESS	frame_odd_or_even_6700	| [$f0cf: lda    frame_odd_or_even_6700]
 	tst.b	(a0)                         	| [...]
@@ -298,10 +278,11 @@ l_f151:
 	move.b	d1,(a0)                         	| [...]
 l_f159:
 	                     	| [$f159: lda    >$0000]
-	move.b	#0x29,d0                         	| [...]
-* at this point, A = $29, everytime!
-	GET_ADDRESS	0x6710                     	| [$f15c: sta    $6710]
-	move.b	d0,(a0)                         	| [...]
+*	move.b	#0x29,d0                         	| [...]
+* at this point, A = $29, everytime! but no need to write it, as it's not
+* used by any cpu
+*	GET_ADDRESS	beamy_value_6710                     	| [$f15c: sta    $6710]
+*	move.b	d0,(a0)                         	| [...]
 get_out_immediately_f15f:
 	move.b	#0x01,d0                        	| [$f15f: lda    #$01]
 	jbsr	set_irq_flag_2000              	| [$f161: sta    irq_flag_2000] enable interrupts
@@ -396,35 +377,35 @@ continue_f202:
 	GET_ADDRESS	0x6500                     	| [$f206: cmpb   $6500]
 	cmp.b	(a0),d1                          	| [...]
 	jcc	l_f20e                             	| [$f209: jcc    $f20e]
-	GET_ADDRESS	0x6500                     	| [$f20b: stb    $6500] [uncovered]
+											| [$f20b: stb    $6500] [uncovered]
 	move.b	d1,(a0)                         	| [...]
 l_f20e:
 	GET_ADDRESS	0x6540                     	| [$f20e: cmpa   $6540]
 	cmp.b	(a0),d0                          	| [...]
 	jcc	l_f216                             	| [$f211: jcc    $f216]
-	GET_ADDRESS	0x6540                     	| [$f213: sta    $6540] [uncovered]
+											| [$f213: sta    $6540] [uncovered]
 	move.b	d0,(a0)                         	| [...]
 l_f216:
 	GET_ADDRESS	0x6580                     	| [$f216: cmpa   $6580]
 	cmp.b	(a0),d0                          	| [...]
 	jcc	l_f21e                             	| [$f219: jcc    $f21e]
-	GET_ADDRESS	0x6580                     	| [$f21b: sta    $6580] [uncovered]
+											| [$f21b: sta    $6580] [uncovered]
 	move.b	d0,(a0)                         	| [...]
 l_f21e:
 	GET_ADDRESS	0x65c0                     	| [$f21e: cmpb   $65c0]
 	cmp.b	(a0),d1                          	| [...]
 	jcc	l_f226                             	| [$f221: jcc    $f226]
-	GET_ADDRESS	0x65c0                     	| [$f223: stb    $65c0] [uncovered]
+											| [$f223: stb    $65c0] [uncovered]
 	move.b	d1,(a0)                         	| [...]
 l_f226:
 	move.b	#0x01,d0                        	| [$f226: lda    #$01]
 	jbsr	set_irq_flag_2000              	| [$f228: sta    irq_flag_2000]
 	                     	| [$f22b: lda    >$0000]
 * A (aka beamy) varies between $9A and $B4 (approx), rather end of frame
-* let's hope that setting a fixed value in that range will do the trick
-	move.b	#0xA0,d0                         	| [...]
-	GET_ADDRESS	0x6710                     	| [$f22e: sta    $6710]
-	move.b	d0,(a0)                         	| [...]
+* anyway it's read by neither cpu so let's skip it
+*	move.b	#0xB4,d0                         	| [...]
+*	GET_ADDRESS	beamy_value_6710                     	| [$f22e: sta    $6710]
+*	move.b	d0,(a0)                         	| [...]
 	rts       	| [$f231: rti]
 
 l_f232:
@@ -902,10 +883,10 @@ try_to_update_all_sprites_odd_f48b:
 	move.w	d2,(a0)                         	| [...]		updates $4200 pointer
 	move.w	#sprite_ram_4040,d4             	| [$f494: ldu    #sprite_ram_4040]
 	GET_DP_ADDRESS	0x0b                    	| [$f497: clr    $0b]
-	move.b	#0,(a0)                         	| [...]
-	move.b	#0x30,d0                        	| [$f499: lda    #$30] all 48 sprites
-	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a      | [$f49b: sta    $0a]
-	move.b	d0,(a0)                         	| [...]
+	clr.b	(a0)                         		| [...]
+												| [$f499: lda    #$30] all 48 sprites
+												| [$f49b: sta    $0a]
+	move.b	#0x30,-(a0)                         	| [...]
 l_f49d:
 	GET_DP_ADDRESS	0x0b                    	| [$f49d: lda    $0b]
 	move.b	(a0),d0                         	| [...]
@@ -995,9 +976,9 @@ try_to_update_all_sprites_even_f4e4:
 	move.w	#sprite_ram_4040,d4             	| [$f4ed: ldu    #sprite_ram_4040]
 	GET_DP_ADDRESS	0x0b                    	| [$f4f0: clr    $0b]
 	move.b	#0,(a0)                         	| [...]
-	move.b	#0x30,d0                        	| [$f4f2: lda    #$30] 48 (all) max number of sprites (not always reached)
-	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f4f4: sta    $0a]
-	move.b	d0,(a0)                         	| [...]
+												| [$f4f2: lda    #$30] 48 (all) max number of sprites (not always reached)
+	                    	| [$f4f4: sta    number_of_sprites_to_update_total_0a]
+	move.b	#0x30,-(a0)                         	| [...]
 l_f4f6:
 	GET_DP_ADDRESS	0x0b                    	| [$f4f6: lda    $0b]
 	move.b	(a0),d0                         	| [...]
@@ -1067,23 +1048,24 @@ l_f529:
 	bra	l_f4f6                             	| [$f53b: bra    $f4f6]
 
 	* copy sprites from shared memory with real sprite memory, no changes
-sync_sprites_no_change_f54a:
-	move.w	#shared_memory_6000,d4          	| [$f54a: ldu    #shared_memory_6000]
-	move.w	#sprite_ram_4040,d3             	| [$f54d: ldy    #sprite_ram_4040]
-	move.w	#0x0030-1,d2                      	| [$f551: ldx    #$0030]
-	GET_Y_ADDRESS	0                        	| [$f556: std    ,y++]
-	move.l	a0,a1
-	GET_U_ADDRESS	0                        	| [$f554: ldd    ,u++]
-l_f554:
-	move.l	(a0)+,(a1)+							| [$f554: ldd    ,u++]
-								| [$f554: ldd    ,u++]
-								| [$f558: ldd    ,u++]
-								| [$f55a: std    ,y++]
-	                         	| [$f55c: leax   -$1,x]
-	dbf		d2,l_f554                             	| [$f55e: bne    $f554]
-	move.b	#0x01,d0                        	| [$f560: lda    #$01]
-	jbsr	set_irq_flag_2000              	| [$f562: sta    irq_flag_2000]
-	rts       	| [$f565: rti]
+	* not called anymore
+*sync_sprites_no_change_f54a:
+*	move.w	#shared_memory_6000,d4          	| [$f54a: ldu    #shared_memory_6000]
+*	move.w	#sprite_ram_4040,d3             	| [$f54d: ldy    #sprite_ram_4040]
+*	move.w	#0x0030-1,d2                      	| [$f551: ldx    #$0030]
+*	GET_Y_ADDRESS	0                        	| [$f556: std    ,y++]
+*	move.l	a0,a1
+*	GET_U_ADDRESS	0                        	| [$f554: ldd    ,u++]
+*l_f554:
+*	move.l	(a0)+,(a1)+							| [$f554: ldd    ,u++]
+*												| [$f554: ldd    ,u++]
+*												| [$f558: ldd    ,u++]
+*												| [$f55a: std    ,y++]
+*												| [$f55c: leax   -$1,x]
+*	dbf		d2,l_f554                             	| [$f55e: bne    $f554]
+*	move.b	#0x01,d0                        	| [$f560: lda    #$01]
+*	jbsr	set_irq_flag_2000              	| [$f562: sta    irq_flag_2000]
+*	rts       	| [$f565: rti]
 	
 ship_coordinate_transform_f566:
 	GET_DP_ADDRESS	0x0f                    	| [$f566: ldu    $0f]

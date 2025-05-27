@@ -1184,11 +1184,14 @@ really_update_tiles:
 
 is_forced_restore:
 	GET_Z80_RAM_START_IN_A6
-	move.b	#0x83,d0
+	move.l	#0x83838383,d0
 	* 4 locations where text could be printed, which means
 	* that the game is not playing at full rate ("game over",
-	* "ready", "2 warps to xxx", "planet name" displayed
-	* probably not a lot of sprites displaying right now)
+	* "ready", "2 warps to xxx", "planet name", "chance stage"
+	* "bonus xxx" displayed
+	* probably not a lot of sprites displaying 
+	* when text is showing, so not a problem to blit
+	* more stuff)
 	
 	cmp.b	(0x60A,a6),d0
 	jne		1f
@@ -1197,6 +1200,8 @@ is_forced_restore:
 	cmp.b	(0x633,a6),d0
 	jne		1f
 	cmp.b	(0x670,a6),d0
+	jne		1f
+	cmp.l	(0x550,a6),d0
 	jne		1f
 	
 	
@@ -1241,7 +1246,7 @@ update_bobs_and_hw_sprites:
 	* not forced restore. That depends on sprite Y pos
 	cmp.b	#24,d1
 	jcs		2f
-	cmp.b	#248,d1
+	cmp.b	#240,d1
 	jcc		2f
 	* 24 <= Y < 248 and no forced restore: we can just clear the background
 	move.w	d6,-(a7)

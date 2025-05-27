@@ -86,8 +86,7 @@ sprite_cluts = [[] for _ in range(NB_SPRITES)]
 nb_planes = 5
 
 nb_colors = 1<<nb_planes
-# colors collected from tiles/sprites but reported by Marconelly@eab as not used. Seems to be right
-colors_to_remove = {(104, 0, 251), (0, 255, 171)}
+
 
 
 
@@ -159,27 +158,9 @@ def add_hw_sprite(index,name,cluts=[0]):
         sprite_names[idx] = name
         hw_sprite_cluts[idx] = cluts
 
-# 24 bit colors that Marconelly reported as the only colors used, we'll see
-#actually_used_colors = ["ff00fb", "0000fb", "0000ab", "2147fb", "0068fb", "00defb",
-#"defffb", "00ff00", "009700", "97de00", "ffff00", "ffb800", "de9700", "b82100", "ff0000",
-#680000"]
-#actually_used_colors = {tuple(int(c[i:i+2],16) for i in range(0,6,2)) for c in actually_used_colors}
 
-
-def remove_colors(imgname):
-
-    img = Image.open(imgname)
-    return img
-    for x in range(img.size[0]):
-        for y in range(img.size[1]):
-            c = img.getpixel((x,y))
-            if c in colors_to_remove:
-                img.putpixel((x,y),(0,0,0))
-    return img
-
-
-sprite_sheet_dicts = [{i:remove_colors(os.path.join(sheets_path,"sprites",f"set_{z}",f"pal_{i:02x}.png")) for i in range(16)} for z in (0,1)]
-tile_sheet_dict = {i:remove_colors(os.path.join(sheets_path,"tiles",f"pal_{i:02x}.png")) for i in range(16)}
+sprite_sheet_dicts = [{i:Image.open(sheets_path / "sprites" / f"set_{z}" / f"pal_{i:02x}.png") for i in range(16)} for z in (0,1)]
+tile_sheet_dict = {i:Image.open(sheets_path / "tiles" / f"pal_{i:02x}.png") for i in range(16)}
 
 tile_palette = set()
 tile_set_list = []
@@ -205,6 +186,9 @@ for j,sprite_sheet_dict in enumerate(sprite_sheet_dicts):
         sprite_set_list[clut_index] += sprite_set
         sprite_palette.update(sp)
 
+# extract star colors (we now where the non-black pixel of the star is
+star_sprite = 0x13
+star_colors = [sprite_set_list[clut][star_sprite].getpixel((8,3)) for clut  in [4,5,6,7,8]]
 
 # sprite_set_list is now a 16x512 matrix of sprite tiles
 
@@ -215,8 +199,27 @@ for j,sprite_sheet_dict in enumerate(sprite_sheet_dicts):
 
 
 # add sprite palette first. As it's 16 colors, we can use only 4 blits per sprite
-# which saves blitter bandwidth
-full_palette = sorted(sprite_palette)
+# which saves blitter bandwidth, plus the 17th color first on the 5th plane
+full_palette = [None]*17
+
+for i,sc in enumerate(star_colors):
+    full_palette[1<<i] = sc
+    sprite_palette.discard(sc)
+# now put the remaining colors
+idx=0
+for s in sorted(sprite_palette):
+    while full_palette[idx]:
+        idx+=1
+    full_palette[idx] = s
+
+# copy one color so all 16 colors are still 0-15. Game uses 28 colors max so we can afford
+# to duplicate colors
+full_palette[-2] = full_palette[-1]
+
+
+# now we swap positions for star colors. We need them to be in special positions
+# so setting just 1 bit on 1 plane activates the proper color
+
 full_palette_colors = set(full_palette)
 for c in sorted(tile_palette):
     if c not in full_palette_colors:

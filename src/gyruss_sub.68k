@@ -1001,7 +1001,6 @@ l_f4fc:
 	GET_X_ADDRESS	0                        	| [$f50e: ldd    ,x++]
 	move.l	(a0),d6
 	addq.w	#4,d2
-	                                 	| [$f50e: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
 	addq.w	#4,d4
 	move.l	d6,(a0)                	| [...]
@@ -1011,10 +1010,9 @@ l_f4fc:
 			
 					| [...]
 	GET_DP_ADDRESS	0x01                    	| [$f516: inc    $01]
-	addq.b	#1,(a0)                         	| [...]
+	addq.b	#1,(a0)                         	| [...]											| [$f51a: dec    $0a]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f518: dec    $09]
 	subq.b	#1,(a0)+                         	| [...]
-												| [$f51a: dec    $0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f4fc                             	| [$f51c: bne    $f4fc]
 	rts                                    	| [$f51e: rts]

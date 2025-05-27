@@ -3,10 +3,12 @@
   and multi-cpu & double-buffered sprite system and different coordinate
   system on top of it.... so backup solution would probably be to turn off star management
   by the game and re-write the starfield on the amiga side
-	
+  OR filter 6x00 => 4040 copy in 6809 code and
+  process stars from Axxx buffer (we are not limited to 48 sprites)
 - lives erased maybe 248 is too low! => 240 in test
 
-- implement putpixel for stars with plane selection (0-4) for stars (to prepare reimplementation)	 
+- mixer routine to integrate
+
 - highscore save
 - still missing sprites, track red flashes
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
@@ -18,12 +20,6 @@
 
 - log sprites/flash when missing
 
-
-- star effect: hack with pixel placement when detected in the sprite update
-  (takes too much blitter time!):
-  when updating sprites, if star found, then just bset. Color palette must be
-  adjusted to have star colors in strategic positions 1,2,4,8
-  when clearing, just clear byte
 
 
 ---------------------

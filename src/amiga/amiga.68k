@@ -9,6 +9,7 @@
 .include "../src/gyruss.inc"
 .include "../src/data.inc"
 .include "hardware/custom.i"
+.include "exec/types.i"
 .include "lvo/exec_lvos.i"
 .include "lvo/dos_lvos.i"
 .include "lvo/graphics_lvos.i"
@@ -37,17 +38,6 @@ BASE_BPLCON2_VALUE = 0x0064		| sprites above all playfields
 
 
 
-* if the alloc_sprite & update_sprite routines
-* are reused, changing those offsets can make
-* a quick reuse from game to game as most sprite
-* RAMs have 4 bytes per sprite, only the order
-* and some bits differ
-
-TARGET_SPRITE_Y = 0
-TARGET_SPRITE_X = 3
-TARGET_SPRITE_CODE1 = 1
-TARGET_SPRITE_CODE2 = 2
-
 
 	.ifdef	RELEASE
 OPT_ENABLE_PROFILING = 0         | DO NOT CHANGE THIS
@@ -61,7 +51,7 @@ OPT_ENABLE_PROFILING = 0
 
 	.endif
 	
-
+	
 OPT_ENABLE_DOUBLE_BUFFERING = 1
 
 _custom = 0xDFF000
@@ -86,12 +76,41 @@ SCREEN_SIZE = SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 NB_HOST_SPRITES = 8
 
 NB_TARGET_SPRITES = 48
+NB_STARS = 32
 
-SPRITE_X = 0
-SPRITE_Y = 1
-SPRITE_CODE = 2
-SPRITE_CLUT = 3
-SPRITE_SIZEOF = 4
+* if the alloc_sprite & update_sprite routines
+* are reused, changing fields order can make
+* a quick reuse from game to game as most sprite
+* RAMs have 4 bytes per sprite, only the order
+* and some bits differ
+
+	STRUCTURE	TARGET_SPRITE
+	UBYTE	TARGET_SPRITE_Y
+	UBYTE	TARGET_SPRITE_CODE1
+	UBYTE	TARGET_SPRITE_CODE2
+	UBYTE	TARGET_SPRITE_X
+	LABEL	TARGET_SPRITE_SIZEOF
+
+	STRUCTURE	STAR,0
+	UWORD	STAR_X
+	UWORD	STAR_Y
+	UWORD	STAR_CLUT
+	UWORD	STAR_DX
+	UWORD	STAR_DY
+	UWORD	STAR_ANGLE
+	UWORD	STAR_SPEED
+	LABEL	STAR_STRUCTURE_SIZE
+
+* hardware sprite (not used)
+	STRUCTURE	SPRITE,0
+	UBYTE	SPRITE_X
+	UBYTE	SPRITE_Y
+	UBYTE	SPRITE_CODE
+	UBYTE	SPRITE_CLUT
+	LABEL	SPRITE_SIZEOF
+
+
+
 
 BIT_INSERT_COIN_1 = 0
 BIT_INSERT_COIN_2 = 1
@@ -1275,8 +1294,9 @@ update_bobs_and_hw_sprites:
 	move.w	#NB_TARGET_SPRITES-1,d7
 1:
 	move.w	(2,a4),d1
-	beq.b	11f		| y=0: inactive
+	beq.b	11f		| y=0: inactive, break the loop
 	move.w	(a4),d0
+	and.w	#0x1F0,d0		| align on 16 lower bound
 	* clear area where the sprite was
 	clr.l	(a4)+			| ack deletion
 	move.w	(a4),d4			| height
@@ -1289,30 +1309,17 @@ update_bobs_and_hw_sprites:
 	jcs		2f
 	cmp.b	#240,d1
 	jcc		2f
-	cmp.w	#1,d4
-	jne		21f
-	* star: just remove pixel from proper plane
-	moveq	#0,d3
-	jbsr	set_pixel
-	jra		4f
-21:
+
 	* 24 <= Y < 248 and no forced restore: we can just clear the background
 	move.w	d6,-(a7)
 	move.l	a1,a3
 	moveq	#NB_BOB_PLANES,d3
-	and.w	#0x1F0,d0		| align on 16 lower bound
 	jbsr	clear_planes_any_blitter_internal
 	move.l	a3,a1
 	move.w	(a7)+,d6
 	jra		4f
 2:
-	cmp.w	#1,d4
-	jne		21f
-	moveq	#2,d2	| star: blit width = 2
-21:
-	and.w	#0x1F0,d0		| align on 16 lower bound
 	jbsr		blit_background
-	jra		4f
 4:
 	dbf		d7,1b	
 	bra.b	12f
@@ -1321,6 +1328,70 @@ update_bobs_and_hw_sprites:
 	dbf		d7,1b
 12:	
 
+* how stars originally work is something like:
+* put "important" sprites in the sprite buffer and if there's room,
+* put as many star sprites as possible. But....
+*
+* stars interfere with other sprites / replacing them in the final
+* sprite buffer, resulting in nasty blinking sprites.
+* Very difficult to debug with all the pseudo-randomness
+* and multi-cpu & double-buffered sprite system and different coordinate
+* system on top of it.... it may be an original game behaviour that doesn't
+* play too well with single cpu? giving that up.
+* so backup solution is to turn off star management
+* by the game and re-write the starfield on the amiga side
+*
+* there are some bright sides:
+* - handling is faster as we use non-converted 68k code
+* - we can put as many stars we want, we're not limited by the 48
+*   max number of sprites
+
+	*********************************************
+	*         erase current stars               *
+	*********************************************
+	
+	move.l	star_previous_drawed_sprites(pc),a4
+	
+	* clear previous positions
+	lea	background_restore_buffer,a0
+	move.l	playfield_drawed_screen_ptr(pc),a1
+	move.w	#NB_STARS-1,d7
+1:
+	move.w	(2,a4),d1
+	beq.b	12f		| y=0: inactive break the loop
+	move.w	(a4),d0
+	* clear area where the sprite was
+	clr.l	(a4)+			| ack deletion
+	*move.w	(a4),d4			| height
+	move.w	(2,a4),d2		| width/clut index (if star)
+	clr.l	(a4)+			| ack deletion
+	tst.b	d6
+	jne		2f				| forced restore
+	* not forced restore. That depends on sprite Y pos
+	cmp.b	#24,d1
+	jcs		2f
+	cmp.b	#240,d1
+	jcc		2f
+	* star: just remove pixel from proper plane
+	moveq	#0,d3
+	jbsr	set_pixel
+	jra		4f
+2:
+	moveq	#2,d2	| star: blit width = 2
+	and.w	#0x1F0,d0		| align on 16 lower bound
+	jbsr		blit_background
+4:
+	dbf		d7,1b	
+	bra.b	12f
+11:
+	addq	#PREVIOUS_SPRITE_SIZE,a4
+	dbf		d7,1b
+12:	
+	
+	*********************************************
+	*         draw current stars                *
+	*********************************************
+	
 	*********************************************
 	* draw current BOBs from 6809 sprite memory *
 	*********************************************
@@ -1875,13 +1946,14 @@ clear_planes_any_blitter_internal:
     rts
 
 
+nb_stars:
+	.word	0
 
-* 2 words: first shift (as bplcon value), then
-* offset in bytes
-
-
+star_structures:
+	.skip	NB_STARS*STAR_STRUCTURE_SIZE
+	
 sprite_buffer:
-	ds.b	NB_TARGET_SPRITES*CURRENT_SPRITE_SIZE
+	.skip	NB_TARGET_SPRITES*CURRENT_SPRITE_SIZE
 	
 bob_previous_positions_1:
 	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE
@@ -1895,6 +1967,18 @@ bob_previous_displayed_sprites:
 bob_previous_positions_2:
 	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE	
 	.endif
+star_previous_positions_1:
+	ds.b	NB_STARS*PREVIOUS_SPRITE_SIZE
+star_previous_drawed_sprites:
+	.long	star_previous_positions_1
+star_previous_displayed_sprites:
+	.ifeq	OPT_ENABLE_DOUBLE_BUFFERING
+	.long	star_previous_positions_1
+	.else
+	.long	star_previous_positions_2	
+star_previous_positions_2:
+	ds.b	NB_STARS*PREVIOUS_SPRITE_SIZE	
+	.endif
 
 		
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
@@ -1906,6 +1990,8 @@ switch_screen_buffers:
 	lea		playfield_drawed_screen_ptr(pc),a0
 	lea		bob_previous_positions_1(pc),a2
 	lea		bob_previous_positions_2(pc),a3
+	lea		star_previous_positions_1(pc),a4
+	lea		star_previous_positions_2(pc),a6
 	move.l	bg_screen_data_1,a1
 	move.l	bg_screen_data_2,a5
 	* also switch previous state memory
@@ -1914,12 +2000,15 @@ switch_screen_buffers:
 	* screen data 1 is displayed screen
 	* set it to drawn screen
 	exg		a1,a5
+	exg		a4,a6
 	exg		a2,a3
 2:
 	move.l	a1,(a0)
 	move.l	a5,playfield_displayed_screen_ptr
 	move.l	a3,bob_previous_displayed_sprites
 	move.l	a2,bob_previous_drawed_sprites
+	move.l	a6,star_previous_displayed_sprites
+	move.l	a4,star_previous_drawed_sprites
 
 	jbra		set_static_bitplanes
 	.endif

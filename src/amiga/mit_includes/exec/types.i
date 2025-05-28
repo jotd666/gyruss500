@@ -28,6 +28,10 @@ EXEC_TYPES_I = 1
 \arg = _soffset
 	.set	_soffset,_soffset+2
 	.endm
+	.macro		UBYTE	arg
+\arg = _soffset
+	.set	_soffset,_soffset+1
+	.endm
 	.macro		WORD	arg
 	WORD		\arg
 	.endm

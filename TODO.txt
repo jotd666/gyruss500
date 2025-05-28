@@ -3,8 +3,9 @@
   and multi-cpu & double-buffered sprite system and different coordinate
   system on top of it.... so backup solution would probably be to turn off star management
   by the game and re-write the starfield on the amiga side
-  OR filter 6x00 => 4040 copy in 6809 code and
-  process stars from Axxx buffer (we are not limited to 48 sprites)
+- after a good game (level 5,6...) next game ships attack wave
+  is completely nuts. Protection? Z80 code? 6809 code?
+  
 - lives erased maybe 248 is too low! => 240 in test
 
 - mixer routine to integrate

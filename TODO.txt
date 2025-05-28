@@ -6,6 +6,8 @@
 - after a good game (level 5,6...) next game ships attack wave
   is completely nuts. Protection? Z80 code? 6809 code?
   
+- a few stars remaining in original sprites
+
 - lives erased maybe 248 is too low! => 240 in test
 
 - mixer routine to integrate

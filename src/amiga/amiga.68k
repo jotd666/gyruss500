@@ -31,6 +31,7 @@ SPRITE_HEIGHT = 8
 
 Y_MAX = 256
 
+_custom = 0xDFF000
 
 BASE_BPLCON2_VALUE = 0x0064		| sprites above all playfields
 
@@ -50,11 +51,16 @@ OPT_ENABLE_PROFILING = 0
 
 
 	.endif
-	
+
+* to save bandwidth, do not clear cookie cut blit
+* if no bitplane data: there will be some color artefacts
+* but not noticeable unless 2 very different not very small
+* ships cross each other paths, which doesn't happen very often
+OPT_IGNORE_ZERO_BITPLANE = 1
+
 	
 OPT_ENABLE_DOUBLE_BUFFERING = 1
 
-_custom = 0xDFF000
 
 OPT_ENABLE_MULTIPLEXED_SPRITES = 0
 
@@ -1837,40 +1843,41 @@ blit_planes_any_internal_cookie_cut:
 	beq.b	7f
 	subq	#1,d3
 6:
-	move.l a3,bltapt(a5)	|source graphic top left corner (mask)
-	bsr.b	start_process_1_plane
+	jbsr	process_1_plane
 	
-	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
-	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
 7:
-	move.l a3,bltapt(a5)	|source graphic top left corner (mask)
-	bsr.b	start_process_1_plane
-	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
-	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	jbsr	process_1_plane
     
     movem.l (a7)+,d0-d7/a4
     rts
 	
-start_process_1_plane:
+process_1_plane:
 	move.l (a0)+,d0
 	beq.b	60f
 	move.l	d0,a4
 	add.w	d5,a4		| add Y offset
 	bra.b	61f
 60:
+	.ifeq	OPT_IGNORE_ZERO_BITPLANE
 	* source is 0: just apply mask (less bandwidth lost) and change bltcon
 	move.l	d6,bltcon0(a5)	| sets con0 and con1: C-A->D cookie cut, B fixed
  	move.w	d2,bltbdat(a5)	|B word is zero
+	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
+	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	.endif
 	rts
 61:
 	* non-zero: set data source & bltcon
+	move.l  a3,bltapt(a5)	|source graphic top left corner (mask)
 	move.l	d7,bltcon0(a5)	| sets con0 and con1: C-A+B->D cookie cut full
 	move.l	a4,bltbpt(a5)	|source graphic top left corner
+	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
+	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
 	rts
 
 	.macro	GEN_MINTERM_TABLE	name,value

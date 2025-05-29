@@ -42,6 +42,19 @@
 	move.b	d4,(1,a0)
 	.endm
 	
+	.macro	MOVE_W_D4_IN_A0_PLUS_1
+	rol.w	#8,d4
+	move.b	d4,(a0)+
+	rol.w	#8,d4
+	move.b	d4,(a0)
+	.endm
+	
+	.macro	MOVE_W_A0_IN_D4
+	move.b	(a0),d4
+	rol.w	#8,d4
+	move.b	(1,a0),d4
+	.endm
+	
 * this code is mainly used to convert Z80-handled coordinates to polar
 * displayable coordinates for enemy ships (not all sprites are concerned)
 *
@@ -136,7 +149,7 @@ gyruss_sub_reset:
 	move.w	#sprite_ram_4040,d4             	| [$f098: ldu    #sprite_ram_4040]
 	moveq	#0,d2
 	move.w	#0x0400-0x20,d2         | [$f09b: ldx    #$0400] do not overshoot!
-	MAKE_D
+	moveq	#0,d1
 	* could be optimized but this is some init routine...
 l_f09e:
 	GET_U_ADDRESS	0                        	| [$f09e: std    ,u++]
@@ -192,17 +205,14 @@ l_f0ca:
 	
 	GET_ADDRESS	0x6400                     	| [$f0d9: clr    $6400]
 	move.b	#0,(a0)                         	| [...]
-	GET_ADDRESS	0x6440                     	| [$f0dc: clr    $6440]
-	move.b	#0,(a0)                         	| [...]
-	GET_ADDRESS	0x6480                     	| [$f0df: clr    $6480]
-	move.b	#0,(a0)                         	| [...]
-	GET_ADDRESS	0x64c0                     	| [$f0e2: clr    $64c0]
-	move.b	#0,(a0)                         	| [...]
+	clr.b	(0x40,a0)                     	| [$f0dc: clr    $6440]
+	clr.b	(0x80,a0)                     	| [$f0df: clr    $6480]
+	clr.b	(0xC0,a0)                     	| [$f0e2: clr    $64c0]
 	move.w	#shared_memory_6000,d4          	| [$f0e5: ldu    #shared_memory_6000]
 	GET_DP_ADDRESS	0x0f                    	| [$f0e8: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	move.w	#0x6400,d4                      	| [$f0ea: ldu    #$6400]
-	GET_DP_ADDRESS	0x11                    	| [$f0ed: stu    $11]
+	addq.w	#2,a0	                    	| [$f0ed: stu    $11]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts
 
@@ -256,25 +266,25 @@ continue_f135:
 	GET_ADDRESS	0x6400                     	| [$f139: cmpb   $6400]
 	cmp.b	(a0),d1                          	| [...]
 	jcc	l_f141                             	| [$f13c: jcc    $f141]
-	GET_ADDRESS	0x6400                     	| [$f13e: stb    $6400] [uncovered]
+											| [$f13e: stb    $6400] [uncovered]
 	move.b	d1,(a0)                         	| [...]
 l_f141:
 	GET_ADDRESS	0x6440                     	| [$f141: cmpa   $6440]
 	cmp.b	(a0),d0                          	| [...]
 	jcc	l_f149                             	| [$f144: jcc    $f149]
-	GET_ADDRESS	0x6440                     	| [$f146: sta    $6440] [uncovered]
+	                     	| [$f146: sta    $6440] [uncovered]
 	move.b	d0,(a0)                         	| [...]
 l_f149:
 	GET_ADDRESS	0x6480                     	| [$f149: cmpa   $6480]
 	cmp.b	(a0),d0                          	| [...]
 	jcc	l_f151                             	| [$f14c: jcc    $f151]
-	GET_ADDRESS	0x6480                     	| [$f14e: sta    $6480] [uncovered]
+	                     	| [$f14e: sta    $6480] [uncovered]
 	move.b	d0,(a0)                         	| [...]
 l_f151:
 	GET_ADDRESS	0x64c0                     	| [$f151: cmpb   $64c0]
 	cmp.b	(a0),d1                          	| [...]
 	jcc	l_f159                             	| [$f154: jcc    $f159]
-	GET_ADDRESS	0x64c0                     	| [$f156: stb    $64c0] [uncovered]
+	                     	| [$f156: stb    $64c0] [uncovered]
 	move.b	d1,(a0)                         	| [...]
 l_f159:
 	                     	| [$f159: lda    >$0000]
@@ -315,12 +325,9 @@ frame_odd_f1a3:
 	jbsr	try_to_update_all_sprites_odd_f48b        	| [$f1a3: jsr    $f48b]
 	GET_ADDRESS	0x6500                     	| [$f1a6: clr    $6500]
 	clr.b	(a0)                         	| [...]
-	GET_ADDRESS	0x6540                     	| [$f1a9: clr    $6540]
-	clr.b	(a0)                         	| [...]
-	GET_ADDRESS	0x6580                     	| [$f1ac: clr    $6580]
-	clr.b	(a0)                         	| [...]
-	GET_ADDRESS	0x65c0                     	| [$f1af: clr    $65c0]
-	clr.b	(a0)                         	| [...]
+	clr.b	(0x40,a0)                     	| [$f1a9: clr    $6540]
+	clr.b	(0x80,a0)                     	| [$f1ac: clr    $6580]
+	clr.b	(0xc0,a0)                     	| [$f1af: clr    $65c0]
 	move.w	#0x6200,d4                      	| [$f1b2: ldu    #$6200]
 	GET_DP_ADDRESS	0x0f                    	| [$f1b5: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
@@ -438,10 +445,9 @@ compute_coords_f273:
 	moveq	#0,d2
 	move.w	#0xe000,d2                      	| [$f273: ldx    #$e000]
 	GET_U_ADDRESS	0                        	| [$f276: ldb    ,u]
+	moveq	#0,d1                            	| [$f27a: clra]
 	move.b	(a0),d1                         	| [...]
 	beq	l_f2d5                             	| [$f278: beq    $f2d5]
-	moveq	#0,d0                            	| [$f27a: clra]
-	MAKE_D
 	GET_X_ADDRESS_FROM_REG	d1              	| [$f27b: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f27d: sta    $08]
@@ -463,9 +469,9 @@ compute_coords_f273:
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f291: mul]
 	neg.b	d0                               	| [$f292: nega]
-	bmi	l_f29f                             	| [$f293: bmi    $f29f]
-	beq	l_f29f                             	| [$f295: beq    $f29f]
-	bra	l_f2d5                             	| [$f297: bra    $f2d5] [uncovered]
+	jmi	l_f29f                             	| [$f293: bmi    $f29f]
+	jeq	l_f29f                             	| [$f295: beq    $f29f]
+	jra	l_f2d5                             	| [$f297: bra    $f2d5] [uncovered]
 
 l_f299:
 	GET_DP_ADDRESS	0x08                    	| [$f299: lda    $08]
@@ -501,17 +507,18 @@ l_f2b7:
 	and.b	#0xc0,d0                         	| [$f2bb: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f2bd: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	move.l	a0,a1
 	GET_INDIRECT_ADDRESS	pointer_4211        | [$f2bf: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 												| [$f2c3: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f2c7: adda   $12]
-	add.b	(a0),d0                          	| [...]
+	* reusing address from a1                    	| [$f2c7: adda   $12]
+	add.b	(a1),d0                          	| [...]
 												| [$f2c9: sta    $12]
-	move.b	d0,(a0)                         	| [...]
+	move.b	d0,(a1)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f2cb: stu    $0d]
-	MOVE_W_D4_IN_A0                         	| [...]
-	GET_DP_ADDRESS	0x0e                    	| [$f2cd: ldb    $0e]
+	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
+											| [$f2cd: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f2cf: lsrb]
 	                            	| [$f2d0: lsrb]
@@ -527,10 +534,9 @@ l_f2d5:
 l_f2dc:
 	move.l	#0xe000,d2                      	| [$f2dc: ldx    #$e000]
 	GET_U_ADDRESS	0                        	| [$f2df: ldb    ,u]
+	moveq	#0,d1                            	| [$f2e3: clra]
 	move.b	(a0),d1                         	| [...]
 	beq	l_f35f                             	| [$f2e1: beq    $f35f]
-	moveq	#0,d0                            	| [$f2e3: clra]
-	MAKE_D
 	GET_X_ADDRESS_FROM_REG	d1              	| [$f2e4: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f2e6: sta    $08]
@@ -550,9 +556,9 @@ l_f2dc:
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f2fa: mul]
 	neg.b	d0                               	| [$f2fb: nega]
-	bmi	l_f308                             	| [$f2fc: bmi    $f308]
-	beq	l_f308                             	| [$f2fe: beq    $f308]
-	bra	l_f35f                             	| [$f300: bra    $f35f]
+	jmi	l_f308                             	| [$f2fc: bmi    $f308]
+	jeq	l_f308                             	| [$f2fe: beq    $f308]
+	jra	l_f35f                             	| [$f300: bra    $f35f]
 
 l_f302:
 	GET_DP_ADDRESS	0x08                    	| [$f302: lda    $08]
@@ -583,9 +589,9 @@ l_f314:
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f320: mul]
 	neg.b	d0                               	| [$f321: nega]
-	bmi	l_f32e                             	| [$f322: bmi    $f32e]
-	beq	l_f32e                             	| [$f324: beq    $f32e]
-	bra	l_f35f                             	| [$f326: bra    $f35f]
+	jmi	l_f32e                             	| [$f322: bmi    $f32e]
+	jeq	l_f32e                             	| [$f324: beq    $f32e]
+	jra	l_f35f                             	| [$f326: bra    $f35f]
 
 l_f328:
 	GET_DP_ADDRESS	0x08                    	| [$f328: lda    $08]
@@ -597,28 +603,26 @@ l_f32e:
 	add.b	#0x78,d0                         	| [$f32e: adda   #$78]
 	GET_U_ADDRESS	0x3                      	| [$f330: sta    $3,u]
 	move.b	d0,(a0)                         	| [...]
-	GET_U_ADDRESS	0x7                      	| [$f332: sta    $7,u]
-	move.b	d0,(a0)                         	| [...]
-	GET_U_ADDRESS	0x2                      	| [$f334: lda    $2,u]
-	move.b	(a0),d0                         	| [...]
+	move.b	d0,(4,a0)                         	| [$f332: sta    $7,u]
+	                      	| [$f334: lda    $2,u]
+	move.b	(-1,a0),d0                         	| [...] writes to 2
 	and.b	#0x10,d0                         	| [$f336: anda   #$10]
 	beq	l_f368                             	| [$f338: beq    $f368]
-	GET_U_ADDRESS	0x3                      	| [$f33a: lda    $3,u]
+												| [$f33a: lda    $3,u]
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f33c: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f33e: sta    $12]
+	exg	a0,a1			| save address for below
 	move.b	d0,(a0)                         	| [...]
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f340: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
 	add.b	#0x02,d0                         	| [$f344: adda   #$02]
 	move.b	d0,(a0)								| [$f346: sta    [$4211]]
-	GET_DP_ADDRESS	0x12                    	| [$f34a: adda   $12]
-	add.b	(a0),d0                          	| [...]
-	                    	| [$f34c: sta    $12]
-	move.b	d0,(a0)                         	| [...]
+	add.b	(a1),d0			                    	| [$f34a: adda   $12]
+	move.b	d0,(a1)                    	        | [$f34c: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f34e: stu    $0d]
-	MOVE_W_D4_IN_A0                         	| [...]
-	GET_DP_ADDRESS	0x0e                    	| [$f350: ldb    $0e]
+	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
+			                   	| [$f350: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	* divide by 4 to find sprite index
 	lsr.b	#2,d1                            	| [$f352: lsrb]
@@ -641,22 +645,23 @@ l_f35f:
 	rts                                    	| [$f367: rts]
 
 l_f368:
-	GET_U_ADDRESS	0x3                      	| [$f368: lda    $3,u]
+	* a0 is already set to address 3                      	| [$f368: lda    $3,u]
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f36a: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f36c: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	move.l	a0,a1			| save address for below
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f36e: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 												| [$f372: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f376: adda   $12]
-	add.b	(a0),d0                          	| [...]
+									| [$f376: adda   $12]
+	add.b	(a1),d0                          	| [...]
 												| [$f378: sta    $12]
-	move.b	d0,(a0)                         	| [...]
+	move.b	d0,(a1)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f37a: stu    $0d]
-	MOVE_W_D4_IN_A0                         	| [...]
-	GET_DP_ADDRESS	0x0e                    	| [$f37c: ldb    $0e]
+	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
+											| [$f37c: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f37e: lsrb]
 												| [$f37f: lsrb]
@@ -667,10 +672,9 @@ l_f368:
 compute_coords_f386:
 	move.l	#0xe000,d2                      	| [$f386: ldx    #$e000] ROM start address
 	GET_U_ADDRESS	0                        	| [$f389: ldb    ,u]
+	moveq	#0,d1                            	| [$f38d: clra]
 	move.b	(a0),d1                         	| [...]
 	beq	l_f3ea                             	| [$f38b: beq    $f3ea]
-	moveq	#0,d0                            	| [$f38d: clra]
-	MAKE_D
 	GET_X_ADDRESS_FROM_REG	d1              	| [$f38e: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f390: sta    $08]
@@ -713,9 +717,9 @@ l_f3b2:
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f3bc: mul]
 	neg.b	d0                               	| [$f3bd: nega]
-	bmi	l_f3ca                             	| [$f3be: bmi    $f3ca]
-	beq	l_f3ca                             	| [$f3c0: beq    $f3ca]
-	bra	l_f3ea                             	| [$f3c2: bra    $f3ea]
+	jmi	l_f3ca                             	| [$f3be: bmi    $f3ca]
+	jeq	l_f3ca                             	| [$f3c0: beq    $f3ca]
+	jra	l_f3ea                             	| [$f3c2: bra    $f3ea]
 
 l_f3c4:
 	GET_DP_ADDRESS	0x08                    	| [$f3c4: lda    $08]
@@ -730,15 +734,16 @@ l_f3ca:
 	and.b	#0xc0,d0                         	| [$f3ce: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f3d0: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	move.l	a0,a1
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f3d2: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]	            	
 	move.b	(a0),d0                         	| [$f3d6: lda    [$4211]]
-	GET_DP_ADDRESS	0x12                    	| [$f3da: adda   $12]
-	add.b	(a0),d0                          	| [...]
-	move.b	d0,(a0)                         	| [$f3dc: sta    $12]
+	* using saved address in a1               	| [$f3da: adda   $12]
+	add.b	(a1),d0                          	| [...]
+	move.b	d0,(a1)                         	| [$f3dc: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f3de: stu    $0d]
-	MOVE_W_D4_IN_A0                         	| [...]
-	GET_DP_ADDRESS	0x0e                    	| [$f3e0: ldb    $0e]
+	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
+											| [$f3e0: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f3e2: lsrb]
 												| [$f3e3: lsrb]
@@ -756,10 +761,9 @@ l_f3f1:
 	moveq	#0,d2
 	move.w	#0xe000,d2                      	| [$f3f1: ldx    #$e000]
 	GET_U_ADDRESS	0                        	| [$f3f4: ldb    ,u]
+	moveq	#0,d1                            	| [$f3fa: clra]
 	move.b	(a0),d1                         	| [...]
 	beq	l_f482                             	| [$f3f6: lbeq   $f482]
-	moveq	#0,d0                            	| [$f3fa: clra]
-	MAKE_D
 	GET_X_ADDRESS_FROM_REG	d1              	| [$f3fb: lda    d,x]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f3fd: sta    $08]
@@ -818,7 +822,7 @@ l_f43c:
 	add.b	#0x78,d0                         	| [$f43c: adda   #$78]
 	GET_U_ADDRESS	0x3                      	| [$f43e: sta    $3,u]
 	move.b	d0,(a0)                         	| [...]
-	GET_U_ADDRESS	0x3                      	| [$f440: ldb    $3,u]
+												| [$f440: ldb    $3,u]
 	move.b	(a0),d1                         	| [...]
 	add.b	#0x04,d1                         	| [$f442: addb   #$04]
 	GET_U_ADDRESS	0x20                     	| [$f444: stb    $20,u]
@@ -826,16 +830,17 @@ l_f43c:
 	and.b	#0xc0,d0                         	| [$f447: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f449: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	move.l	a0,a1
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f44b: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 	            	| [$f44f: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f453: adda   $12]
-	add.b	(a0),d0                          	| [...]	                    	
-	move.b	d0,(a0)                         	| [$f455: sta    $12]
+	* reusing address in a1                    	| [$f453: adda   $12]
+	add.b	(a1),d0                          	| [...]	                    	
+	move.b	d0,(a1)                         	| [$f455: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f457: stu    $0d]
-	MOVE_W_D4_IN_A0                         	| [...]
-	GET_DP_ADDRESS	0x0e                    	| [$f459: ldb    $0e]
+	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
+										| [$f459: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	* convert address to index of sprite (1 sprite = 4 bytes)
 	lsr.b	#2,d1                            	| [$f45b: lsrb]
@@ -848,15 +853,16 @@ l_f43c:
 	and.b	#0xc0,d0                         	| [$f466: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f468: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	move.l	a0,a1
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f46a: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]	            	
 	move.b	(a0),d0                         	| [$f46e: lda    [$4211]]
-	GET_DP_ADDRESS	0x12                    	| [$f472: adda   $12]
-	add.b	(a0),d0                          	| [...]                 	
-	move.b	d0,(a0)                         	| [$f474: sta    $12]
+	* used stored A1                    	| [$f472: adda   $12]
+	add.b	(a1),d0                          	| [...]                 	
+	move.b	d0,(a1)                         	| [$f474: sta    $12]
 	GET_DP_ADDRESS	0x0d                    	| [$f476: stu    $0d]
-	MOVE_W_D4_IN_A0                         	| [...]
-	GET_DP_ADDRESS	0x0e                    	| [$f478: ldb    $0e]
+	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
+											| [$f478: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f47a: lsrb]
 												| [$f47b: lsrb]
@@ -1067,7 +1073,7 @@ l_f529:
 	
 ship_coordinate_transform_f566:
 	GET_DP_ADDRESS	0x0f                    	| [$f566: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	moveq	#0,d1                            	| [$f568: clrb]
 l_f569:
 	GET_U_ADDRESS	0x3                      	| [$f569: lda    $3,u]
@@ -1075,14 +1081,15 @@ l_f569:
 	and.b	#0xc0,d0                         	| [$f56b: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f56d: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	move.l	a0,a1
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f56f: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 												| [$f573: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f577: adda   $12]
-	add.b	(a0),d0                          	| [...]
+	* reused address from a1					| [$f577: adda   $12]
+	add.b	(a1),d0                          	| [...]
 	                    	| [$f579: sta    $12]
-	move.b	d0,(a0)                         	| [...]
+	move.b	d0,(a1)                         	| [...]
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f57b: stb    [$4211]]
 	move.b	d1,(a0)                         	| [...]
 	addq.w	#0x4,d4                         	| [$f57f: leau   $4,u]
@@ -1098,7 +1105,7 @@ enemies_coordinate_transform_f589:
 	move.b	(a0),d0                         	| [...]
 	bne	l_f59e                             	| [$f58c: bne    $f59e]
 	GET_DP_ADDRESS	0x0f                    	| [$f58e: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                  	| [...]
+	MOVE_W_A0_IN_D4                  	| [...]
 	sub.w	#0x0128,d4                       	| [$f590: leau   -$0128,u]
 	move.b	#0x0a,d0                        	| [$f594: lda    #$0a]
 	GET_DP_ADDRESS	0x0c                    	| [$f596: sta    $0c]
@@ -1110,15 +1117,16 @@ enemies_coordinate_transform_f589:
 
 l_f59e:
 	GET_DP_ADDRESS	0x0f                    	| [$f59e: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                  	| [...]
+	MOVE_W_A0_IN_D4                  	| [...]
 	sub.w	#0x0128,d4                       	| [$f5a0: leau   -$0128,u]
 	move.b	#0x01,d0                        	| [$f5a4: lda    #$01]
 	GET_DP_ADDRESS	0x0c                    	| [$f5a6: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
+	move.l	a0,-(a7)
 	jbsr	l_f2dc                            	| [$f5a8: jsr    $f2dc]
+	move.l	(a7)+,a0
 	move.b	#0x09,d0                        	| [$f5ab: lda    #$09]
-	GET_DP_ADDRESS	0x0c                    	| [$f5ad: sta    $0c]
-	move.b	d0,(a0)                         	| [...]
+	move.b	d0,(a0)								| [$f5ad: sta    $0c]
 l_f5af:
 	GET_U_ADDRESS	0                        	| [$f5af: lda    ,u]
 	move.b	(a0),d0                         	| [...]
@@ -1126,25 +1134,26 @@ l_f5af:
 	add.b	#0x08,d0                         	| [$f5b3: adda   #$08]
 	GET_U_ADDRESS	0x4                      	| [$f5b5: sta    $4,u]
 	move.b	d0,(a0)                         	| [...]
-	GET_U_ADDRESS	0x3                      	| [$f5b7: lda    $3,u]
-	move.b	(a0),d0                         	| [...]
+												| [$f5b7: lda    $3,u]
+	move.b	-(a0),d0                         	| [...]
 	GET_U_ADDRESS	0x7                      	| [$f5b9: sta    $7,u]
 	move.b	d0,(a0)                         	| [...]
 	and.b	#0xc0,d0                         	| [$f5bb: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f5bd: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	move.l 	a0,-(a7)
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f5bf: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
 	add.b	#0x02,d0                         	| [$f5c3: adda   #$02]
 									| [$f5c5: sta    [$4211]]
 	move.b	d0,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f5c9: adda   $12]
+	move.l	(a7)+,a0                    	| [$f5c9: adda   $12]
 	add.b	(a0),d0                          	| [...]
 										| [$f5cb: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f5cd: stu    $0d]
-	MOVE_W_D4_IN_A0                         	| [...]
-	GET_DP_ADDRESS	0x0e                    	| [$f5cf: ldb    $0e]
+	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
+												| [$f5cf: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f5d1: lsrb]
 	                            	| [$f5d2: lsrb]
@@ -1166,7 +1175,7 @@ l_f5de:
 
 coordinate_transform_one_f5e7:
 	GET_DP_ADDRESS	0x0f                    	| [$f5e7: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x0a,d0                        	| [$f5e9: lda    #$0a]
 	GET_DP_ADDRESS	0x0c                    	| [$f5eb: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
@@ -1177,7 +1186,7 @@ coordinate_transform_one_f5e7:
 
 coordinate_transform_two_f5f3:
 	GET_DP_ADDRESS	0x0f                    	| [$f5f3: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x08,d0                        	| [$f5f5: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f5f7: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
@@ -1188,7 +1197,7 @@ coordinate_transform_two_f5f3:
 
 coordinate_transform_three_f5ff:
 	GET_DP_ADDRESS	0x0f                    	| [$f5ff: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x0a,d0                        	| [$f601: lda    #$0a]
 	GET_DP_ADDRESS	0x0c                    	| [$f603: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
@@ -1199,7 +1208,7 @@ coordinate_transform_three_f5ff:
 
 coordinate_transform_four_f60b:
 	GET_DP_ADDRESS	0x0f                    	| [$f60b: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x08,d0                        	| [$f60d: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f60f: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
@@ -1210,7 +1219,7 @@ coordinate_transform_four_f60b:
 
 coordinate_transform_eight_f617:
 	GET_DP_ADDRESS	0x0f                    	| [$f617: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                    	| [...]
+	MOVE_W_A0_IN_D4                    	| [...]
 	add.w	#0x10,d4                         	| [$f619: leau   $10,u]
 	move.b	#0x06,d0                        	| [$f61c: lda    #$06]
 	GET_DP_ADDRESS	0x0c                    	| [$f61e: sta    $0c]
@@ -1222,7 +1231,7 @@ coordinate_transform_eight_f617:
 
 enemies_coordinate_transform_f626:
 	GET_DP_ADDRESS	0x0f                    	| [$f626: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	add.w	#0x0108,d4                       	| [$f628: leau   $0108,u]
 	move.b	#0x08,d0                        	| [$f62c: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f62e: sta    $0c]
@@ -1234,7 +1243,7 @@ enemies_coordinate_transform_f626:
 
 coordinate_transform_six_f636:
 	GET_DP_ADDRESS	0x0f                    	| [$f636: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	add.w	#0x20,d4                         	| [$f638: leau   $20,u]
 	move.b	#0x04,d0                        	| [$f63b: lda    #$04]
 	GET_DP_ADDRESS	0x0c                    	| [$f63d: sta    $0c]
@@ -1246,7 +1255,7 @@ coordinate_transform_six_f636:
 
 coordinate_transform_seven_f645:
 	GET_DP_ADDRESS	0x0f                    	| [$f645: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x04,d0                        	| [$f647: lda    #$04]
 	GET_DP_ADDRESS	0x0c                    	| [$f649: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
@@ -1257,7 +1266,7 @@ coordinate_transform_seven_f645:
 
 coordinate_transform_five_f651:
 	GET_DP_ADDRESS	0x0f                    	| [$f651: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
 	add.w	#0x10,d4                         	| [$f653: leau   $10,u]
 	move.b	#0x06,d0                        	| [$f656: lda    #$06]
 	GET_DP_ADDRESS	0x0c                    	| [$f658: sta    $0c]
@@ -1269,13 +1278,14 @@ coordinate_transform_five_f651:
 
 coordinate_transform_zero_f660:
 	GET_DP_ADDRESS	0x0f                    	| [$f660: ldu    $0f]
-	MOVE_W_TO_REG	(a0),d4                         	| [...]
+	MOVE_W_A0_IN_D4                         	| [...]
+	move.l	a0,-(a7)
 	add.w	#0x0108,d4                       	| [$f662: leau   $0108,u]
 	move.b	#0x08,d0                        	| [$f666: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f668: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f670                            	| [$f66a: jsr    $f670]
-	GET_DP_ADDRESS	0x0f                    	| [$f66d: stu    $0f]
+	move.l	(a7)+,a0	                    	| [$f66d: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f66f: rts]
 
@@ -1294,8 +1304,8 @@ l_f670:
 				                    	| [$f680: sta    $12]
 	move.b	d0,(a0)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f682: stu    $0d]
-	MOVE_W_D4_IN_A0                         	| [...]
-	GET_DP_ADDRESS	0x0e                    	| [$f684: ldb    $0e]
+	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
+	                    	| [$f684: ldb    $0e]
 	move.b	(a0),d1                         	| [...]
 	lsr.b	#2,d1                            	| [$f686: lsrb]
 												| [$f687: lsrb]

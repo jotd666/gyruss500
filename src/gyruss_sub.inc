@@ -11,14 +11,12 @@
 * conditional compilation to select the proper memory banks at compile time
 * (see my burger time 6502 conversion which does that in RELEASE mode)
 
-
-
-
 	.macro	MAKE_D
 	rol.w	#8,d1
 	move.b	d0,d1
-	rol.w	#8,d1
+	rol.w	#8,d1		| also updates all flags (which is required)
 	.endm
+
 
 	.macro	LOAD_D
 	move.b	(a0),d0
@@ -69,17 +67,7 @@
 	roxl.b	#1,d5
 	.endm
 
-	.macro CLR_V_FLAG
-	moveq	#0,WTF
-	add.b	WTF,WTF
-	.endm
 
-	.macro SET_I_FLAG
-    .error   "TODO: insert interrupt disable code here"
-	.endm
-	.macro CLR_I_FLAG
-    .error   "TODO: insert interrupt enable code here"
-	.endm
 	.ifdef	MC68020
 	.macro PUSH_SR
 	move.w	ccr,-(sp)
@@ -87,11 +75,6 @@
 	.macro POP_SR
 	move.w	(sp)+,ccr
 	.endm
-	.macro	MOVE_W_TO_REG	src,dest
-	move.w	\src,\dest
-	.endm
-	.macro	MOVE_W_FROM_REG	src,dest
-	move.w	\src,\dest
 	.endm
 	.else
 	.macro PUSH_SR
@@ -100,27 +83,8 @@
 	.macro POP_SR
 	move.w	(sp)+,sr
 	.endm
-	
-	* not optimized at all but here
-	* src or dest is (a0) so it's not easy!
-	.macro	MOVE_W_TO_REG	src,dest
-	ror.w	#8,\dest
-	move.b	\src+,\dest
-	ror.w	#8,\dest
-	move.b	\src,\dest
-	tst.b	-\src
-	tst		\dest
-	.endm
-	
-	.macro	MOVE_W_FROM_REG	src,dest
-	ror.w	#8,\src
-	move.b	\src,\dest+
-	ror.w	#8,\src
-	move.b	\src,\dest
-	tst.b	-\dest
-	tst		\src
-	.endm
 	.endif
+
 
 	.macro READ_BE_WORD	srcreg
 	move.b	(\srcreg),d6

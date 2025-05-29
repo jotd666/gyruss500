@@ -2765,8 +2765,8 @@ set_static_bitplanes:
 osd_debug_hook:
 	rts
 	
-osd_get_random:
-* > D0: pseudo random value (8 bits, all other bits zeroed)
+get_random:
+* > D0.L: pseudo random value
 	movem.l	a0,-(a7)
 	lea	seed(pc),a0
 	move.l	(a0),d0
@@ -2776,8 +2776,7 @@ osd_get_random:
 	rol.l #6,d0	
 	move.l	d0,(a0) 
 	movem.l	(a7)+,a0
-	add.b	_custom+vposr,d0
-	and.l	#0xFF,d0
+	*add.b	_custom+vposr,d0
 	rts
 seed:
 	dc.l	0x12345678

@@ -490,9 +490,9 @@ l_f29f:
 	move.b	(a0),d0                         	| [...]
 	jbsr	multiply_ab                       	| [$f2a9: mul]
 	neg.b	d0                               	| [$f2aa: nega]
-	bmi	l_f2b7                             	| [$f2ab: bmi    $f2b7]
-	beq	l_f2b7                             	| [$f2ad: beq    $f2b7]
-	bra	l_f2d5                             	| [$f2af: bra    $f2d5]
+	jmi	l_f2b7                             	| [$f2ab: bmi    $f2b7]
+	jeq	l_f2b7                             	| [$f2ad: beq    $f2b7]
+	jra	l_f2d5                             	| [$f2af: bra    $f2d5]
 
 l_f2b1:
 	GET_DP_ADDRESS	0x08                    	| [$f2b1: lda    $08]

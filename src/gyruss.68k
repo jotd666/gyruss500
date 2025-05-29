@@ -429,6 +429,15 @@
 	move.l	(a7)+,a0
 	.endm
 
+
+* add_d0_to_a0_0018: add A to HL, update L
+* this is called a lot, so let's inline it
+	.macro	ADD_D0_TO_A0_0018
+	and.w	#0xFF,d0                            	| [$0018: add  a,l]
+	add.w	d0,a0                           	| [$0019: ld   l,a]
+											| [$001b: inc  h]
+	.endm                                    	| [$001c: ret]
+
 	.ifndef	RELEASE
 	
 
@@ -546,7 +555,7 @@ fetch_a0_plus_d0_0008:
 * < D0.B: index
 load_rom_pointer_in_a1_d3_0010:
 	add.b	d0,d0                            	| [$0010: add  a,a]
-	jbsr	add_d0_to_a0_0018                            	| [$0011: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$0011: rst  $18]
 	move.b	(a0)+,d4                         	| [$0012: ld   e,(hl)]
 	                           	| [$0013: inc  hl]
 	move.b	(a0)+,d3                         	| [$0014: ld   d,(hl)]
@@ -566,7 +575,7 @@ load_rom_pointer_in_a1_d3_0010:
 * 68000: loads ROM data in A1, offset in D3 
 load_word_in_d3_0010:
 	add.b	d0,d0                            	| [$0010: add  a,a]
-	jbsr	add_d0_to_a0_0018                            	| [$0011: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$0011: rst  $18]
 	move.b	(a0)+,d4                         	| [$0012: ld   e,(hl)]
 	                           	| [$0013: inc  hl]
 	move.b	(a0)+,d3                         	| [$0014: ld   d,(hl)]
@@ -574,13 +583,6 @@ load_word_in_d3_0010:
 	LOAD_D3_16_FROM_D3D4
 	rts                                    	| [$0016: ret]
 
-* add_d0_to_a0_0018: add A to HL, update L
-add_d0_to_a0_0018:
-	and.w	#0xFF,d0                            	| [$0018: add  a,l]
-	add.w	d0,a0                           	| [$0019: ld   l,a]
-
-											| [$001b: inc  h]
-	rts                                    	| [$001c: ret]
 
 * sub_20_to_a1_0020: subtract 0x20 to DE
 sub_20_to_a1_0020:
@@ -2426,7 +2428,7 @@ rom_checksum_and_next_state_0f11:
 *	READ_ROM_BYTE	0x37A9,d0                       	| [$0f14: ld   a,($37A9)]
 *	LOAD_RAM_POINTER	l_37AA,a0             	| [$0f17: ld   hl,($37AA)]
 *
-*	jbsr	add_d0_to_a0_0018                            	| [$0f1a: rst  $18]
+*	ADD_D0_TO_A0_0018                            	| [$0f1a: rst  $18]
 *	eor.b	d5,d0                            	| [$0f1b: xor  h]
 *	sub.b	#0xEB,d0                         	| [$0f1c: sub  $EB]
 *	jne	l_dd0000                             	| [$0f1e: jp   nz,$0000]
@@ -3665,7 +3667,7 @@ l_191f:
 	add.b	d0,d0                            	| [$1966: add  a,a]
 	add.b	d2,d0                            	| [$1967: add  a,c]
 	LEA_ROM	0x5EAD,a0                          	| [$1968: ld   hl,$5EAD]
-	jbsr	add_d0_to_a0_0018                            	| [$196b: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$196b: rst  $18]
 	clr.b	d1                               	| [$196c: ld   b,$00]
 	move.b	double_fire_930E(a6),d0         	| [$196e: ld   a,(double_fire_930E)]
 	                               	| [$1971: and  a]
@@ -3741,7 +3743,7 @@ displayed_x_03 = 0x03
 * < A3: sprite shadow
 l_1a15:
 	LEA_ROM	0x5E2D,a0                          	| [$1a15: ld   hl,$5E2D]
-	jbsr	add_d0_to_a0_0018                            	| [$1a18: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$1a18: rst  $18]
 	move.b	(a0)+,d1                         	| [$1a19: ld   b,(hl)]
 												| [$1a1a: inc  hl]
 	move.b	(fine_x_02,a2),d3                    	| [$1a1b: ld   d,(ix+$02)]
@@ -3820,7 +3822,7 @@ l_1a87:
 	move.b	l_91CE(a6),d0                   	| [$1aa8: ld   a,($91CE)]
 	ror.b	#4,d0                            	| [$1aab: rrca] * 4
 	and.b	#0x0F,d0                         	| [$1aaf: and  $0F]
-	jbsr	add_d0_to_a0_0018                            	| [$1ab1: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$1ab1: rst  $18]
 	move.b	(a0),d2                         	| [$1ab2: ld   c,(hl)]
 l_1ab3:
 	move.b	(0x00,a3),d0                    	| [$1ab3: ld   a,(iy+$00)]
@@ -4668,14 +4670,14 @@ handle_enemies_2339:
 l_23b0:
 	lea	l_90B0(a6),a2                      	| [$23b0: ld   ix,$90B0]
 	lea	l_9860(a6),a3                      	| [$23b4: ld   iy,$9860]
-	READ_ROM_BYTE	0x09E7,d0                       	| [$23b8: ld   a,($09E7)]
-	move.b	d0,d1                           	| [$23bb: ld   b,a]
+											| [$23b8: ld   a,($09E7)]
+											| [$23bb: ld   b,a]
 	move.b	general_fast_timer_9400(a6),d0                   	| [$23bc: ld   a,($9400)]
 	ror.b	#1,d0                            	| [$23bf: rrca]
 	and.b	#0x1F,d0                         	| [$23c0: and  $1F]
 	move.b	d0,d2                           	| [$23c2: ld   c,a]
 	LEA_ROM	0x241B,a0                          	| [$23c3: ld   hl,$241B]
-	jbsr	add_d0_to_a0_0018                            	| [$23c6: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$23c6: rst  $18]
 	move.b	l_9475(a6),d0                   	| [$23c7: ld   a,($9475)]
 	add.b	(a0),d0                          	| [$23ca: add  a,(hl)]
 	move.b	d0,l_9475(a6)                   	| [$23cb: ld   ($9475),a]
@@ -4685,16 +4687,16 @@ l_23b0:
 	move.b	d0,l_923E(a6)                   	| [$23d5: ld   ($923E),a]
 	ror.b	#1,d0                            	| [$23d8: rrca]
 	and.b	#0x1F,d0                         	| [$23d9: and  $1F]
-	jbsr	add_d0_to_a0_0018                            	| [$23db: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$23db: rst  $18]
 	move.b	l_9476(a6),d0                   	| [$23dc: ld   a,($9476)]
 	add.b	(a0),d0                          	| [$23df: add  a,(hl)]
 	move.b	d0,l_9476(a6)                   	| [$23e0: ld   ($9476),a]
-	jbsr	exx                               	| [$23e3: exx]
-	move.w	#0x0010,d3                      	| [$23e4: ld   de,$0010]
-	move.w	#0x0004,d1                      	| [$23e7: ld   bc,$0004]
-	jbsr	exx                               	| [$23ea: exx]
+												| [$23e3: exx]
+												| [$23e4: ld   de,$0010]
+												| [$23e7: ld   bc,$0004]
+	move.w	#0x23,d1	| 0x24-1 times set at 23B8											| [$23ea: exx]
 l_23eb:
-	movem.w	d1/d2,-(sp)                    	| [$23eb: push bc]
+	move.w	d1,-(sp)                    	| [$23eb: push bc]
 	move.b	(0x00,a2),d0                    	| [$23ec: ld   a,(ix+$00)]
 	                               	| [$23ef: and  a]
 	jeq	l_2411                             	| [$23f0: jr   z,$2411]
@@ -4713,14 +4715,13 @@ l_23fc:
 	add.b	(0x0d,a2),d0                     	| [$240b: add  a,(ix+$0d)]
 	move.b	d0,(displayed_y_00,a3)                    	| [$240e: ld   (iy+$00),a]
 l_2411:
-	jbsr	exx                               	| [$2411: exx]
-	* optimize this D3=0x10 and D1=0x4
-	add.w	d3,a2                            	| [$2412: add  ix,de]
-	add.w	d1,a3                            	| [$2414: add  iy,bc]
-	jbsr	exx                               	| [$2416: exx]
-	movem.w	(sp)+,d1/d2                    	| [$2417: pop  bc]
-	subq.b	#1,d1                           	| [...]
-	jne	l_23eb                             	| [$2418: djnz $23EB]
+	                               	| [$2411: exx]
+	* optimized this as D3=0x10 and D1=0x4 (called a lot!)
+	add.w	#0x10,a2                            	| [$2412: add  ix,de]
+	addq.w	#4,a3                            	| [$2414: add  iy,bc]
+	                               	| [$2416: exx]
+	move.w	(sp)+,d1                    	| [$2417: pop  bc]
+	dbf	d1,l_23eb                             	| [$2418: djnz $23EB]
 	rts                                    	| [$241a: ret]
 
 l_2464:
@@ -4960,7 +4961,7 @@ l_25ac:
 	add.b	d0,d0                            	| [$25b3: add  a,a]
 	add.b	d0,d0                            	| [$25b4: add  a,a]
 	LEA_ROM	0x25CF,a0                          	| [$25b5: ld   hl,$25CF]
-	jbsr	add_d0_to_a0_0018                            	| [$25b8: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$25b8: rst  $18]
 	move.b	general_fast_timer_9400(a6),d0                   	| [$25b9: ld   a,($9400)]
 	ror.b	#3,d0                            	| [$25bc: rrca] * 3
 	and.b	#0x03,d0                         	| [$25bf: and  $03]
@@ -6078,7 +6079,7 @@ l_2db4:
 	move.b	d0,d1                           	| [$2dc0: ld   b,a]
 	add.b	d0,d0                            	| [$2dc1: add  a,a]
 	add.b	d1,d0                            	| [$2dc2: add  a,b]
-	jbsr	add_d0_to_a0_0018                            	| [$2dc3: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$2dc3: rst  $18]
 	move.b	d2,d0                           	| [$2dc4: ld   a,c]
 	cmp.b	#0x80,d0                         	| [$2dc5: cp   $80]
 	jcc	l_2dea                             	| [$2dc7: jp   nc,$2DEA]
@@ -6094,7 +6095,7 @@ l_2db4:
 	ror.b	#2,d0                            	| [$2dd9: rrca] * 2
 	and.b	#0x0F,d0                         	| [$2ddb: and  $0F]
 	LEA_ROM	0x3201,a0                          	| [$2ddd: ld   hl,$3201]
-	jbsr	add_d0_to_a0_0018                            	| [$2de0: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$2de0: rst  $18]
 	move.b	d1,d0                           	| [$2de1: ld   a,b]
 	add.b	(a0),d0                          	| [$2de2: add  a,(hl)]
 	move.b	d0,(0x02,a3)                    	| [$2de3: ld   (iy+$02),a]
@@ -6115,7 +6116,7 @@ l_2dea:
 	ror.b	#2,d0                            	| [$2dfb: rrca] * 2
 	and.b	#0x0F,d0                         	| [$2dfd: and  $0F]
 	LEA_ROM	0x3201,a0                          	| [$2dff: ld   hl,$3201]
-	jbsr	add_d0_to_a0_0018                            	| [$2e02: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$2e02: rst  $18]
 	move.b	d1,d0                           	| [$2e03: ld   a,b]
 	add.b	(a0),d0                          	| [$2e04: add  a,(hl)]
 	move.b	d0,(0x02,a3)                    	| [$2e05: ld   (iy+$02),a]
@@ -6569,7 +6570,7 @@ l_3280:
 	add.b	d0,d0                            	| [$3287: add  a,a]
 	add.b	d0,d0                            	| [$3288: add  a,a]
 	LEA_ROM	0x336D,a0                          	| [$3289: ld   hl,$336D]
-	jbsr	add_d0_to_a0_0018                            	| [$328c: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$328c: rst  $18]
 	move.b	(a0)+,d4                         	| [$328d: ld   e,(hl)]
 	                           	| [$328e: inc  hl]
 	move.b	(a0)+,d3                         	| [$328f: ld   d,(hl)]
@@ -7374,9 +7375,9 @@ update_starfield_pass_1_3A37:
 	move.b	#0x26,d6                        	| [$3a37: ld   l,$26] star code 13<<1
 	move.w	#0x0004,d3                      	| [$3a39: ld   de,$0004]
 l_3a3c:
-	move.b	(displayed_x_03,a3),d0              | [$3a3c: ld   a,(iy+$03)]
-	add.b	#0x80,d0                         	| [$3a3f: add  a,$80]
-	move.b	d0,(displayed_x_03,a3)              | [$3a41: ld   (iy+$03),a]
+	              | [$3a3c: ld   a,(iy+$03)]
+	add.b	#0x80,(displayed_x_03,a3)                         	| [$3a3f: add  a,$80]
+	              | [$3a41: ld   (iy+$03),a]
 	move.b	(displayed_y_00,a3),d0              | [$3a44: ld   a,(iy+$00)]
 	add.b	d5,d0                            	| [$3a47: add  a,h]
 	cmp.b	#0x18,d0                         	| [$3a48: cp   $18]
@@ -7535,7 +7536,7 @@ l_4031:
 l_4036:
 	move.b	d2,d0                           	| [$4036: ld   a,c]
 	LEA_ROM	0x409E,a0                          	| [$4037: ld   hl,$409E]
-	jbsr	add_d0_to_a0_0018                   | [$403a: rst  $18]
+	ADD_D0_TO_A0_0018                   | [$403a: rst  $18]
 	move.b	d1,d0                           	| [$403b: ld   a,b]
 	ror.b	#2,d0                            	| [$403c: rrca] * 2
 	and.b	#0x1F,d0                         	| [$403e: and  $1F]
@@ -7641,7 +7642,7 @@ l_417d:
 	add.b	d1,d0                            	| [$417f: add  a,b]
 	add.b	d0,d0                            	| [$4180: add  a,a]
 	LEA_ROM	0x41DF,a0                          	| [$4181: ld   hl,$41DF]
-	jbsr	add_d0_to_a0_0018                            	| [$4184: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$4184: rst  $18]
 	exg	a1,a0                              	| [$4185: ex   de,hl]
 	lea	l_900E(a6),a0                      	| [$4186: ld   hl,$900E]
 	move.b	(a0),d0                         	| [$4189: ld   a,(hl)]
@@ -8892,10 +8893,10 @@ l_4d32:
 	move.b	d0,(0x01,a2)                    	| [$4d59: ld   (ix+$01),a]
 	exg	a1,a0                              	| [$4d5c: ex   de,hl]
 	READ_ROM_BYTE	0x1DE0,d0                       	| [$4d5d: ld   a,($1DE0)]
-	jbsr	add_d0_to_a0_0018                            	| [$4d60: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$4d60: rst  $18]
 	exg	a1,a0                              	| [$4d61: ex   de,hl]
 	READ_ROM_BYTE	0x2E5C,d0                       	| [$4d62: ld   a,($2E5C)]
-	jbsr	add_d0_to_a0_0018                            	| [$4d65: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$4d65: rst  $18]
 	subq.b	#1,d1                           	| [...]
 	jne	l_4d32                             	| [$4d66: djnz $4D32]
 	rts                                    	| [$4d68: ret]
@@ -8952,7 +8953,7 @@ l_4e79:
 	exg	d0,d7                              	| [$4e8a: ex   af,af']
 	READ_ROM_BYTE	0x1216,d0                       	| [$4e8b: ld   a,($1216)]
 	sub.b	d1,d0                            	| [$4e8e: sub  b]
-	jbsr	add_d0_to_a0_0018                            	| [$4e8f: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$4e8f: rst  $18]
 	jra	l_4e79                             	| [$4e90: jr   $4E79]
 
 l_4e92:
@@ -9023,7 +9024,7 @@ l_4eea:
 	ror.b	#2,d0                            	| [$4eea: rrca]
 	                            	| [$4eeb: rrca]
 	and.b	#0x3E,d0                         	| [$4eec: and  $3E]
-	jbsr	add_d0_to_a0_0018                            	| [$4eee: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$4eee: rst  $18]
 	move.b	(a0)+,d4                         	| [$4eef: ld   e,(hl)]
 	                           	| [$4ef0: inc  hl]
 	move.b	(a0),d3                         	| [$4ef1: ld   d,(hl)]
@@ -9094,7 +9095,7 @@ l_4f46:
 	ror.b	#2,d0                            	| [$4f46: rrca]
 	                            	| [$4f47: rrca]
 	and.b	#0x3E,d0                         	| [$4f48: and  $3E]
-	jbsr	add_d0_to_a0_0018                            	| [$4f4a: rst  $18]
+	ADD_D0_TO_A0_0018                            	| [$4f4a: rst  $18]
 	move.b	(a0)+,d4                         	| [$4f4b: ld   e,(hl)]
 	                           	| [$4f4c: inc  hl]
 	move.b	(a0),d3                         	| [$4f4d: ld   d,(hl)]

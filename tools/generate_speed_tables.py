@@ -8,8 +8,8 @@ def convert(v):
         dv += 0x10000
     return dv
 
-speeds = [0.6,0.8,1]
-with open("star_speed_tables.68k","w") as f:
+speeds = [1,1.2,1.4]
+with open("../src/amiga/star_speed_tables.68k","w") as f:
     f.write("star_speed_table:\n")
     for i,speed in enumerate(speeds):
         f.write(f"\t.long\tstar_speed_{i}\n")

@@ -347,12 +347,22 @@ l_f1bc:
 	move.b	(a0),d0                         	| [...]
 	bne	l_f232                             	| [$f1c4: bne    $f232]
 	* the game performs calculations and tries to update
-	* the maximum of sprites, avoiding to cross the Y beam
+	* the maximum of sprites, checking the Y beam to see
+	* if sprite slot can be reused (sprite multiplexing)
 	* to avoid flashes. If we skip the "race_beam_update_sprites_xxxx"
 	* routines, game still runs and animates, only it flashes more
 	*
 	* each non "race" routine does something to convert coords
 	*
+	* this is not possible to recreate faithfully specially
+	* on amiga, where sprite multiplexing is done differently
+	*
+	* Fortunately, the enemies don't rely a lot on this and
+	* have priority on the stars, so multplexing occurs only
+	* when there are stars. Removing stars generation 
+	* from the Z80 code fixes the annoying flashing issues
+	* I was investigating for a (long) while. The code is 100%
+	* correct, it's just that it cannot be done that way.
 	jbsr	ship_coordinate_transform_f566                            	| [$f1c6: jsr    $f566]
 	* here beamy = 31 on the arcade machine
 	jbsr	init_current_ybeam

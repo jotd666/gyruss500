@@ -65,13 +65,13 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
     nb_active = 0
     nb_stars = 0
 
-    for offs in range(0xBC,-4,-4):
+    for offs in range(len(m_spriteram)-4,-4,-4):
         raw_code_and_clut = (m_spriteram[offs+1]<<8)+m_spriteram[offs+2]
         x = m_spriteram[offs]
         y = 241 - m_spriteram[offs + 3]
         y = 256 -y # adding this to MAME formula else pic is not correct
 
-        if y:
+        if x:
             gfx_bank = m_spriteram[offs + 1] & 0x01
             code = ((m_spriteram[offs + 2] & 0x20) << 2) | (m_spriteram[offs + 1] >> 1)
             if code:
@@ -108,9 +108,9 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
     print(f"NB ACTIVE: {nb_active}, NB_STARS: {nb_stars}")
     result.save(f"{the_dump.stem}_{offset:04x}.png")
 
-process(r"s9800",offset=0,base_address=0x9800,name_filter="star")
 
-#process(r"iceberg_amiga_4040",offset=0,base_address=0x4040,name_filter="iceberg")
+
+process(r"sprites",offset=0,base_address=0xA000)
 #process(r"sattelites_A000",offset=0,base_address=0xA000)
 #process(r"bug_4040",offset=0,base_address=0x4040)
 #process(r"../../sprite_ram_4040",offset=0,base_address=0x4040)

@@ -30,7 +30,6 @@ SPRITE_Y_CORRECTION = 0
 SPRITE_HEIGHT = 8
 
 Y_MAX = 256
-X_MAX = 224
 
 _custom = 0xDFF000
 
@@ -83,13 +82,6 @@ SCREEN_SIZE = SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 NB_HOST_SPRITES = 8
 
 NB_TARGET_SPRITES = 48
-NB_STARS = 24
-
-* if the alloc_sprite & update_sprite routines
-* are reused, changing fields order can make
-* a quick reuse from game to game as most sprite
-* RAMs have 4 bytes per sprite, only the order
-* and some bits differ
 
 	STRUCTURE	TARGET_SPRITE
 	UBYTE	TARGET_SPRITE_Y
@@ -98,16 +90,7 @@ NB_STARS = 24
 	UBYTE	TARGET_SPRITE_X
 	LABEL	TARGET_SPRITE_SIZEOF
 
-	STRUCTURE	STAR,0
-	UBYTE	STAR_ALIVE
-	UBYTE	STAR_CLUT
-	UWORD	STAR_X
-	UWORD	STAR_Y
-	UWORD	STAR_DX
-	UWORD	STAR_DY
-	UWORD	STAR_ANGLE
-	UWORD	STAR_SPEED
-	LABEL	STAR_STRUCTURE_SIZE
+
 
 * hardware sprite (not used)
 	STRUCTURE	SPRITE,0
@@ -743,102 +726,6 @@ demo_game:
 	GET_Z80_RAM_START_IN_A6
 	jmp			gyruss_reset					| pass control to the cpu core
 		
-update_native_stars:
-	move.b	star_period,d0
-	addq	#1,d0
-	move.b	d0,star_period
-	cmp.b	#16,d0
-	jne		30f			| go to update part
-0:
-	clr.b	star_period
-	* first, see if there are slots available to insert
-	* new stars in the starfield
-	jbsr	get_random
-	move.b	d0,d1
-	and.b	#4,d1
-	jne		30f
-0:
-	lsr.l	#2,D0		| lose first 2 bits
-	* check if there are some available star slots
-	lea		star_structures,a0
-	moveq	#NB_STARS-1,d7
-1:
-	tst.b	(STAR_ALIVE,a0)
-	jne		2f
-	* slot available: create a new star
-	* d0 is 32 bit random, let's use it
-	* select directions
-	lea		star_speed_table,a1
-	move.l	(a1),a1		| temp speed 0
-	moveq	#0,d1
-	move.b	d0,d1
-	add.w	d1,d1
-	add.w	d1,d1
-	st.b	(STAR_ALIVE,a0)		| activate
-	move.w	d1,(STAR_ANGLE,a0)
-	* pick an angle 0-255 (0-2pi)
-	move.w	(a1,d1.w),d2		| delta x
-	move.w	d2,(STAR_DX,a0)
-	move.w	(2,a1,d1.w),d2		| delta y
-	move.w	d2,(STAR_DY,a0)
-	* init X,Y at center of the screen
-	move.b	#X_MAX/2+32,(STAR_X,a0)
-	move.b	#Y_MAX/2,(STAR_Y,a0)
-	swap	d0
-	* pick clut 0-4
-	and.b	#7,d0
-	cmp.b	#5,d0
-	jcs		11f
-	and.b	#3,d0
-11:
-	move.b	d0,(STAR_CLUT,a0)
-	* allocated a star: go to move stars part
-	jra		30f
-2:
-	lea		(STAR_STRUCTURE_SIZE,a0),a0
-	dbf		d7,1b
-30:
-	******************************
-	* move all active stars now  *
-	******************************
-	lea		star_structures,a0
-	moveq	#NB_STARS-1,d7
-	move.w	#(X_MAX-1)<<8,d2		| max X coord
-	move.w	#(Y_MAX-1)<<8,d3		| max Y coord
-1:
-	tst.b	(STAR_ALIVE,a0)
-	jeq		2f
-	* active star: move it
-	move.w	(STAR_DX,a0),d0
-	add.w	(STAR_X,a0),d0
-	* check if is out of bounds X-wise
-	cmp.w	d2,d0
-	jcs		3f
-	* too far right or negative left: disable
-	clr.b	(STAR_ALIVE,a0)
-	jra		2f
-3:
-	* validate X coord
-	move.w	d0,(STAR_X,a0)
-	
-	move.w	(STAR_DY,a0),d0
-	add.w	(STAR_Y,a0),d0
-	* check if is out of bounds X-wise
-	cmp.w	d3,d0
-	jcs		3f
-	* too far right or negative left: disable
-	clr.b	(STAR_ALIVE,a0)
-	jra		2f
-3:	
-	* validate Y coord
-	move.w	d0,(STAR_Y,a0)
-2:
-	* next item
-	lea		(STAR_STRUCTURE_SIZE,a0),a0
-	dbf		d7,1b
-	rts
-	
-	.include	"star_speed_tables.68k"
 	
 osd_queue_sprites:
 	movem.l	d0-a6,-(a7)
@@ -855,7 +742,6 @@ osd_draw_sprites:
 	rts
 	
 do_both_gyruss_irq:
-	jbsr	update_native_stars
 	* set base for RAM
 	lea	rom_base,a5
 	GET_Z80_RAM_START_IN_A6
@@ -1209,23 +1095,6 @@ add_10000_points:
 * A1: bitplanes
 
 set_pixel:
-	.ifndef	RELEASE
-	cmp.b	#5,d2
-	jcs		0f
-	BREAKPOINT	"plane number out of range (D2)"
-	moveq	#0,d2
-0:
-	cmp.w	#Y_MAX,d1
-	jcs		0f
-	BREAKPOINT	"pixel Y out of range"
-	moveq	#0,d1
-0:
-	cmp.w	#X_MAX,d0
-	jcs		0f
-	BREAKPOINT	"pixel X out of range"
-	moveq	#0,d0
-0:
-	.endif
 	movem.l	d0-d4/a1/a2,-(a7)
 	move.b	d0,d4
 	lsr.w	#3,d0
@@ -1237,14 +1106,12 @@ set_pixel:
 	* add bitplane offset
 	and.w	#0x7,d2
 	add.w	d2,d2
-	add.w	d2,d2
 	lea		mulPLANE_table(pc),a2
-	add.l	(a2,d2.w),a1
+	add.w	(a2,d2.w),a1
 
 	tst.b	d3
 	jeq		2f
 	* select proper bit
-	and.b	#7,d4
 	neg.b	d4
 	add.b	#7,d4
 	bset	d4,(a1)
@@ -1257,11 +1124,11 @@ set_pixel:
 	rts
 	
 mulPLANE_table:
-	.long	0
-	.long	SCREEN_PLANE_SIZE
-	.long	SCREEN_PLANE_SIZE*2
-	.long	SCREEN_PLANE_SIZE*3
-	.long	SCREEN_PLANE_SIZE*4
+	.word	0
+	.word	SCREEN_PLANE_SIZE
+	.word	SCREEN_PLANE_SIZE*2
+	.word	SCREEN_PLANE_SIZE*3
+	.word	SCREEN_PLANE_SIZE*4
 	
 * what: blits data on bg plane, no horizontal shifting (erase)
 * args:
@@ -1420,7 +1287,6 @@ update_bobs_and_hw_sprites:
 	move.w	(2,a4),d1
 	beq.b	11f		| y=0: inactive, break the loop
 	move.w	(a4),d0
-	and.w	#0x1F0,d0		| align on 16 lower bound
 	* clear area where the sprite was
 	clr.l	(a4)+			| ack deletion
 	move.w	(a4),d4			| height
@@ -1433,80 +1299,30 @@ update_bobs_and_hw_sprites:
 	jcs		2f
 	cmp.b	#240,d1
 	jcc		2f
-
+	cmp.w	#1,d4
+	jne		21f
+	* star: just remove pixel from proper plane
+	moveq	#0,d3
+	jbsr	set_pixel
+	jra		4f
+21:
 	* 24 <= Y < 248 and no forced restore: we can just clear the background
 	move.w	d6,-(a7)
 	move.l	a1,a3
 	moveq	#NB_BOB_PLANES,d3
+	and.w	#0x1F0,d0		| align on 16 lower bound
 	jbsr	clear_planes_any_blitter_internal
 	move.l	a3,a1
 	move.w	(a7)+,d6
 	jra		4f
 2:
-	jbsr		blit_background
-4:
-	dbf		d7,1b	
-	bra.b	12f
-11:
-	addq	#PREVIOUS_SPRITE_SIZE,a4
-	dbf		d7,1b
-12:	
-
-* how stars originally work is something like:
-* put "important" sprites in the sprite buffer and if there's room,
-* put as many star sprites as possible. But....
-*
-* stars interfere with other sprites / replacing them in the final
-* sprite buffer, resulting in nasty blinking sprites.
-* Very difficult to debug with all the pseudo-randomness
-* and multi-cpu & double-buffered sprite system and different coordinate
-* system on top of it.... it may be an original game behaviour that doesn't
-* play too well with single cpu? giving that up.
-* so backup solution is to turn off star management
-* by the game and re-write the starfield on the amiga side
-*
-* there are some bright sides:
-* - handling is faster as we use non-converted 68k code
-* - we can put as many stars we want, we're not limited by the 48
-*   max number of sprites
-
-	*********************************************
-	*         erase current stars               *
-	*********************************************
-	
-	move.l	star_previous_drawed_sprites(pc),a4
-	
-	* clear previous positions
-	lea	background_restore_buffer,a0
-	move.l	playfield_drawed_screen_ptr(pc),a1
-	move.w	#NB_STARS-1,d7
-	WAIT_BLIT
-1:
-	move.l	(a4),d1
-	beq.b	12f		| x=y=0: inactive break the loop
-	move.l	d1,d0
-	swap	d0		| get X
-	* clear area where the sprite was
-	clr.l	(a4)+			| ack deletion
-	*move.w	(a4),d4			| height
-	move.w	(2,a4),d2		| width/clut index (if star)
-	clr.l	(a4)+			| ack deletion
-	tst.b	d6
-	jne		2f				| forced restore
-	* not forced restore. That depends on sprite Y pos
-	cmp.b	#24,d1
-	jcs		2f
-	cmp.b	#240,d1
-	jcc		2f
-	* star: just remove pixel from proper plane
-	moveq	#0,d3
-	jbsr	set_pixel
-	jra		4f
-2:
+	cmp.w	#1,d4
+	jne		21f
 	moveq	#2,d2	| star: blit width = 2
-	and.w	#0x1F0,d0	| align on 16 lower bound
-	moveq	#1,d4		| height = 1	
+21:
+	and.w	#0x1F0,d0		| align on 16 lower bound
 	jbsr		blit_background
+	jra		4f
 4:
 	dbf		d7,1b	
 	bra.b	12f
@@ -1515,27 +1331,6 @@ update_bobs_and_hw_sprites:
 	dbf		d7,1b
 12:	
 	
-	*********************************************
-	*         draw current stars                *
-	*********************************************
-
-    lea _custom,A5
-	move.l	star_previous_drawed_sprites(pc),a6
-	lea		star_structures,a0
-	move.w	#NB_STARS-1,d7
-	moveq	#0,d0
-	moveq	#0,d1
-	moveq	#0,d2
-	st.b	d3		| mode: draw
-1:
-	tst.b	(STAR_ALIVE,a0)
-	jeq		2f
-	jbsr	draw_one_star
-2:
-	lea		(STAR_STRUCTURE_SIZE,a0),a0
-	dbf		d7,1b
-	clr.l	(a6)
-0:
 	
 	*********************************************
 	* draw current BOBs from 6809 sprite memory *
@@ -1565,19 +1360,6 @@ update_bobs_and_hw_sprites:
 	rts
 	
 
-* < A6: previous drawed stars
-* < A0: current star structure
-draw_one_star:
-	move.b	#0,0x100
-	move.b	(STAR_X,a0),d0  | sprite X (MSB)
-	move.b	(STAR_Y,a0),d1  | sprite Y (MSB)
-	move.b	(STAR_CLUT,a0),d2	| clut
-	move.w	d0,(a6)+
-	move.w	d1,(a6)+
-	addq	#2,a6
-	move.w	d2,(a6)+
-	jbsr	set_pixel
-	rts
 	
 update_one_bob:
 	
@@ -2109,8 +1891,6 @@ clear_planes_any_blitter_internal:
 nb_stars:
 	.word	0
 
-star_structures:
-	.skip	NB_STARS*STAR_STRUCTURE_SIZE
 	
 sprite_buffer:
 	.skip	NB_TARGET_SPRITES*CURRENT_SPRITE_SIZE
@@ -2127,18 +1907,6 @@ bob_previous_displayed_sprites:
 bob_previous_positions_2:
 	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE	
 	.endif
-star_previous_positions_1:
-	.skip	NB_STARS*PREVIOUS_SPRITE_SIZE+4
-star_previous_drawed_sprites:
-	.long	star_previous_positions_1
-star_previous_displayed_sprites:
-	.ifeq	OPT_ENABLE_DOUBLE_BUFFERING
-	.long	star_previous_positions_1
-	.else
-	.long	star_previous_positions_2	
-star_previous_positions_2:
-	.skip	NB_STARS*PREVIOUS_SPRITE_SIZE+4
-	.endif
 
 		
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
@@ -2150,8 +1918,6 @@ switch_screen_buffers:
 	lea		playfield_drawed_screen_ptr(pc),a0
 	lea		bob_previous_positions_1(pc),a2
 	lea		bob_previous_positions_2(pc),a3
-	lea		star_previous_positions_1(pc),a4
-	lea		star_previous_positions_2(pc),a6
 	move.l	bg_screen_data_1,a1
 	move.l	bg_screen_data_2,a5
 	* also switch previous state memory
@@ -2160,15 +1926,12 @@ switch_screen_buffers:
 	* screen data 1 is displayed screen
 	* set it to drawn screen
 	exg		a1,a5
-	exg		a4,a6
 	exg		a2,a3
 2:
 	move.l	a1,(a0)
 	move.l	a5,playfield_displayed_screen_ptr
 	move.l	a3,bob_previous_displayed_sprites
 	move.l	a2,bob_previous_drawed_sprites
-	move.l	a6,star_previous_displayed_sprites
-	move.l	a4,star_previous_drawed_sprites
 
 	jbra		set_static_bitplanes
 	.endif
@@ -2901,8 +2664,8 @@ set_static_bitplanes:
 osd_debug_hook:
 	rts
 	
-get_random:
-* > D0.L: pseudo random value
+osd_get_random:
+* > D0: pseudo random value (8 bits, all other bits zeroed)
 	movem.l	a0,-(a7)
 	lea	seed(pc),a0
 	move.l	(a0),d0
@@ -2912,7 +2675,8 @@ get_random:
 	rol.l #6,d0	
 	move.l	d0,(a0) 
 	movem.l	(a7)+,a0
-	*add.b	_custom+vposr,d0
+	add.b	_custom+vposr,d0
+	and.l	#0xFF,d0
 	rts
 seed:
 	dc.l	0x12345678
@@ -3266,11 +3030,10 @@ difficulty_level:
 		.long	0
 	.long	0
 dip_switches_1:
-	.byte	0
+		.byte	0
 dip_switches_2:
-	.byte	0
-star_period:
-	.byte	0
+		.byte	0
+
 
 mid_screen_interrupt_count:
 	.byte	0

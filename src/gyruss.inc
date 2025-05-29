@@ -19,7 +19,7 @@ next\@:
 	.endm
 
 
-OPT_NO_STARS = 1		| disable stars
+OPT_NO_STARS = 0		| disable stars
 OPT_RAW_COORDS = 0      | use Z80 computed coords, not 6809 computed ones
 
 	.endc

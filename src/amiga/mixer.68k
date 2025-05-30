@@ -52,6 +52,29 @@
 		.include "hardware/cia.i"
 	.endif
 	
+	.global	MixerGetBufferSize
+	.global	MixerSetup
+	.global	MixerInstallHandler
+	.global	MixerRemoveHandler
+	.global	MixerStart
+	.global	MixerStop
+	.global	MixerVolume
+	.global	MixerPlayFX
+	.global	MixerPlayChannelFX
+	.global	MixerStopFX
+	.global	MixerPlaySample
+	.global	MixerPlayChannelSample
+	.global	MixerGetSampleMinSize
+	.global	MixerGetChannelStatus
+	.global	MixerEnableCallback
+	.global	MixerDisableCallback
+	.global	MixerGetPluginsBufferSize
+	.global	MixerGetTotalChannelCount
+	.global	MixerSetPluginDeferredPtr
+	.global	MixerGetChannelBufferSize
+	.global	MixerResetCounter
+	.global	MixerGetCounter
+	
 * Constants
 mxcustombase		=	0xdff000				| mx prefix to keep one namespace
 	.ifeq	MIXER_CIA_TIMER-1
@@ -3446,7 +3469,7 @@ MixerCalcTicks:
 			moveq	#128-1,d7
 			
 			* Loop over all entries
-.lp			moveq	#0,d1
+.lp:			moveq	#0,d1
 			move.w	(a0)+,d1
 			add.l	d1,d0
 			dbra	d7,.lp
@@ -3464,7 +3487,7 @@ MixerCalcTicks:
 			moveq	#4-1,d7
 	
 			* Loop over the results
-.lp2		moveq	#-1,d1
+.lp2:		moveq	#-1,d1
 			move.w	(a0),d0
 			sub.w	d0,d1
 			move.w	d1,(a0)+
@@ -3558,28 +3581,7 @@ _MixerResetCounter			=	MixerResetCounter
 _MixerGetCounter			=	MixerGetCounter
 
 
-	.global	_MixerGetBufferSize
-	.global	_MixerSetup
-	.global	_MixerInstallHandler
-	.global	_MixerRemoveHandler
-	.global	_MixerStart
-	.global	_MixerStop
-	.global	_MixerVolume
-	.global	_MixerPlayFX
-	.global	_MixerPlayChannelFX
-	.global	_MixerStopFX
-	.global	_MixerPlaySample
-	.global	_MixerPlayChannelSample
-	.global	_MixerGetSampleMinSize
-	.global	_MixerGetChannelStatus
-	.global	_MixerEnableCallback
-	.global	_MixerDisableCallback
-	.global	_MixerGetPluginsBufferSize
-	.global	_MixerGetTotalChannelCount
-	.global	_MixerSetPluginDeferredPtr
-	.global	_MixerGetChannelBufferSize
-	.global	_MixerResetCounter
-	.global	_MixerGetCounter
+
 		.endif
 		
 	.endif

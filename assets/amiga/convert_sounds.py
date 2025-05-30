@@ -30,33 +30,9 @@ def convert():
     EMPTY_SND = "EMPTY_SND"
     sound_dict = {
 
-    "MEAT_PICKED_SND"               :{"index":0xA,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
-    "WOLF_FALLING_SND"               :{"index":0x2,"channel":1,"sample_rate":hq_sample_rate,"priority":40,"loops":True},
-    "WOLF_CRASHES_SND"               :{"index":0x3,"channel":1,"sample_rate":hq_sample_rate,"priority":40},
-    "WOLF_ATTACKS_SND"               :{"index":0x14,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
-    "WOLF_ATTACKS_2_SND"               :{"index":0xC,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
-    "EXTRA_SOUND_WOLF_HIT_SND"               :{"index":0x7,"channel":1,"sample_rate":hq_sample_rate,"priority":40},
-    "CREDIT_SND"               :{"index":0xB,"channel":0,"sample_rate":hq_sample_rate,"priority":20},
-    "BALLOON_POPPED_SND"       :{"index":0x5,"channel":3,"sample_rate":hq_sample_rate,"priority":20},
-    "WOLF_SHOT_DESTROYED_SND"       :{"index":0x6,"channel":3,"sample_rate":hq_sample_rate,"priority":20},
-    "BALLOON_BURST_SND"       :{"index":0x8,"channel":3,"sample_rate":hq_sample_rate,"priority":20},
-    "PLAYER_FALLING_SND"       :{"index":0x26,"channel":3,"sample_rate":hq_sample_rate,"priority":20},
-    "PLAYER_CRASHING_SND"       :{"index":0x10,"channel":3,"sample_rate":hq_sample_rate,"priority":20},
-    "BONUS_STAGE_JINGLE_SND"       :{"index":0x13,"channel":3,"sample_rate":hq_sample_rate,"priority":20},
-    "PIGLETS_JUMP_SND"       :{"index":0x12,"channel":3,"sample_rate":hq_sample_rate,"priority":20},
-    "SHOT_BOUNCES_SND"             :{"index":0x11,"channel":1,"sample_rate":hq_sample_rate,"priority":5},
-    "SHOOTING_ARROW_SND"             :{"index":0x1,"channel":3,"sample_rate":hq_sample_rate,"priority":5},
-    "INFLATING_BALLOON_SND"             :{"index":0x4,"channel":3,"sample_rate":hq_sample_rate,"priority":10},
-    "INTRO_TUNE_SND"                :{"index":0x27,"pattern":1,"volume":32,'loops':False,"ticks":360},
-    "GAME_INTRO_TUNE_SND"                :{"index":0x1C,"pattern":2,"volume":32,'loops':False,"ticks":520},
-    "LEVEL_1_TUNE_SND"                :{"index":0x1A,"pattern":0xB,"volume":32,'loops':True},
-    "LEVEL_2_TUNE_SND"                :{"index":0x1B,"pattern":0xF,"volume":32,'loops':True},
-    "LEVEL_1_COMPLETED_TUNE_SND"                :{"index":0x1E,"pattern":0x14,"volume":32,"loops":False,"ticks":480},
-    "LEVEL_2_COMPLETED_TUNE_SND"                :{"index":0x22,"pattern":0x7,"volume":32,"loops":False,"ticks":520},
-    "LEVEL_2_COMPLETED_2_TUNE_SND"                :{"index":0x23,"pattern":0x1B,"volume":32,"loops":False,"ticks":500},  # suzannah
-    "HIGH_SCORE_ENTRY_TUNE_SND"                :{"index":0x29,"pattern":0x1F,"volume":32,"loops":True},
-    "GAME_OVER_TUNE_SND"                :{"index":0x1D,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
-    "BONUS_STAGE_TUNE_SND"                :{"index":0x28,"pattern":0x15,"volume":32,'loops':True},
+    "CREDIT_SND"               :{"index":0x1,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+
+#    "GAME_OVER_TUNE_SND"                :{"index":0x1D,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
 
 
     }
@@ -91,21 +67,16 @@ def convert():
     snd_header = rf"""
     # sound tables
     #
-    # the "sound_table" table has 8 bytes per entry
-    # first word: 0: no entry, 1: sample, 2: pattern from music module
-    # second word: 0 except for music module: pattern number
-    # longword: sample data pointer if sample, 0 if no entry and
-    # 2 words: 0/1 noloop/loop followed by duration in ticks
     #
-    FXFREQBASE = 3579564
 
-        .macro    SOUND_ENTRY    sound_name,size,channel,soundfreq,volume,priority
+        .macro    SOUND_ENTRY    sound_name,size,priority
     \sound_name\()_sound:
+        .long   \size
         .long    \sound_name\()_raw
-        .word   \size
-        .word   FXFREQBASE/\soundfreq,\volume
-        .byte    \channel
-        .byte    \priority
+        .word   0           | loop
+        .word    \priority
+        .long   0           | loop offset
+        .long   0           | plugin ptr
         .endm
 
     """
@@ -176,7 +147,7 @@ def convert():
                 if amp_ratio > 1:
                     print(f"{wav}: volume peaked {amp_ratio}")
                     amp_ratio = 1
-                sound_table[sound_index] = "    SOUND_ENTRY {},{},{},{},{},{}\n".format(wav,len(signed_data)//2,channel,used_sampling_rate,int(64*amp_ratio),used_priority)
+                sound_table[sound_index] = "    SOUND_ENTRY {},{},{}\n".format(wav,len(signed_data)//2,used_priority)
                 sound_table_set_1[sound_index] = f"\t.word\t1,{int(details.get('loops',0))}\n\t.long\t{wav}_sound"
 
 ##                if amp_ratio > 0:
@@ -209,11 +180,11 @@ def convert():
 
 
         # make sure next section will be aligned
-        with open(os.path.join(sound_dir,f"{gamename}_conv.mod"),"rb") as f:
-            contents = f.read()
-
-        fw.write("{}:".format(music_module_label))
-        write_asm(contents,fw)
+##        with open(os.path.join(sound_dir,f"{gamename}_conv.mod"),"rb") as f:
+##            contents = f.read()
+##
+##        fw.write("{}:".format(music_module_label))
+##        write_asm(contents,fw)
         fw.write("\t.align\t8\n")
 
 

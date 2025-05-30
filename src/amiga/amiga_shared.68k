@@ -13,6 +13,7 @@
 .include "lvo/dos_lvos.i"
 .include "gyruss.inc"
 .include "sounds.inc"
+.include "mixer.i"
 
 SCORE_FILE_SIZE = 3+30*3
 
@@ -191,6 +192,16 @@ force_sound_stop:
 * tunes sounds are: sound index followed by 0x15,0x16,0x17 (that we ignore!)
 osd_sound_start:
 	movem.l	d0/d1/a0/a6,-(a7)
+	
+	* TEMP
+	jbsr	osd_break
+	moveq	#DMAF_AUD3,d0				
+										
+	lea.l	credit_sound,a0			
+	jbsr		MixerPlayFX			
+	movem.l	(a7)+,d0/d1/a0/a6
+	rts
+	
 	lea		_custom,a6
 	and.w	#0xFF,d0
 	jne		0f
@@ -258,8 +269,8 @@ osd_sound_start:
 	bsr		force_sound_stop
     lea _custom,a6
  	movem.l	d0/a0,-(a7)
-	lea	pooyan_tunes,a0
-
+	*lea	pooyan_tunes,a0
+	illegal
 	
 	move.b	d1,music_track_start_number
 	move.w	d1,d0

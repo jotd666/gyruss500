@@ -3,17 +3,18 @@
   some 6809 code is explosion specific I seem to remember
 - better optimization: remove the last clear of sprite buffer,
   use a counter instead
+- clear if blitter busy use cpu clear like dragonninja
+- clear bitplane note the zero bitplanes to avoid clearing the bitplanes
+- zooming into Saturn, Earth, etc... enable restore (Neptune 860A: no need as planet is 100% a sprite)
+  for other planets it doesn't seem to work
+- proper start level cheat  
+
+- mixer routine to integrate: in progress
+
 - after a good game (level 6+?...) next game ships attack wave
-  is completely nuts. Protection? Z80 code? 6809 code? compare memory
+  is different. Protection? Z80 code? 6809 code? compare memory
   when starting game, see which RAM values are changed.
-  losing at level 5 => game ok.
-  
-- profile cpu with MAME: trace without loop while playing, see where the cpu
-  is spending a lot of time: apply on galaga too!!
-
-
-
-- mixer routine to integrate
+  losing at level 5 => game ok. 8 => different
 
 - highscore save
 - still missing sprites, track red flashes

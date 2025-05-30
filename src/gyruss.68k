@@ -9737,6 +9737,7 @@ l_5c1f:
 	rts                                    	| [$5c37: ret]
 
 play_sound_5c38:
+	jbsr	osd_sound_start
 	                       	| [$5c38: ld   ($C100),a]
 	                       	| [$5c3b: ld   ($C080),a]
 	rts                                    	| [$5c3e: ret]

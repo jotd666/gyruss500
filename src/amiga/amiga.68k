@@ -6,13 +6,14 @@
 
 
 
-.include "../src/gyruss.inc"
-.include "../src/data.inc"
-.include "hardware/custom.i"
-.include "exec/types.i"
-.include "lvo/exec_lvos.i"
-.include "lvo/dos_lvos.i"
-.include "lvo/graphics_lvos.i"
+	.include "../src/gyruss.inc"
+	.include "../src/data.inc"
+	.include "hardware/custom.i"
+	.include "exec/types2.i"
+	.include "lvo/exec_lvos.i"
+	.include "lvo/dos_lvos.i"
+	.include "lvo/graphics_lvos.i"
+	.include "mixer.i"
 
 AttnFlags = 0x128
 AFB_68010 = 0
@@ -88,7 +89,7 @@ NB_TARGET_SPRITES = 0x200/4  | 48
 NB_TARGET_SPRITES = 0x200/4
 	.endif
 	
-	STRUCTURE	TARGET_SPRITE
+	STRUCTURE	TARGET_SPRITE,0
 	UBYTE	TARGET_SPRITE_Y
 	UBYTE	TARGET_SPRITE_CODE1
 	UBYTE	TARGET_SPRITE_CODE2
@@ -725,6 +726,7 @@ demo_game:
 	add.l	#0x4000,d0
 	move.l	d0,ram_start_8000		| Z80 memory (some shared with 6809)
 	.endif
+		
 	GET_M6809_MEMORY_BLOCKS
 	jbsr		gyruss_sub_reset				| initialize the subcpu memory
 	* direct page won't change, let's store it now for irq
@@ -1269,7 +1271,7 @@ is_forced_restore:
 	* when text is showing, so not a problem to blit
 	* more stuff)
 	
-	cmp.b	(0x60A,a6),d0
+	cmp.b	(0x60A,a6),d0		| planet name
 	jne		1f
 	cmp.b	(0x614,a6),d0
 	jne		1f
@@ -2199,6 +2201,18 @@ platform_init:
 	move.l	system_vbr(pc),a0
 	moveq	#1,d0	| PAL
 	jsr		_mt_install_cia
+
+	* Setup the mixer
+	move.w	#MIX_PAL,d0					| Set video system to PAL
+	lea.l	mixer_buffer,a0				| Fetch Chip RAM buffer
+	jbsr		MixerSetup				| Set up the mixer
+
+	* Start the mixer interrupt handler
+	move.l	system_vbr(pc),a0			| Set VBR to 0
+	jbsr		MixerInstallHandler			| Install the mixer IRQ handler
+
+	* Start the mixer
+	jbsr		MixerStart
 
 	.ifne	OPT_ENABLE_PROFILING
 	* init profiling if enabled
@@ -3151,6 +3165,7 @@ queued_sprite_buffer:
 queued_sprite_pointer:
 	.long	0
 
+	.global 	credit_sound
 	.include	"sound_entries.68k"
 
 current_column_scroll_values:
@@ -3344,6 +3359,9 @@ intreq_block_game:
 	
 		.section .bsschip
 		
+
+mixer_buffer:
+	.skip 	mixer_buffer_size
 	
 	
 background_restore_buffer:

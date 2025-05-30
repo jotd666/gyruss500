@@ -102,10 +102,10 @@
 *   MIX_PAL .ifeq	running on a PAL system, or MIX_NTSC when running on a NTSC 
 *   system.
 *
-*   .ifeq	the video system is unknown, EQU D0 to MIX_PAL.
-*
-*	.ifeq	MIXER_ENABLE_PLUGINS is EQU to one, A1, A2 and D1 also need to be set.
-*	.ifeq	not, they can be omitted.
+*   if the video system is unknown, EQU D0 to MIX_PAL.
+*   
+*	if MIXER_ENABLE_PLUGINS is EQU to one, A1, A2 and D1 also need to be set.
+*	if not, they can be omitted.
 *
 *	A1 must point to a block of memory (any RAM type) at least
 *	mixer_plugin_buffer_size bytes in size. D1 must be EQU to the maximum size

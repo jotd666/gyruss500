@@ -65,7 +65,7 @@ MIXER_HQ_MODE			=	0
 *-----------------------------------------------------------------------------
 * Mixer output configuration
 *-----------------------------------------------------------------------------
-mixer_output_channels	=	DMAF_AUD2
+mixer_output_channels	=	DMAF_AUD3
 									* valid values are DMAF_AUD0/1/2/3 or
 									* any bitwise combination of these with at
 									* least one channel set.

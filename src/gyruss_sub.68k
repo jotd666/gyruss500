@@ -927,19 +927,14 @@ l_f4a3:
 	GET_X_ADDRESS	0                        	| [$f4b5: ldd    ,x++]
 
 
-	move.l	(a0),d6
-	
-
-	
+	move.l	(a0),d0
 	addq.w	#4,d2
 	                                 	
 	GET_U_ADDRESS	0                        	| [$f4b7: std    ,u++]
 	addq.w	#4,d4
-	move.l	d6,(a0)                	| [...]
+	move.l	d0,(a0)                	| [...]
 	
-	exg		d6,d0
 	jbsr	osd_queue_sprite
-	exg		d6,d0
 
 
 								| [$f4b9: ldd    ,x]
@@ -1021,16 +1016,14 @@ l_f4fc:
 	add.w	#shared_memory_6000+0x200,d1                       	| [$f509: addd   #$6200]
 	move.w	d1,d2                           	| [$f50c: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f50e: ldd    ,x++]
-	move.l	(a0),d6
+	move.l	(a0),d0
 	addq.w	#4,d2
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
 	addq.w	#4,d4
 	
-	exg		d6,d0
 	jbsr	osd_queue_sprite
-	exg		d6,d0
 	
-	move.l	d6,(a0)                	| [...]
+	move.l	d0,(a0)                	| [...]
 								| [$f512: ldd    ,x]
 							| [$f512: ldd    ,x]
 								| [$f514: std    ,u++]
@@ -1380,31 +1373,24 @@ l_f6b2:
 	add.w	#shared_memory_6000,d1           	| [$f6bf: addd   #shared_memory_6000]
 	move.w	d1,d2                           	| [$f6c2: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f6c4: ldd    ,x++]
-	addq.w	#2,d2
-	LOAD_D                                 	| [$f6c4: ldd    ,x++]
+	addq.w	#4,d2
+	move.l	(a0),d0                                 	| [$f6c4: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f6c6: std    ,u++]
-	addq.w	#2,d4
-	* copy first part of sprite data
-	move.w	d1,(a0)                	| [...]
-	GET_X_ADDRESS	0                        	| [$f6c8: ldd    ,x]
-	LOAD_D                                 	| [$f6c8: ldd    ,x]
-	GET_U_ADDRESS	0                        	| [$f6ca: std    ,u++]
-	addq.w	#2,d4
-	* copy second part of sprite data
-	move.w	d1,(a0)                	| [...]
-	
-	move.l	d0,-(a7)
-	move.l	(-2,a0),d0
+	addq.w	#4,d4
+	* copy sprite data in one go (optimized)
+	move.l	d0,(a0)                	| [...]
+									| [$f6c8: ldd    ,x]
+								| [$f6c8: ldd    ,x]
+									| [$f6ca: std    ,u++]
 	jbsr	osd_queue_sprite
-	move.l	(a7)+,d0
 	
 	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f6cc: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f6ce: dec    $09]
-	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a                    	| [$f6d0: dec    $0a]
-	subq.b	#1,(a0)                         	| [...]
-	bne	l_f6ab                             	| [$f6d2: bne    $f6ab]
+	subq.b	#1,(a0)+                         	| [...]
+	subq.b	#1,(a0)	                    	| [$f6d0: dec    number_of_sprites_to_update_total_0a]
+	                         	| [...]
+	jne	l_f6ab                             	| [$f6d2: bne    $f6ab]
 l_f6d4:
 	rts                                    	| [$f6d4: rts]
 
@@ -1469,29 +1455,28 @@ l_f70b:
 	add.w	#shared_memory_6000+0x200,d1        | [$f718: addd   #$6200]
 	move.w	d1,d2                           	| [$f71b: tfr    d,x]
 	GET_X_ADDRESS	0                        	| [$f71d: ldd    ,x++]
-	addq.w	#2,d2
-	LOAD_D                                 	| [$f71d: ldd    ,x++]
+	addq.w	#4,d2
+	move.l	(a0),d6                                 	| [$f71d: ldd    ,x++]
 	GET_U_ADDRESS	0                        	| [$f71f: std    ,u++]
-	addq.w	#2,d4
-	* copy first part of sprite data
-	move.w	d1,(a0)                	| [...]
-	GET_X_ADDRESS	0                        	| [$f721: ldd    ,x]
-	LOAD_D                                 	| [$f721: ldd    ,x]
-	GET_U_ADDRESS	0                        	| [$f723: std    ,u++]
-	addq.w	#2,d4
-	* copy second part of sprite data
-	move.w	d1,(a0)                	| [...]
+	addq.w	#4,d4
+	* copy both parts of sprite data (optim)
+	move.l	d6,(a0)                	| [...]
+						| [$f721: ldd    ,x]
+						| [$f721: ldd    ,x]
+						| [$f723: std    ,u++]
+					
+					
+					
 	
-	move.l	d0,-(a7)
-	move.l	(-2,a0),d0
+	exg		d0,d6
 	jbsr	osd_queue_sprite
-	move.l	(a7)+,d0
+	exg		d0,d6
 	
 	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f725: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f727: dec    $09]
-	subq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	number_of_sprites_to_update_total_0a     | [$f729: dec    $0a]
+	subq.b	#1,(a0)+                         	| [...]
+							| [$f729: dec    number_of_sprites_to_update_total_0a]
 	subq.b	#1,(a0)                         	| [...]
 	bne	l_f704                             	| [$f72b: bne    $f704]
 l_f72d:

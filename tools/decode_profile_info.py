@@ -20,7 +20,7 @@ def get_trace(tn):
 # generated using log:     trace galaga.tr
 # note: sub cpu log has a bug: trace won't consider tracelog instruction if "sub" is specified. So instead, break into subcpu
 # then use trace on current cpu
-lst = []
+
 print("reading MAME trace file...")
 
 #pcs = get_trace("maincpu.tr")

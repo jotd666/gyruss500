@@ -82,13 +82,14 @@ queue_sprites_flag_6702 = 0x6702
 beamy_value_6710 = 0x6710    | just written to, no read by any cpu
 update_sequence_control_flag_67fc = 0x67fc
 update_sequence_control_flag_67fd = 0x67fd
-pointer_4200 = 0x4200
+sprite_index_pointer_4200 = 0x4200
 pointer_4211 = 0x4211
 
 * page 42 offsets for work variables
+sprite_index_pointer_4200_lsb_01 = 0x01
 number_of_sprites_to_update_09 = 0x09
 number_of_sprites_to_update_total_0a = 0x0a
-
+unknown_0b = 0x0b
 
 * tell 6809 to perform more or less operations:
 * 0xFF: don't do anything (state not reached in the game)
@@ -184,7 +185,8 @@ l_f09e:
 									| [$f0bf: lbeq   $f15f]
 					| [$f0c3: lda    $67ff]
 			
-	
+* sub draw just copies the 48 selected sprites for that frame
+* into the 0x4040 hardware buffer (length: 0xC0)	
 											| [...]
 gyruss_sub_draw:
 	jbsr	gyruss_sub_cpu_init
@@ -199,8 +201,6 @@ l_f0ca:
 	jne	frame_odd_f1a3                             	| [$f0d2: lbne   $f1a3]
 	* frame even
 
-	move.b	#1,0x101
-	
 	jbsr	try_to_update_all_sprites_even_f4e4      	| [$f0d6: jsr    $f4e4]
 	
 	GET_ADDRESS	0x6400                     	| [$f0d9: clr    $6400]
@@ -218,6 +218,7 @@ l_f0ca:
 
 gyruss_sub_queue:
 	jbsr	gyruss_sub_cpu_init
+	
 	GET_ADDRESS	frame_odd_or_even_6700
 	tst.b	(a0)
 	jne		sub_queue_odd	
@@ -237,25 +238,25 @@ l_f0ef:
 	jbsr	ship_coordinate_transform_f566          | [$f0f9: jsr    $f566]
 	* here beamy = 31 on the arcade machine
 	jbsr	init_current_ybeam
-	jbsr	race_beam_update_sprites_f6ee           | [$f0fc: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f0fc: jsr    $f6ee]
 	jbsr	enemies_coordinate_transform_f626        	| [$f0ff: jsr    $f626]
-	jbsr	race_beam_update_sprites_f6ee           | [$f102: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f102: jsr    $f6ee]
 	jbsr	enemies_coordinate_transform_f589        	| [$f105: jsr    $f589]
-	jbsr	race_beam_update_sprites_f6ee           | [$f108: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f108: jsr    $f6ee]
 	jbsr	coordinate_transform_one_f5e7           | [$f10b: jsr    $f5e7]
-	jbsr	race_beam_update_sprites_f6ee           | [$f10e: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f10e: jsr    $f6ee]
 	jbsr	coordinate_transform_two_f5f3           | [$f111: jsr    $f5f3]
-	jbsr	race_beam_update_sprites_f6ee           | [$f114: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f114: jsr    $f6ee]
 	jbsr	coordinate_transform_three_f5ff         | [$f117: jsr    $f5ff]
-	jbsr	race_beam_update_sprites_f6ee           | [$f11a: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f11a: jsr    $f6ee]
 	jbsr	coordinate_transform_four_f60b          | [$f11d: jsr    $f60b]
-	jbsr	race_beam_update_sprites_f6ee           | [$f120: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f120: jsr    $f6ee]
 	jbsr	coordinate_transform_eight_f617         | [$f123: jsr    $f617]  different from other update sequence
-	jbsr	race_beam_update_sprites_f6ee           | [$f126: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f126: jsr    $f6ee]
 	jbsr	coordinate_transform_six_f636           | [$f129: jsr    $f636]
-	jbsr	race_beam_update_sprites_f6ee           | [$f12c: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f12c: jsr    $f6ee]
 	jbsr	coordinate_transform_seven_f645         | [$f12f: jsr    $f645]
-	jbsr	race_beam_update_sprites_f6ee           | [$f132: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee           | [$f132: jsr    $f6ee]
 
 
 	
@@ -300,25 +301,25 @@ get_out_immediately_f15f:
 
 alternate_update_sequence_f165:
 	jbsr	ship_coordinate_transform_f566                            	| [$f165: jsr    $f566]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f168: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f168: jsr    $f6ee]
 	jbsr	coordinate_transform_zero_f660                            	| [$f16b: jsr    $f660]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f16e: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f16e: jsr    $f6ee]
 	jbsr	enemies_coordinate_transform_f589                            	| [$f171: jsr    $f589]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f174: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f174: jsr    $f6ee]
 	jbsr	coordinate_transform_one_f5e7                            	| [$f177: jsr    $f5e7]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f17a: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f17a: jsr    $f6ee]
 	jbsr	coordinate_transform_two_f5f3                            	| [$f17d: jsr    $f5f3]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f180: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f180: jsr    $f6ee]
 	jbsr	coordinate_transform_three_f5ff                            	| [$f183: jsr    $f5ff]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f186: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f186: jsr    $f6ee]
 	jbsr	coordinate_transform_four_f60b                            	| [$f189: jsr    $f60b]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f18c: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f18c: jsr    $f6ee]
 	jbsr	coordinate_transform_five_f651                            	| [$f18f: jsr    $f651]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f192: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f192: jsr    $f6ee]
 	jbsr	coordinate_transform_six_f636                            	| [$f195: jsr    $f636]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f198: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f198: jsr    $f6ee]
 	jbsr	coordinate_transform_seven_f645                            	| [$f19b: jsr    $f645]
-	jbsr	race_beam_update_sprites_f6ee                            	| [$f19e: jsr    $f6ee]
+	jbsr	update_multiplexed_sprites_f6ee                            	| [$f19e: jsr    $f6ee]
 	bra	continue_f135                             	| [$f1a1: bra    $f135]
 
 frame_odd_f1a3:
@@ -366,27 +367,27 @@ l_f1bc:
 	jbsr	ship_coordinate_transform_f566                            	| [$f1c6: jsr    $f566]
 	* here beamy = 31 on the arcade machine
 	jbsr	init_current_ybeam
-	jbsr	race_beam_update_sprites_f695                            	| [$f1c9: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1c9: jsr    $f695]
 	* also used for player radial shots
 	jbsr	enemies_coordinate_transform_f626                            	| [$f1cc: jsr    $f626]
-	jbsr	race_beam_update_sprites_f695                            	| [$f1cf: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1cf: jsr    $f695]
 	jbsr	enemies_coordinate_transform_f589                            	| [$f1d2: jsr    $f589]
-	jbsr	race_beam_update_sprites_f695                            	| [$f1d5: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1d5: jsr    $f695]
 	jbsr	coordinate_transform_one_f5e7                            	| [$f1d8: jsr    $f5e7]
-	jbsr	race_beam_update_sprites_f695                            	| [$f1db: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1db: jsr    $f695]
 	jbsr	coordinate_transform_two_f5f3                            	| [$f1de: jsr    $f5f3]
-	jbsr	race_beam_update_sprites_f695                            	| [$f1e1: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1e1: jsr    $f695]
 	jbsr	coordinate_transform_three_f5ff                            	| [$f1e4: jsr    $f5ff]
-	jbsr	race_beam_update_sprites_f695                            	| [$f1e7: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1e7: jsr    $f695]
 	jbsr	coordinate_transform_four_f60b                            	| [$f1ea: jsr    $f60b]
-	jbsr	race_beam_update_sprites_f695                            	| [$f1ed: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1ed: jsr    $f695]
 	jbsr	coordinate_transform_eight_f617                            	| [$f1f0: jsr    $f617]
-	jbsr	race_beam_update_sprites_f695                            	| [$f1f3: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1f3: jsr    $f695]
 	jbsr	coordinate_transform_six_f636                            	| [$f1f6: jsr    $f636]
-	jbsr	race_beam_update_sprites_f695                            	| [$f1f9: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1f9: jsr    $f695]
 	jbsr	coordinate_transform_seven_f645                            	| [$f1fc: jsr    $f645]
 	* here beamy = 169 on the arcade machine
-	jbsr	race_beam_update_sprites_f695                            	| [$f1ff: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f1ff: jsr    $f695]
 	* here beamy = 176 on the arcade machine
 continue_f202:
 	move.b	#0x29,d0                        	| [$f202: lda    #$29]
@@ -429,25 +430,25 @@ l_f232:
 	jbsr	ship_coordinate_transform_f566                            	| [$f232: jsr    $f566]
 	* here beamy = 31 on the arcade machine
 	jbsr	init_current_ybeam
-	jbsr	race_beam_update_sprites_f695                            	| [$f235: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f235: jsr    $f695]
 	jbsr	coordinate_transform_zero_f660                            	| [$f238: jsr    $f660]
-	jbsr	race_beam_update_sprites_f695                            	| [$f23b: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f23b: jsr    $f695]
 	jbsr	enemies_coordinate_transform_f589                            	| [$f23e: jsr    $f589]
-	jbsr	race_beam_update_sprites_f695                            	| [$f241: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f241: jsr    $f695]
 	jbsr	coordinate_transform_one_f5e7                            	| [$f244: jsr    $f5e7]
-	jbsr	race_beam_update_sprites_f695                            	| [$f247: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f247: jsr    $f695]
 	jbsr	coordinate_transform_two_f5f3                            	| [$f24a: jsr    $f5f3]
-	jbsr	race_beam_update_sprites_f695                            	| [$f24d: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f24d: jsr    $f695]
 	jbsr	coordinate_transform_three_f5ff                            	| [$f250: jsr    $f5ff]
-	jbsr	race_beam_update_sprites_f695                            	| [$f253: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f253: jsr    $f695]
 	jbsr	coordinate_transform_four_f60b                            	| [$f256: jsr    $f60b]
-	jbsr	race_beam_update_sprites_f695                            	| [$f259: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f259: jsr    $f695]
 	jbsr	coordinate_transform_five_f651                            	| [$f25c: jsr    $f651]
-	jbsr	race_beam_update_sprites_f695                            	| [$f25f: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f25f: jsr    $f695]
 	jbsr	coordinate_transform_six_f636                            	| [$f262: jsr    $f636]
-	jbsr	race_beam_update_sprites_f695                            	| [$f265: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f265: jsr    $f695]
 	jbsr	coordinate_transform_seven_f645                            	| [$f268: jsr    $f645]
-	jbsr	race_beam_update_sprites_f695                            	| [$f26b: jsr    $f695]
+	jbsr	update_multiplexed_sprites_f695                            	| [$f26b: jsr    $f695]
 	* here beamy = 186 on the arcade machine
 	jra	continue_f202                             	| [$f26e: bra    $f202]
 
@@ -898,13 +899,13 @@ try_to_update_all_sprites_odd_f48b:
 	GET_DP_ADDRESS	0x00                    	| [$f492: stx    $00]
 	move.w	d2,(a0)                         	| [...]		updates $4200 pointer
 	move.w	#sprite_ram_4040,d4             	| [$f494: ldu    #sprite_ram_4040]
-	GET_DP_ADDRESS	0x0b                    	| [$f497: clr    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f497: clr    $0b]
 	clr.b	(a0)                         		| [...]
 												| [$f499: lda    #$30] all 48 sprites
 												| [$f49b: sta    $0a]
 	move.b	#0x30,-(a0)                         	| [...]
 l_f49d:
-	GET_DP_ADDRESS	0x0b                    	| [$f49d: lda    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f49d: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f49f: cmpa   #$04]
 	jcc	hide_rest_of_sprites_f4c6                             	| [$f4a1: jcc    $f4c6]
@@ -913,7 +914,7 @@ l_f4a3:
 	move.b	(a0),d0                         	| [...]
 	beq	l_f4d0                             	| [$f4a5: beq    $f4d0]
 	* gives the sprite number to update, driven by shared memory in 65xx
-	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f4a7: ldb    [$4200]]
+	GET_INDIRECT_ADDRESS	sprite_index_pointer_4200            	| [$f4a7: ldb    [$4200]]
 	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
 	add.w	d1,d1                  	| [$f4ab: clra]
@@ -931,17 +932,21 @@ l_f4a3:
 
 	
 	addq.w	#4,d2
-	                                 	| [$f4b5: ldd    ,x++]
+	                                 	
 	GET_U_ADDRESS	0                        	| [$f4b7: std    ,u++]
 	addq.w	#4,d4
 	move.l	d6,(a0)                	| [...]
-	                        	| [$f4b9: ldd    ,x]
+	
+	exg		d6,d0
+	jbsr	osd_queue_sprite
+	exg		d6,d0
+
 
 								| [$f4b9: ldd    ,x]
 									| [$f4bb: std    ,u++]
 				
 						| [...]
-	GET_DP_ADDRESS	0x01                    	| [$f4bd: inc    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f4bd: inc    $01]
 	addq.b	#1,(a0)                         	| [...]  increase 4201 (lsb of pointer on 64xx)
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4bf: dec    $09]
 	subq.b	#1,(a0)+                         	| [...]
@@ -962,19 +967,19 @@ l_f4c7:
 	rts                                    	| [$f4cf: rts]
 
 l_f4d0:
-	GET_DP_ADDRESS	0x01                    	| [$f4d0: lda    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f4d0: lda    $01]
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f4d2: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f4d4: suba   #$40]
 										| [$f4d6: sta    $01]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f4d8: lda    [$4200]]
+	GET_INDIRECT_ADDRESS	sprite_index_pointer_4200            	| [$f4d8: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4dc: sta    $09]
 	move.b	d0,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x01                    	| [$f4de: inc    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f4de: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x0b                    	| [$f4e0: inc    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f4e0: inc    $0b]
 	addq.b	#1,(a0)                         	| [...]
 	bra	l_f49d                             	| [$f4e2: bra    $f49d]
 
@@ -990,13 +995,13 @@ try_to_update_all_sprites_even_f4e4:
 	GET_DP_ADDRESS	0x00                    	| [$f4eb: stx    $00]
 	move.w	d2,(a0)                         	| [...] store $65C1 in $4200
 	move.w	#sprite_ram_4040,d4             	| [$f4ed: ldu    #sprite_ram_4040]
-	GET_DP_ADDRESS	0x0b                    	| [$f4f0: clr    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f4f0: clr    $0b]
 	move.b	#0,(a0)                         	| [...]
 												| [$f4f2: lda    #$30] 48 (all) max number of sprites (not always reached)
-	                    	| [$f4f4: sta    number_of_sprites_to_update_total_0a]
-	move.b	#0x30,-(a0)                         	| [...]
+	                    	
+	move.b	#0x30,-(a0)            | [$f4f4: sta    number_of_sprites_to_update_total_0a]
 l_f4f6:
-	GET_DP_ADDRESS	0x0b                    	| [$f4f6: lda    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f4f6: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f4f8: cmpa   #$04]
 	jcc	hide_rest_of_sprites_f51f                             	| [$f4fa: jcc    $f51f]
@@ -1004,7 +1009,8 @@ l_f4fc:
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4fc: lda    $09]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f529                             	| [$f4fe: beq    $f529]
-	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f500: ldb    [$4200]]
+	* compute offset for source buffer
+	GET_INDIRECT_ADDRESS	sprite_index_pointer_4200            	| [$f500: ldb    [$4200]]
 	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
 	add.w	d1,d1                            	| [$f504: clra]
@@ -1019,17 +1025,22 @@ l_f4fc:
 	addq.w	#4,d2
 	GET_U_ADDRESS	0                        	| [$f510: std    ,u++]
 	addq.w	#4,d4
+	
+	exg		d6,d0
+	jbsr	osd_queue_sprite
+	exg		d6,d0
+	
 	move.l	d6,(a0)                	| [...]
 								| [$f512: ldd    ,x]
 							| [$f512: ldd    ,x]
 								| [$f514: std    ,u++]
 			
-					| [...]
-	GET_DP_ADDRESS	0x01                    	| [$f516: inc    $01]
+	* increase pointer on sprite indexes (sprite_index_pointer_4200)
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f516: inc    $01]
 	addq.b	#1,(a0)                         	| [...]											| [$f51a: dec    $0a]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f518: dec    $09]
 	subq.b	#1,(a0)+                         	| [...]
-	subq.b	#1,(a0)                         	| [...]
+	subq.b	#1,(a0)                         	| [...] 420A total number of hardware sprites
 	bne	l_f4fc                             	| [$f51c: bne    $f4fc]
 	rts                                    	| [$f51e: rts]
 
@@ -1045,24 +1056,25 @@ l_f520:
 	rts                                    	| [$f528: rts]
 
 l_f529:
-	GET_DP_ADDRESS	0x01                    	| [$f529: lda    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f529: lda    $01]
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f52b: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f52d: suba   #$40]
-												| [$f52f: sta    $01]
-	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f531: lda    [$4200]]
+	move.b	d0,(a0)								| [$f52f: sta    $01]
+	GET_INDIRECT_ADDRESS	sprite_index_pointer_4200            	| [$f531: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f535: sta    $09]
 	move.b	d0,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x01                    	| [$f537: inc    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f537: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x0b                    	| [$f539: inc    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f539: inc    $0b]
 	addq.b	#1,(a0)                         	| [...]
-	bra	l_f4f6                             	| [$f53b: bra    $f4f6]
+	jra	l_f4f6                             	| [$f53b: bra    $f4f6]
 
 	* copy sprites from shared memory with real sprite memory, no changes
+	* no multiplexing, no coordinate transformation
 	* not called anymore
+	* (only active at bootup, so useless)
 *sync_sprites_no_change_f54a:
 *	move.w	#shared_memory_6000,d4          	| [$f54a: ldu    #shared_memory_6000]
 *	move.w	#sprite_ram_4040,d3             	| [$f54d: ldy    #sprite_ram_4040]
@@ -1115,13 +1127,13 @@ enemies_coordinate_transform_f589:
 	move.b	(a0),d0                         	| [...]
 	bne	l_f59e                             	| [$f58c: bne    $f59e]
 	GET_DP_ADDRESS	0x0f                    	| [$f58e: ldu    $0f]
+	move.l	a0,-(a7)				| save address for later
 	MOVE_W_A0_IN_D4                  	| [...]
 	sub.w	#0x0128,d4                       	| [$f590: leau   -$0128,u]
 	move.b	#0x0a,d0                        	| [$f594: lda    #$0a]
-	GET_DP_ADDRESS	0x0c                    	| [$f596: sta    $0c]
-	move.b	d0,(a0)                         	| [...]
+	move.b	d0,(0xC-0xF,a0)                    	| [$f596: sta    $0c]
 	jbsr	l_f2dc                            	| [$f598: jsr    $f2dc]
-	GET_DP_ADDRESS	0x0f                    	| [$f59b: stu    $0f]
+	move.l	(a7)+,a0	                    	| [$f59b: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f59d: rts]
 
@@ -1130,7 +1142,7 @@ l_f59e:
 	MOVE_W_A0_IN_D4                  	| [...]
 	sub.w	#0x0128,d4                       	| [$f5a0: leau   -$0128,u]
 	move.b	#0x01,d0                        	| [$f5a4: lda    #$01]
-	GET_DP_ADDRESS	0x0c                    	| [$f5a6: sta    $0c]
+	lea		(0xC-0xF,a0),a0                    	| [$f5a6: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	move.l	a0,-(a7)
 	jbsr	l_f2dc                            	| [$f5a8: jsr    $f2dc]
@@ -1328,11 +1340,11 @@ l_f670:
 	bne	l_f670                             	| [$f692: bne    $f670]
 	rts                                    	| [$f694: rts]
 
-race_beam_update_sprites_f695:
+update_multiplexed_sprites_f695:
 	jbsr	0f
 	jra		next_current_ybeam
 0:
-	GET_DP_ADDRESS	0x0b                    	| [$f695: lda    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f695: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f697: cmpa   #$04]
 	jcc	l_f6d4                             	| [$f699: jcc    $f6d4]
@@ -1356,7 +1368,7 @@ l_f6b2:
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f6b2: lda    $09]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f6d5                             	| [$f6b4: beq    $f6d5]
-	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f6b6: ldb    [$4200]] 0x6xxx
+	GET_INDIRECT_ADDRESS	sprite_index_pointer_4200            	| [$f6b6: ldb    [$4200]] 0x6xxx
 	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
 	add.w	d1,d1                            	| [$f6ba: clra]
@@ -1380,7 +1392,13 @@ l_f6b2:
 	addq.w	#2,d4
 	* copy second part of sprite data
 	move.w	d1,(a0)                	| [...]
-	GET_DP_ADDRESS	0x01                    	| [$f6cc: inc    $01]
+	
+	move.l	d0,-(a7)
+	move.l	(-2,a0),d0
+	jbsr	osd_queue_sprite
+	move.l	(a7)+,d0
+	
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f6cc: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f6ce: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
@@ -1391,19 +1409,19 @@ l_f6d4:
 	rts                                    	| [$f6d4: rts]
 
 l_f6d5:
-	GET_DP_ADDRESS	0x01                    	| [$f6d5: lda    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f6d5: lda    $01]
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f6d7: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f6d9: suba   #$40]
-	GET_DP_ADDRESS	0x01                    	| [$f6db: sta    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f6db: sta    $01]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f6dd: lda    [$4200]]
+	GET_INDIRECT_ADDRESS	sprite_index_pointer_4200            	| [$f6dd: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f6e1: sta    $09]
 	move.b	d0,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x01                    	| [$f6e3: inc    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f6e3: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x0b                    	| [$f6e5: inc    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f6e5: inc    $0b]
 	addq.b	#1,(a0)                         	| [...]
 				                    	| [$f6e7: lda    $0b]
 	move.b	(a0),d0                         	| [...]
@@ -1411,11 +1429,11 @@ l_f6d5:
 	jcc	l_f6b2                             	| [$f6eb: jcc    $f6b2]
 	rts                                    	| [$f6ed: rts]
 
-race_beam_update_sprites_f6ee:
+update_multiplexed_sprites_f6ee:
 	jbsr	0f
 	jra		next_current_ybeam
 0:
-	GET_DP_ADDRESS	0x0b                    	| [$f6ee: lda    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f6ee: lda    $0b]
 	move.b	(a0),d0                         	| [...]
 	cmp.b	#0x04,d0                         	| [$f6f0: cmpa   #$04]
 	jcc	l_f72d                             	| [$f6f2: jcc    $f72d]
@@ -1439,7 +1457,7 @@ l_f70b:
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f70b: lda    $09]
 	move.b	(a0),d0                         	| [...]
 	beq	l_f72e                             	| [$f70d: beq    $f72e]
-	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f70f: ldb    [$4200]]
+	GET_INDIRECT_ADDRESS	sprite_index_pointer_4200            	| [$f70f: ldb    [$4200]]
 	moveq 	#0,d1
 	move.b	(a0),d1                         	| [...]
 	add.w	d1,d1                            	| [$f713: clra]
@@ -1463,7 +1481,13 @@ l_f70b:
 	addq.w	#2,d4
 	* copy second part of sprite data
 	move.w	d1,(a0)                	| [...]
-	GET_DP_ADDRESS	0x01                    	| [$f725: inc    $01]
+	
+	move.l	d0,-(a7)
+	move.l	(-2,a0),d0
+	jbsr	osd_queue_sprite
+	move.l	(a7)+,d0
+	
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f725: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f727: dec    $09]
 	subq.b	#1,(a0)                         	| [...]
@@ -1474,19 +1498,19 @@ l_f72d:
 	rts                                    	| [$f72d: rts]
 
 l_f72e:
-	GET_DP_ADDRESS	0x01                    	| [$f72e: lda    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f72e: lda    $01]
 	move.b	(a0),d0                         	| [...]
 	and.b	#0xc0,d0                         	| [$f730: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f732: suba   #$40]
 									| [$f734: sta    $01]
 	move.b	d0,(a0)                         	| [...]
-	GET_INDIRECT_ADDRESS	pointer_4200            	| [$f736: lda    [$4200]]
+	GET_INDIRECT_ADDRESS	sprite_index_pointer_4200            	| [$f736: lda    [$4200]]
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f73a: sta    $09]
 	move.b	d0,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x01                    	| [$f73c: inc    $01]
+	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f73c: inc    $01]
 	addq.b	#1,(a0)                         	| [...]
-	GET_DP_ADDRESS	0x0b                    	| [$f73e: inc    $0b]
+	GET_DP_ADDRESS	unknown_0b                    	| [$f73e: inc    $0b]
 	addq.b	#1,(a0)                         	| [...]
 				                    	| [$f740: lda    $0b]
 	move.b	(a0),d0                         	| [...]

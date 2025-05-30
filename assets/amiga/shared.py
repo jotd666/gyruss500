@@ -43,7 +43,7 @@ def get_sprite_names():
     def add(i,name):
             rval[i] = name
 
-    add_dual_range(0x3A,0x3F,"small_blue_enemy")
+    add_dual_range(0x39,0x40,"furthest_swarm_enemy")
     add_dual_range(1,0x13,"player_ship")
     add_range(0x1C0,0x1C5,"player_ship")
     add_dual_range(0xD0,0xD3,"player_ship")
@@ -62,6 +62,11 @@ def get_sprite_names():
     add_dual_range(0x18,0x1f,"player_laser")
     add_dual_range(0x1f,0x23,"enemy_bomb")
     add_dual_range(0x78,0x7B,"neptune")
+
+    add_dual_range(0x65,0x66,"enemy_ship")
+    add_dual_range(0x9E,0x9F,"enemy_ship")
+
+
 
     return rval
 

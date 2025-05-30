@@ -1,17 +1,14 @@
-- stars interfere with other sprites / replacing them in the final
-  sprite buffer. Very difficult to debug with all the pseudo-randomness
-  and multi-cpu & double-buffered sprite system and different coordinate
-  system on top of it.... so backup solution would probably be to turn off star management
-  by the game and re-write the starfield on the amiga side
+
+- remove sprite multiplexing completely from 6809 code
+  (with the proper OPT_COORDS_MODE=1) to save some computation
 - after a good game (level 6+?...) next game ships attack wave
   is completely nuts. Protection? Z80 code? 6809 code? compare memory
   when starting game, see which RAM values are changed.
   losing at level 5 => game ok.
   
 - profile cpu with MAME: trace without loop while playing, see where the cpu
-  is spending a lot of time
-  
-- a few stars remaining in original sprites
+  is spending a lot of time: apply on galaga too!!
+
 
 
 - mixer routine to integrate

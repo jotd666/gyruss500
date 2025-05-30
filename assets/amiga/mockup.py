@@ -50,13 +50,13 @@ tile_sets_0 = [loadtiles(i,"set_0") for i in range(16)]
 tile_sets_1 = [loadtiles(i,"set_1") for i in range(16)]
 tile_set = [tile_sets_0,tile_sets_1]
 
-def process(the_dump,offset=0,base_address=0,name_filter=None):
+def process(the_dump,offset=0,base_address=0,name_filter=None,anti_repeat_hack=False):
     the_dump = pathlib.Path(the_dump)
     # in input, we use a MAME memory dump: save sprites,$A000,$400
     # (0x200 are read, but there's a kind of double buffering
     with open(the_dump,"rb") as f:
         f.read(offset)
-        m_spriteram = f.read(0x200)
+        m_spriteram = bytearray(f.read(0x200))
 
 
     result = Image.new("RGB",(256,256))
@@ -64,6 +64,17 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
     print("*"*50)
     nb_active = 0
     nb_stars = 0
+    if anti_repeat_hack:
+        prev_code = None
+        for offs in range(0,len(m_spriteram),4):
+            sid = (m_spriteram[offs+1]<<16)+(m_spriteram[offs+2]<<8)+m_spriteram[offs+3]
+            if sid and prev_code == sid and m_spriteram[offs]-prev_y == 8:
+                # unwanted repeat from decoding the raw unmultiplexed buffer: skip
+                print("echo",hex(offs),hex(sid))
+                for i in range(offs,offs+4):
+                    m_spriteram[i] = 0
+            prev_code = sid
+            prev_y = m_spriteram[offs]
 
     for offs in range(len(m_spriteram)-4,-4,-4):
         raw_code_and_clut = (m_spriteram[offs+1]<<8)+m_spriteram[offs+2]
@@ -110,7 +121,9 @@ def process(the_dump,offset=0,base_address=0,name_filter=None):
 
 
 
-process(r"sprites",offset=0,base_address=0xA000)
+process(r"sprites_a000",offset=0,base_address=0xA000,anti_repeat_hack=True)
+#process(r"sprites_4040",offset=0,base_address=0xA000,name_filter="swarm")
+#process(r"sprites_A200",offset=0,base_address=0xA000)
 #process(r"sattelites_A000",offset=0,base_address=0xA000)
 #process(r"bug_4040",offset=0,base_address=0x4040)
 #process(r"../../sprite_ram_4040",offset=0,base_address=0x4040)

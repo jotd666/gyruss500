@@ -1,6 +1,8 @@
 - on explosion, seems that there's a mixup between stars
   and explosion bits. Check with stars off
   some 6809 code is explosion specific I seem to remember
+- better optimization: remove the last clear of sprite buffer,
+  use a counter instead
 - after a good game (level 6+?...) next game ships attack wave
   is completely nuts. Protection? Z80 code? 6809 code? compare memory
   when starting game, see which RAM values are changed.

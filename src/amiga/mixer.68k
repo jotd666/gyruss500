@@ -782,7 +782,7 @@ stjmp_table\arg:
 		jmp		.play_fx\arg(pc)
 		jmp		.check_priority\arg(pc)
 
-play_fx\arg:
+.play_fx\arg:
 		* This channel is free, play the sample here
 		.ifeq	MIXER_68020-1
 			moveq	#0,d6
@@ -792,24 +792,24 @@ play_fx\arg:
 		.endif
 		bra		.found
 		
-check_priority\arg:
+.check_priority\arg:
 		* Check based on priority
 		* Check .ifeq	the priority of the new sample is equal or higher than the
 		* current channel.
 		cmp.w	mch_priority(a1),d2
-		blt.s	not_free\arg
+		blt.s	.not_free\arg
 
 		* Check .ifeq	the priority of the current channel is lower than the best
 		* found priority so far.
 		cmp.w	mch_priority(a1),d4
-		bgt.s	new_best_chan\arg
+		bgt.s	.new_best_chan\arg
 		
 		* Check .ifeq	the age of the current channel is higher than the best age
 		* found so far.
 		cmp.w	mch_age(a1),d5
-		bhi.s	not_free\arg
+		bhi.s	.not_free\arg
 		
-new_best_chan\arg:
+.new_best_chan\arg:
 		* Set current channel as best found so far
 		move.w	mch_priority(a1),d4			| Best priority found
 		move.w	mch_age(a1),d5				| Reset best age found
@@ -821,7 +821,7 @@ new_best_chan\arg:
 		.endif
 		move.l	a1,a2						| Best channel found pointer
 
-not_free\arg:
+.not_free\arg:
 		* This channel is not free, continue with the next channel.
 		lea.l	mch_SIZEOF(a1),a1
 				.endm
@@ -964,7 +964,7 @@ write_loop_ptr:
 		.endif
 		jra	.write_status
 			
-write_loop_offset_ptr:
+.write_loop_offset_ptr:
 		* Force loop offset to be in bounds of the sample here
 		move.l	d0,-(sp)
 		.ifeq	mxslength_word-1
@@ -999,7 +999,7 @@ loop_offset_larger_fx:
 		subq.l	#4,d7				| Loop offset now in range
 		moveq	#4,d0				| Length in range
 
-loop_offset_in_bounds_fx:
+.loop_offset_in_bounds_fx:
 		.ifeq	mxslength_word-1
 			move.w	d0,mch_loop_length(a1)
 		.else
@@ -1010,7 +1010,7 @@ loop_offset_in_bounds_fx:
 		add.l	mfx_sample_ptr(a0),d7
 		move.l	d7,mch_loop_ptr(a1)
 
-write_status:
+.write_status:
 		move.w	mfx_loop(a0),mch_status(a1)	| Set status
 
 		* Test .ifeq	the mixer interrupts are running
@@ -1284,7 +1284,7 @@ prio_found:
 		* Found a lower priority/older channel
 		move.l	a2,a1
 
-found:
+.found:
 		* Found a free channel, add the sample
 		.ifeq	mxsize_x32-1
 			and.w	#0xffe0,d1				| Limit to multiple of 32 bytes
@@ -1411,22 +1411,22 @@ ch0:
 		
 		* Jump table for the different statuses (free, in use, looping)
 stjmp_table:
-		jmp		not_free(pc)
-		jmp		play_fx(pc)
-		jmp		check_priority(pc)
+		jmp		.not_free(pc)
+		jmp		.play_fx(pc)
+		jmp		.check_priority(pc)
 		
 .check_priority:
-		* Check .ifeq	the priority of the new FX is equal or higher than the
+		* Check if the priority of the new FX is equal or higher than the
 		* currently playing FX.
 		cmp.w	mch_priority(a1),d2
-		bge.s	1f
+		bge.s	.play_fx
 		
 		* Channel is not free
 .not_free:
 		moveq	#-1,d0
 		bra		0f
 		
-1:
+.play_fx:
 		* Add sample to selected channel here
 		.ifeq	mxsize_x32-1
 			and.w	#0xffe0,d1				| Limit to multiple of 32 bytes

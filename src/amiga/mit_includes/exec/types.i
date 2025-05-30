@@ -3,36 +3,40 @@ EXEC_TYPES_I = 1
 
 * defines the start of a structure (arg is ignored?)
 	.macro		STRUCTURE	arg,offset
-	.set		_soffset,\offset
+	.set		_foffset,\offset
 	.endm
 	
 * defines the end of a structure (arg is ignored?)
 
 	.macro		LABEL	arg
-	.set		\arg,_soffset
+	.set		\arg,_foffset
 	.endm
 	
 	.macro		STRUCT	arg,offset
-\arg = _soffset
-	.set		_soffset,_soffset+\offset
+\arg = _foffset
+	.set		_foffset,_foffset+\offset
 	.endm
 	
 	.macro		LONG	arg
-\arg = _soffset
-	.set	_soffset,_soffset+4
+\arg = _foffset
+	.set	_foffset,_foffset+4
 	.endm
+	
 	.macro		APTR	arg
 	LONG		\arg
 	.endm
+	
 	.macro		UWORD	arg
-\arg = _soffset
-	.set	_soffset,_soffset+2
+\arg = _foffset
+	.set	_foffset,_foffset+2
 	.endm
+	
 	.macro		UBYTE	arg
-\arg = _soffset
-	.set	_soffset,_soffset+1
+\arg = _foffset
+	.set	_foffset,_foffset+1
 	.endm
+	
 	.macro		WORD	arg
-	WORD		\arg
+	UWORD		\arg
 	.endm
 	.endif

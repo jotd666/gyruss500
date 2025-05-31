@@ -45,8 +45,19 @@ turn off music 25/27 and background humming:
 
 bpset 5c38,a==$25 || a==$27 || a == $2,{PC=$3803;g}
 
+log sounds:
+
+bpset 5c38,,{printf "%x",A;g}
+
 a=1: credit
+a=3: player shooting
+a=4: player double shooting
+a=5: start sound
 a=6: attack wave sound
+a=7: enemy bomb dropped
+a=$f: award double shot
+a=$19: swarm enemy shot
+a=$1a+1b: attacking enemy shot
 
 6809 converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
 remove the second one

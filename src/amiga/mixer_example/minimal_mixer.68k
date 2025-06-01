@@ -27,7 +27,6 @@
 	.include "hardware/cia.i"
 
 	*.include "debug.i"
-	*.include "../converter.i"
 	.include "mixer.inc"
 	.include "samples.inc"
 
@@ -371,11 +370,12 @@ txt_14:	.short	1f-0f
 1:
 		.align 2
 
+	.include "converter.68k"
 
 *------------------------------------
 * Chip RAM buffer
 *------------------------------------
-		.section bss_chip
+		.section .bsschip
 		.align  4
 mixer_buffer:	
 		.skip	mixer_buffer_size

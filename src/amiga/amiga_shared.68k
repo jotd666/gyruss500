@@ -244,8 +244,11 @@ osd_sound_start:
 	*lea	pooyan_tunes,a0
 	illegal
 	
+	moveq	#7,d0		| only 3 first channels enabled for pt player
+	jbsr	_mt_channelmask
+	
 	move.b	d1,music_track_start_number
-	move.w	d1,d0
+	move.w	d1,d0	
     sub.l   a1,a1		| samples are in the module
     jsr _mt_init
 	movem.l	(a7)+,d0/a0

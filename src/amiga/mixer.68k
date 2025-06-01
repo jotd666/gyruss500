@@ -817,7 +817,7 @@ stjmp_table\arg:
 		
 .check_priority\arg:
 		* Check based on priority
-		* Check .ifeq	the priority of the new sample is equal or higher than the
+		* Check if the priority of the new sample is equal or higher than the
 		* current channel.
 		cmp.w	mch_priority(a1),d2
 		blt.s	.not_free\arg

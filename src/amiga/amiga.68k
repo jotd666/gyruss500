@@ -82,12 +82,9 @@ RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*NB_BOB_PLANES
 SCREEN_SIZE = SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 NB_HOST_SPRITES = 8
 
-	.ifeq	OPT_COORDS_MODE
-NB_TARGET_SPRITES = 0x200/4  | 48
-	.else
-	* emulate multiplexing on the host side
-NB_TARGET_SPRITES = 0x200/4
-	.endif
+* hardware allows 48 but game implements some sort of multiplexing, allowing 128
+* sprites at the same time (in theory), which is awesome!
+NB_TARGET_SPRITES = 0x200/4  
 	
 	STRUCTURE	TARGET_SPRITE,0
 	UBYTE	TARGET_SPRITE_Y
@@ -757,8 +754,6 @@ osd_queue_sprite:
 	move.l	(a7)+,a0
 	rts
 
-
-	
 osd_queue_sprites:
 	movem.l	d0-a6,-(a7)
 	GET_M6809_MEMORY_BLOCKS
@@ -1317,9 +1312,10 @@ update_bobs_and_hw_sprites:
 	move.l	playfield_drawed_screen_ptr(pc),a1
 	move.w	#NB_TARGET_SPRITES-1,d7
 1:
-	move.w	(2,a4),d1
-	beq.b	11f		| y=0: inactive, break the loop
-	move.w	(a4),d0
+	move.l	(a4),d1	| read X and Y
+	beq.b	11f		| x=y=0: inactive, skip
+	move.l	d1,d0
+	swap	d0		| get X
 	* clear area where the sprite was
 	clr.l	(a4)+			| ack deletion
 	move.w	(a4),d4			| height
@@ -1369,51 +1365,31 @@ update_bobs_and_hw_sprites:
 	* draw current BOBs from 6809 sprite memory *
 	*********************************************
 
-	.ifeq	OPT_COORDS_MODE
 	GET_M6809_MEMORY_BLOCKS
 	* original machine works that way. On the amiga, it
 	* works more or less but sprite multiplexing cannot be
 	* emulated so some blinking could occur
   	*lea		(0x40+NB_TARGET_SPRITES*4-4,a6),a0
 	move.l	queued_sprite_pointer,a0
+	lea		queued_sprite_buffer+NB_TARGET_SPRITES*4,a1
 	* clear the rest
 0:
-	cmp.l	#queued_sprite_buffer+0x200,a0
+	cmp.l	a1,a0
 	jeq		1f
 	clr.l	(a0)+
 	jra		0b
 1:
 	lea		queued_sprite_buffer+0x1FC,a0
-	.else
-	GET_Z80_RAM_START_IN_A6
-	.ifeq	OPT_COORDS_MODE-2
-	* with this mode this will suck hard as the
-	* ships are misplaced, but it allows to debug Z80
-	* sprite placement BEFORE 6809 code corrects it
-  	lea		(0x1800+NB_TARGET_SPRITES*4-4,a6),a0
-	.else
-	* use the non-multiplexed, longer, shared memory buffer
-	* where the coordinates are already transformed by the 6809
-	* (if we pick the proper buffer since there is a flip-flop)
-	* but multiplexing didn't occur so we don't lose any sprites
-  	lea		(0x2000+NB_TARGET_SPRITES*4-4,a6),a0
-	tst.b	(frame_odd_or_even_a700,a6)
-	jeq		0f
-	add.w	#0x200,a0		| pick other buffer
-0:
-	.endif
-	.endif
-	
+
     lea _custom,A5
 	move.l	bob_previous_drawed_sprites(pc),a6
 	lea		bob_table,a4
-	
 	moveq	#NB_TARGET_SPRITES-1,d7
 1:
 	jbsr	update_one_bob
 	subq.w	#4,a0
 	dbf		d7,1b
-
+2:
 	rts
 	
 
@@ -3183,7 +3159,8 @@ queued_sprite_buffer:
 queued_sprite_pointer:
 	.long	0
 
-	.global 	credit_sound
+	
+
 	.include	"sound_entries.68k"
 
 current_column_scroll_values:

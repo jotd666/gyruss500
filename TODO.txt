@@ -1,10 +1,8 @@
 - on explosion, seems that there's a mixup between stars
   and explosion bits. Check with stars off
   some 6809 code is explosion specific I seem to remember
-- better optimization: remove the last clear of sprite buffer,
-  use a counter instead
 - clear if blitter busy use cpu clear like dragonninja
-- try to group sprites vertically 16x8 twice => 16x16 once
+- try to group sprites vertically 16x8 twice => 16x16 once: grouping will depend on xflip!
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes
 - zooming into Saturn, Earth, etc... enable restore (Neptune 860A: no need as planet is 100% a sprite)
   for other planets it doesn't seem to work
@@ -21,6 +19,7 @@
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
 
 - missing sounds: flash yellow
+- add ignored sound flag
  
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
@@ -44,16 +43,16 @@ bpset f0cd:sub,,{PC=$F0CF;g}
 turn off music 25/27 and background humming:
 
 bpset 5c38,a==$25 || a==$27 || a == $2,{PC=$3803;g}
+bpset 5c38,a==$25 || a==$27 || a == $2 || a == $a,{PC=$3803;g}
 
 log sounds:
 
 bpset 5c38,,{printf "%x",A;g}
 
-a=4: player double shooting
-a=7: enemy bomb dropped
-a=$f: award double shot
-a=$19: swarm enemy killed
-a=$1a+1b: attacking enemy killed
+- to redirect "credit" sound to any sound
+bpset 5c38,,{A=xxx;g}
+
+
 
 mot2mit: blk.b => .skip
 mot2mit: leave .if as is IF => .if

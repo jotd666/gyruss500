@@ -26,16 +26,31 @@ def convert():
 
     hq_sample_rate = 11025  # must be coherent with value in mixer.inc
 
-
+    ignore_sounds = {0,0x82,0x24}
 
     EMPTY_SND = "EMPTY_SND"
     sound_dict = {
 
     "CREDIT_SND"               :{"index":0x1},
-    "PLAYER_SINGLE_SHOT_SND"    :{"index":0x3},
-    "STARTUP_SND"          :{"index":0x5},
+    "PLAYER_SINGLE_SHOT_SND"    :{"index":0x3,"priority":1},
+    "WARP_SND"          :{"index":0x5,"priority":2},
+    "STARTUP_SND"          :{"index":0xC,"priority":2},
 
     "ATTACK_WAVE_SND"          :{"index":0x6},
+    "ENEMY_BOMB_DROPPED_SND"          :{"index":0x7},
+    "PLAYER_KILLED_SND"          :{"index":0x11,"priority":10},
+    "PLAYER_DOUBLE_SHOT_SND" : {"index":0x4,"priority":1},
+    "AWARD_DOUBLE_SHOT_SND" : {"index":0xf},
+   "SWARM_ENEMY_KILLED_SND" : {"index":0x19},
+   "ENEMY_KILLED_1A_SND" : {"index":0x1A},
+   "ENEMY_KILLED_1B_SND" : {"index":0x1B},
+   "CHANCE_KILLED_SND" : {"index":0x23},
+   "PING_SND" : {"index":0x12},
+   "SCORE_SND" : {"index":0x13},
+   "BOSS_KILLED_1E_SND" : {"index":0x1E},
+   "BOSS_KILLED_1F_SND" : {"index":0x1F},
+   #"DEATH_RAY_SND" : {"index":0xA,"loops":True},
+
 
 #    "GAME_OVER_TUNE_SND"                :{"index":0x1D,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
 
@@ -61,7 +76,7 @@ def convert():
     #
     #
 
-        .macro    SOUND_ENTRY    sound_name,size,priority,loop
+    .macro    SOUND_ENTRY    sound_name,size,priority,loop
     \sound_name\()_sound:
         .long   \size
         .long    \sound_name\()_raw
@@ -71,7 +86,7 @@ def convert():
         .long   0           | plugin ptr
         .endm
 
-    """
+"""
 
     def write_asm(contents,fw):
         n=0
@@ -115,7 +130,7 @@ def convert():
 
 
                 used_sampling_rate = hq_sample_rate
-                used_priority = details.get("priority",1)
+                used_priority = details.get("priority",10)
 
                 cmd = get_sox_cmd(used_sampling_rate,raw_file)
 
@@ -173,8 +188,6 @@ def convert():
 
                 fw.write("{}_raw:   | {} bytes".format(wav,len(contents)))
 
-                if len(contents)>65530:
-                    raise Exception(f"Sound {wav_entry} is too long")
                 write_asm(contents,fw)
 
 

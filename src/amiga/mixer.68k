@@ -1214,7 +1214,7 @@ MixerPlayChannelSample:
 		*
 		* Note: this routine does not check if the HW channel selected is 
 		*       available to the mixer, if an unused HW channel is 
-		*       selected, no sample will be played back. This only applies .ifeq	*       MIXER_MULTI=1 or  MIXER_MULTI_PAIRED=1.
+		*       selected, no sample will be played back. This only applies if MIXER_MULTI=1 or  MIXER_MULTI_PAIRED=1.
 		* Note: once playing, looping FX can only be ended by calling
 		*       MixerStopFX. Until this happens, a looping FX will occupy a
 		*       mixer channel forever, regardless of the priority of any
@@ -1284,10 +1284,10 @@ MixerPlayFX:
 			swap	d0						| Swap back HW channel
 		.else
 			MixChkChan 0					| Check MIX_CH0
-			.if	mixer_sw_channels>-2
+			.if	mixer_sw_channels>2
 				MixChkChan 1				| Check MIX_CH1
 			.endif
-			.if	mixer_sw_channels>-3
+			.if	mixer_sw_channels>3
 				MixChkChan 2				| Check MIX_CH2
 			.endif
 			.ifeq	mixer_sw_channels-4
@@ -2290,7 +2290,7 @@ MixerStopFX:
 		.ifeq	mxslength_word-1
 			move.w	mch_remaining_length(a6),d3	| D3 = remaining length
 			sub.w	d2,d3						| Update remaining length
-			.if	.\@_chkch_wlen_dist>-1
+			.if	.\@_chkch_wlen_dist>1
 				bhi		.\@_write_remaining
 			.else
 				bhi.s	.\@_write_remaining
@@ -2298,7 +2298,7 @@ MixerStopFX:
 		.else
 			move.l	mch_remaining_length(a6),d3	| D3 = remaining length
 			sub.l	d2,d3						| Update remaining length
-			.if	.\@_chkch_wlen_dist>-1
+			.if	.\@_chkch_wlen_dist>1
 				bgt		.\@_write_remaining
 			.else
 				bgt.s	.\@_write_remaining

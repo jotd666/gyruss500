@@ -4,12 +4,12 @@
 - better optimization: remove the last clear of sprite buffer,
   use a counter instead
 - clear if blitter busy use cpu clear like dragonninja
+- try to group sprites vertically 16x8 twice => 16x16 once
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes
 - zooming into Saturn, Earth, etc... enable restore (Neptune 860A: no need as planet is 100% a sprite)
   for other planets it doesn't seem to work
 - proper start level cheat  
 
-- mixer routine to integrate: in progress
 
 - after a good game (level 6+?...) next game ships attack wave
   is different. Protection? Z80 code? 6809 code? compare memory
@@ -49,15 +49,14 @@ log sounds:
 
 bpset 5c38,,{printf "%x",A;g}
 
-a=1: credit
-a=3: player shooting
 a=4: player double shooting
-a=5: start sound
-a=6: attack wave sound
 a=7: enemy bomb dropped
 a=$f: award double shot
-a=$19: swarm enemy shot
-a=$1a+1b: attacking enemy shot
+a=$19: swarm enemy killed
+a=$1a+1b: attacking enemy killed
+
+mot2mit: blk.b => .skip
+mot2mit: leave .if as is IF => .if
 
 6809 converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
 remove the second one

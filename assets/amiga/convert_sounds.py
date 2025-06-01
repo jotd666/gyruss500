@@ -2,8 +2,11 @@ import subprocess,os,struct,glob,tempfile
 import shutil
 
 
-gamename = "pooyan"
+gamename = "gyruss"
 sox = "sox"
+
+# max 4 sounds at once
+nb_mix_channels = 4
 
 def convert():
     if not shutil.which("sox"):
@@ -21,37 +24,26 @@ def convert():
     sndfile = os.path.join(src_dir,"sound_entries.68k")
 
 
-    hq_sample_rate = 18004  #{"aga":18004,"ecs":12000,"ocs":11025}[mode]
-    lq_sample_rate = hq_sample_rate//2 # if aga_mode else 8000
+    hq_sample_rate = 11025  # must be coherent with value in mixer.inc
 
 
-    loop_channel = 3
 
     EMPTY_SND = "EMPTY_SND"
     sound_dict = {
 
-    "CREDIT_SND"               :{"index":0x1,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "CREDIT_SND"               :{"index":0x1},
+    "PLAYER_SINGLE_SHOT_SND"    :{"index":0x3},
+    "STARTUP_SND"          :{"index":0x5},
+
+    "ATTACK_WAVE_SND"          :{"index":0x6},
 
 #    "GAME_OVER_TUNE_SND"                :{"index":0x1D,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
 
 
     }
 
-    valid_sounds = [None]*128
-    valid_sounds[0x15] = "music_start"
-    valid_sounds[0x16] = "music_start"
-    valid_sounds[0x17] = "music_start"
-    valid_sounds[0x4B] = "bogus"
-    valid_sounds[0x4D] = "bogus"
-    valid_sounds[0x5D] = "bogus"
-    for k,v in sound_dict.items():
-        valid_sounds[v["index"]] = k
-    with open(os.path.join(this_dir,"valid_sound_table.68k"),"w") as f:
-        for i,v in enumerate(valid_sounds):
-            if v:
-                f.write("\t.byte    1\t| {:02x}: {}\n".format(i,v))
-            else:
-                f.write("\t.byte    0\t| {:02x}\n".format(i))
+    for s in sound_dict.values():
+        s.update({"channel":3})
 
     with open(os.path.join(src_dir,"..","sounds.inc"),"w") as f:
         for k,v in sorted(sound_dict.items(),key = lambda x:x[1]["index"]):
@@ -69,11 +61,11 @@ def convert():
     #
     #
 
-        .macro    SOUND_ENTRY    sound_name,size,priority
+        .macro    SOUND_ENTRY    sound_name,size,priority,loop
     \sound_name\()_sound:
         .long   \size
         .long    \sound_name\()_raw
-        .word   0           | loop
+        .word   \loop           | loop
         .word    \priority
         .long   0           | loop offset
         .long   0           | plugin ptr
@@ -97,7 +89,7 @@ def convert():
     with open(sndfile,"w") as fst,open(outfile,"w") as fw:
         fst.write(snd_header)
 
-        fw.write("\t.section\t.datachip\n")
+        fw.write("\t.section\t.data\n")  # no need for chipmem!
         fw.write("\t.global\t{}\n".format(music_module_label))
 
         for wav_file,details in sound_dict.items():
@@ -122,7 +114,7 @@ def convert():
                     return [sox,"--volume","0.8",wav_file,"--channels","1","-D","--bits","8","-r",str(sr),"--encoding","signed-integer",output]
 
 
-                used_sampling_rate = details["sample_rate"]
+                used_sampling_rate = hq_sample_rate
                 used_priority = details.get("priority",1)
 
                 cmd = get_sox_cmd(used_sampling_rate,raw_file)
@@ -138,24 +130,31 @@ def convert():
                 maxsigned = max(signed_data)
                 minsigned = min(signed_data)
 
-                amp_ratio = max(maxsigned,abs(minsigned))/128
+                amp_ratio = max(maxsigned,abs(minsigned))/64
 
                 # JOTD: for that one, I'm using maxxed out sfx by no9, no amp
-                amp_ratio = 0.9
+                #amp_ratio = 0.9
 
                 wav = os.path.splitext(wav_name)[0]
                 if amp_ratio > 1:
                     print(f"{wav}: volume peaked {amp_ratio}")
                     amp_ratio = 1
-                sound_table[sound_index] = "    SOUND_ENTRY {},{},{}\n".format(wav,len(signed_data)//2,used_priority)
-                sound_table_set_1[sound_index] = f"\t.word\t1,{int(details.get('loops',0))}\n\t.long\t{wav}_sound"
 
-##                if amp_ratio > 0:
-##                    maxed_contents = [int(x/amp_ratio) for x in signed_data]
-##                else:
-##                    maxed_contents = signed_data
+                loop = 0xFFFF if details.get('loops') else 1
 
-                maxed_contents = signed_data
+                sound_table[sound_index] = "    SOUND_ENTRY {},{},{},{}\n".format(wav,len(signed_data),used_priority,loop)
+                sound_table_set_1[sound_index] = f"\t.word\t1,{loop}\n\t.long\t{wav}_sound"
+
+
+                amp_ratio *= nb_mix_channels
+
+                if amp_ratio > 0:
+
+                    maxed_contents = [int(x/amp_ratio) for x in signed_data]
+                else:
+                    maxed_contents = signed_data
+
+                #maxed_contents = signed_data
 
                 signed_contents = bytes([x if x >= 0 else 256+x for x in maxed_contents])
                 # pre-pad with 0W, used by ptplayer for idling
@@ -193,7 +192,6 @@ def convert():
         for i,st in enumerate(sound_table_set_1):
             fst.write(st)
             fst.write(" | {}\n".format(i))
-
 
 convert()
 

@@ -13,7 +13,7 @@
 .include "lvo/dos_lvos.i"
 .include "gyruss.inc"
 .include "sounds.inc"
-.include "mixer.i"
+.include "mixer.inc"
 
 SCORE_FILE_SIZE = 3+30*3
 
@@ -193,55 +193,28 @@ force_sound_stop:
 osd_sound_start:
 	movem.l	d0/d1/a0/a6,-(a7)
 	
-	* TEMP
-	moveq	#DMAF_AUD3,d0				
-										
-	lea.l	credit_sound,a0			
-	jbsr		MixerPlayFX			
-	movem.l	(a7)+,d0/d1/a0/a6
-	rts
-	
-	lea		_custom,a6
 	and.w	#0xFF,d0
 	jne		0f
 	* null sound: stop
-	jbsr	osd_music_stop
+	*jbsr	osd_music_stop
 	jra		10f
 0:
 	* original sound stop commands have bit 7 set. But if we follow them, they'll kill the
-	btst	#7,d0
-	jeq		1f
-	clr.b	looped_sound_enabled
-	moveq	#2,d0		| the loop channel?
-	jbsr	_mt_stopfx
-	jra		10f
-1:
-	
-
 
 	lsl.w	#3,d0
 	lea		sound_table,a0
-
-	move.w	(a0,d0.w),d1	| sound type
+	add.w	d0,a0
+	move.w	(a0),d1	| sound type
 	beq.b	10f		| no sound
 
 2:
 	cmp.w	#1,d1
 	bne.b	4f		| music module
-	move.w	(2,a0,d0.w),d1
-	move.l	(4,a0,d0.w),a0
-	lea		_custom,a6
-	tst.w	d1
-	beq.b	3f
-	tst.b	looped_sound_enabled
-	bne.b	3f
-	* looped sound
-	st.b	looped_sound_enabled
-	jsr		_mt_loopfx
-	bra.b	10f
-3:
-	jsr		_mt_playfx
+	moveq	#DMAF_AUD3,d0									
+	move.l	(4,a0),a0
+	jbsr		MixerPlayFX	
 10:
+
 	movem.l	(a7)+,d0/d1/a0/a6
 	rts
 

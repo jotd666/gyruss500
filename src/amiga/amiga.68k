@@ -13,7 +13,7 @@
 	.include "lvo/exec_lvos.i"
 	.include "lvo/dos_lvos.i"
 	.include "lvo/graphics_lvos.i"
-	.include "mixer.i"
+	.include "mixer.inc"
 
 AttnFlags = 0x128
 AFB_68010 = 0
@@ -183,10 +183,17 @@ w\@:
 
 start:
 	move.l	a7,old_stack
-	bra	_user
+	jra	_user
     
-	
+	.include	"samples.68k"
 
+
+effect1:	.skip mfx_SIZEOF
+effect2:	.skip mfx_SIZEOF
+effect3:	.skip mfx_SIZEOF
+effect4:	.skip mfx_SIZEOF
+	
+	
 * exports
 
 	.global		_user
@@ -2200,7 +2207,17 @@ platform_init:
 	move.l	a0,(0xD0,a6)
 	move.l	system_vbr(pc),a0
 	moveq	#1,d0	| PAL
-	**jsr		_mt_install_cia
+	jsr		_mt_install_cia
+
+
+*	moveq	#4,d1
+*	* Sample 1
+*	lea.l	credit_sound,a2	
+*	move.l	(mfx_length,a2),a0 | Sample source
+*	move.l	a0,a1					| Pre-processed destination
+*	move.l	(mfx_length,a2),d0			| Sample size
+*	jbsr		ConvertSampleDivide
+
 
 
 	* Setup the mixer
@@ -2250,7 +2267,7 @@ load_palette:
 osd_interrupt_control:
 	tst.b	d0
 	jeq		0f
-	move.w	#0xC038,_custom+intena
+	move.w	#0xC038+0x780,_custom+intena
 	rts
 0:
 	move.w	#0x0030,_custom+intena

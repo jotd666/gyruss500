@@ -1,5 +1,3 @@
-- zooming into Saturn, Earth, etc... enable restore (Neptune: no need as planet is 100% a sprite)
-  for other planets it doesn't seem to work
 - on explosion, some 6809 code is explosion specific I seem to remember
   some explosion bits aren't erased
 

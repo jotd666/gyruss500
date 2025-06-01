@@ -1734,7 +1734,7 @@ jump_table_0620:
 0DBE: CA 75 0D    jp   z,$0D75
 0DC1: CD 43 0E    call $0E43
 0DC4: CD D2 09    call $09D2
-0DC7: 21 09 96    ld   hl,starting_stage_9609
+0DC7: 21 09 96    ld   hl,current_stage_number_9609
 0DCA: 34          inc  (hl)
 0DCB: 46          ld   b,(hl)
 0DCC: 21 0B 96    ld   hl,$960B
@@ -4034,7 +4034,7 @@ jump_table_0620:
 25A6: CD 82 5C    call $5C82
 25A9: C3 0B 08    jp   $080B
 
-25AC: 3A 09 96    ld   a,(starting_stage_9609)
+25AC: 3A 09 96    ld   a,(current_stage_number_9609)
 25AF: C6 01       add  a,$01
 25B1: E6 03       and  $03
 25B3: 87          add  a,a
@@ -5145,7 +5145,7 @@ jump_table_0620:
 2EDF: 87          add  a,a
 2EE0: 32 0A 96    ld   ($960A),a
 2EE3: 87          add  a,a
-2EE4: 32 09 96    ld   (starting_stage_9609),a
+2EE4: 32 09 96    ld   (current_stage_number_9609),a
 2EE7: 32 0B 96    ld   ($960B),a
 2EEA: AF          xor  a
 2EEB: 32 76 94    ld   ($9476),a
@@ -7488,7 +7488,7 @@ update_starfield_3A37:
 
 4E27: 3A D4 0D    ld   a,($0DD4)
 4E2A: CD E4 07    call $07E4
-4E2D: 3A 09 96    ld   a,(starting_stage_9609)
+4E2D: 3A 09 96    ld   a,(current_stage_number_9609)
 4E30: 47          ld   b,a
 4E31: 04          inc  b
 4E32: 3A 95 12    ld   a,($1295)

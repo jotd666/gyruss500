@@ -64,7 +64,8 @@ regscopy:
 	.skip	56
 current_y_beam:
 	.byte	0
-
+start_level:
+	.byte	0
 invincible_flag:
 	.byte	0
 level_skip_flag:
@@ -96,8 +97,6 @@ break_at_startup_flag:
 	.byte	0
 
 
-start_level:
-	.byte	0
 	.ascii	"RAM_END!"
 
 

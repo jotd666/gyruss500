@@ -300,6 +300,11 @@ _user:
 	bsr		bcpl_string_to_int
 	move.l	d0,difficulty_level
 2:
+	move.l	(A0)+,D0	| STARTLEVEL/K/N
+	beq.b	2f
+	bsr		bcpl_string_to_int
+	move.l	d0,start_level_option
+2:
 
 
 	lea		_custom,a5
@@ -406,7 +411,11 @@ _user:
 	move.b	difficulty_level+3,d0
 	and.b	#3,d0
 	
-
+	moveq	#0,d0
+	move.b	start_level_option+3,d0
+	and.b	#0x3F,d0	| safety
+	lea		start_level_table,a0
+	move.b	(a0,d0.w),start_level
 	
 	move.l	misc_options,d1
 	btst	#0,d1
@@ -1265,6 +1274,7 @@ really_update_tiles:
 is_forced_restore:
 	GET_Z80_RAM_START_IN_A6
 	move.l	#0x83838383,d0
+	move.b	#1,0x100
 	* 4 locations where text could be printed, which means
 	* that the game is not playing at full rate ("game over",
 	* "ready", "2 warps to xxx", "planet name", "chance stage"
@@ -1273,7 +1283,7 @@ is_forced_restore:
 	* when text is showing, so not a problem to blit
 	* more stuff)
 	
-	cmp.b	(0x60A,a6),d0		| planet name
+	cmp.b	(0x610,a6),d0		| planet if not a sprite (uranus!)
 	jne		1f
 	cmp.b	(0x614,a6),d0
 	jne		1f
@@ -3030,7 +3040,7 @@ program_args_end:
 read_args_string:
 	.byte	read_args_string_end-read_args_string
 	.ascii	"INVINCIBLE/S,INFLIVES/S,"
-	.ascii	"CHEATKEYS/S,STARTLIVES/K/N,SKILL/K/N"
+	.ascii	"CHEATKEYS/S,STARTLIVES/K/N,SKILL/K/N,STARTLEVEL/K/N"
 read_args_string_end:
 	.align	2
 
@@ -3073,8 +3083,12 @@ chiprevbits:
 cheat_flags:
 		.long	0
 
-		.long	WHDLTAG_CUSTOM3_GET
+		.long	WHDLTAG_CUSTOM2_GET
 misc_options:
+		.long	0
+		
+		.long	WHDLTAG_CUSTOM3_GET
+start_level_option:
 		.long	0
 		
 		.long	WHDLTAG_CUSTOM4_GET
@@ -3090,7 +3104,30 @@ dip_switches_1:
 dip_switches_2:
 		.byte	0
 
-
+start_level_table:
+	.byte	0
+	.byte	1
+	.byte	3
+	.byte	4
+	.byte	5
+	.byte	7
+	.byte	8
+	.byte	9
+	.byte	11
+	.byte	12
+	.byte	13
+	.byte	15
+	.byte	16
+	.byte	17
+	.byte	19
+	.byte	20
+	.byte	21
+	.byte	23
+	.byte	24
+	.rept	40
+	.byte	0
+	.endr
+	
 mid_screen_interrupt_count:
 	.byte	0
 	.align	2

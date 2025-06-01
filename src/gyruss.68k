@@ -1465,7 +1465,7 @@ global_state_demo_or_game_0828:
 
 
 l_089a:
-	move.b	l_960B(a6),d0                   	| [$089a: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$089a: ld   a,($960B)]
 	                               	| [$089d: and  a]
 	jeq	l_5db6                             	| [$089e: jp   z,$5DB6]
 l_08a1:
@@ -1480,7 +1480,7 @@ l_08a1:
 
 
 l_08ad:
-	move.b	l_960B(a6),d0                   	| [$08ad: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$08ad: ld   a,($960B)]
 	jra	l_08a1                             	| [$08b0: jp   $08A1]
 
 l_08b3:
@@ -1904,7 +1904,7 @@ init_end_of_level_sequence_planet_0b71:
 	jbsr	update_starfield_in_game_3804                            	| [$0b71: call $3804]
 	jbsr	l_4b68                            	| [$0b74: call $4B68]
 	jbsr	randomize_18_star_positions_3af2                            	| [$0b77: call $3AF2]
-	move.b	l_960B(a6),d0                   	| [$0b7a: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$0b7a: ld   a,($960B)]
 	ror.b	#2,d0                            	| [$0b7d: rrca] * 2
 	and.b	#0x07,d0                         	| [$0b7f: and  $07]
 	add.b	#0x20,d0                         	| [$0b81: add  a,$20]
@@ -2218,10 +2218,10 @@ l_0dc1:
 	jbsr	disable_game_objects_0e43                            	| [$0dc1: call $0E43]
 	jbsr	l_09d2                            	| [$0dc4: call $09D2]
 	* advance stage
-	lea	starting_stage_9609(a6),a0         	| [$0dc7: ld   hl,starting_stage_9609]
+	lea	current_stage_number_9609(a6),a0         	| [$0dc7: ld   hl,current_stage_number_9609]
 	addq.b	#1,(a0)                         	| [$0dca: inc  (hl)]
 	move.b	(a0),d1                         	| [$0dcb: ld   b,(hl)]
-	lea	l_960B(a6),a0                      	| [$0dcc: ld   hl,$960B]
+	lea	current_stage_960B(a6),a0                      	| [$0dcc: ld   hl,$960B]
 	addq.b	#1,(a0)                         	| [$0dcf: inc  (hl)]
 	move.b	(a0),d0                         	| [$0dd0: ld   a,(hl)]
 	cmp.b	#0x18,d0                         	| [$0dd1: cp   $18]
@@ -4247,6 +4247,11 @@ l_1fe5:
 	lea	lives_9600(a6),a1                  	| [$1fe5: ld   de,lives_9600]
 	move.w	#0x0020,d1                      	| [$1fe8: ld   bc,$0020]
 	jbsr	ldir                              	| [$1feb: ldir]
+	move.b	start_level,d0
+	jeq		0f
+	move.b	d0,(current_stage_960B,a6)
+	move.b	d0,(current_stage_number_9609,a6)
+0:
 	jbsr	l_172e                            	| [$1fed: call $172E]
 	jbsr	randomize_18_star_positions_3af2                            	| [$1ff0: call $3AF2]
 	* another ROM checksum that changes sub state if fails
@@ -4957,7 +4962,7 @@ l_256d:
 	jra	next_game_state_080b                             	| [$25a9: jp   $080B]
 
 l_25ac:
-	move.b	starting_stage_9609(a6),d0      	| [$25ac: ld   a,(starting_stage_9609)]
+	move.b	current_stage_number_9609(a6),d0      	| [$25ac: ld   a,(current_stage_number_9609)]
 	addq.b	#0x01,d0                        	| [$25af: add  a,$01]
 	and.b	#0x03,d0                         	| [$25b1: and  $03]
 	add.b	d0,d0                            	| [$25b3: add  a,a]
@@ -5650,7 +5655,7 @@ l_2a7e:
 	jra	l_2b2c                             	| [$2aa2: jp   $2B2C] [uncovered]
 
 l_2abd:
-	move.b	l_960B(a6),d0                   	| [$2abd: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$2abd: ld   a,($960B)]
 	ror.b	#2,d0                            	| [$2ac0: rrca] * 2
 	and.b	#0x3F,d0                         	| [$2ac2: and  $3F]
 	add.b	d0,d0                            	| [$2ac4: add  a,a]
@@ -6243,8 +6248,9 @@ new_demo_game_start_2e8f:
 	add.b	d0,d0                            	| [$2edf: add  a,a]
 	move.b	d0,l_960A(a6)                   	| [$2ee0: ld   ($960A),a]
 	add.b	d0,d0                            	| [$2ee3: add  a,a]
-	move.b	d0,starting_stage_9609(a6)      	| [$2ee4: ld   (starting_stage_9609),a]
-	move.b	d0,l_960B(a6)                   	| [$2ee7: ld   ($960B),a]
+	* demo mode sets proper stage number AND stage itself
+	move.b	d0,current_stage_number_9609(a6)    | [$2ee4: ld   (current_stage_number_9609),a]
+	move.b	d0,current_stage_960B(a6)           | [$2ee7: ld   ($960B),a]
 	                               	| [$2eea: xor  a]
 	clr.b	l_9476(a6)                   	| [$2eeb: ld   ($9476),a]
 	clr.b	update_sequence_control_flag_a7fd(a6) 	| [$2eee: ld   ($A7FD),a]
@@ -6512,7 +6518,7 @@ l_3171:
 	move.b	l_960D(a6),d0                   	| [$3171: ld   a,($960D)]
 	and.b	#0x01,d0                         	| [$3174: and  $01]
 	jeq	l_2d81                             	| [$3176: jp   z,$2D81]
-	move.b	l_960B(a6),d0                   	| [$3179: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$3179: ld   a,($960B)]
 	ror.b	#2,d0                            	| [$317c: rrca] * 2
 	and.b	#0x1F,d0                         	| [$317e: and  $1F]
 	jbsr	jump_table_jump_0030                            	| [$3180: rst  $30]
@@ -6777,7 +6783,7 @@ l_3530:
 	jbsr	l_37f3                            	| [$354d: call z,$37F3]
 0:
 	addq.b	#1,(a0)                         	| [$3550: inc  (hl)]
-	move.b	l_960B(a6),d0                   	| [$3551: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$3551: ld   a,($960B)]
 	and.b	#0x1F,d0                         	| [$3554: and  $1F]
 	add.b	d0,d0                            	| [$3556: add  a,a]
 	add.b	d0,d0                            	| [$3557: add  a,a]
@@ -7213,7 +7219,7 @@ l_38ba:
 	jra	l_36e9                             	| [$38c6: jp   $36E9] [uncovered]
 
 l_38c9:
-	move.b	l_960B(a6),d0                   	| [$38c9: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$38c9: ld   a,($960B)]
 	addq.b	#0x01,d0                        	| [$38cc: add  a,$01]
 	and.b	#0x03,d0                         	| [$38ce: and  $03]
 	add.b	#0x2C,d0                         	| [$38d0: add  a,$2C]
@@ -7221,7 +7227,7 @@ l_38c9:
 	move.b	#0x01,d3                        	| [$38d3: ld   d,$01]
 	LOAD_D3_16_FROM_D3D4
 	jbsr	start_task_d3_0038                            	| [$38d5: rst  $38]
-	move.b	l_960B(a6),d0                   	| [$38d6: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$38d6: ld   a,($960B)]
 	cmp.b	#0x17,d0                         	| [$38d9: cp   $17]
 	jeq	l_38ea                             	| [$38db: jr   z,$38EA]
 	addq.b	#0x01,d0                        	| [$38dd: add  a,$01]
@@ -8062,7 +8068,7 @@ start_title_screen_tasks_46b6:
 	move.b	#0x01,d0                        	| [$46b6: ld   a,$01]
 	move.b	d0,sprite_sync_status_a7ff(a6)                       	| [$46b8: ld   ($A7FF),a]
 	READ_ROM_BYTE	0x25C9,d0                       	| [$46bb: ld   a,($25C9)]
-	move.b	d0,l_960B(a6)                   	| [$46be: ld   ($960B),a]
+	move.b	d0,current_stage_960B(a6)                   	| [$46be: ld   ($960B),a]
 	jbsr	l_4cea                            	| [$46c1: call $4CEA]
 	move.w	#0x0100,d3                          	| [$46c4: ld   de,$0100]
 	jbsr	start_task_d3_0038                            	| [$46c7: rst  $38]
@@ -8609,7 +8615,7 @@ update_death_ray_sattelite_size_4b1c:
 	rts                                    		| [$4b43: ret]
 
 l_4b68:
-	move.b	l_960B(a6),d0                   	| [$4b68: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$4b68: ld   a,($960B)]
 	ror.b	#2,d0                            	| [$4b6b: rrca] * 2
 	and.b	#0x07,d0                         	| [$4b6d: and  $07]
 	jbsr	jump_table_jump_0030                            	| [$4b6f: rst  $30]
@@ -8870,7 +8876,7 @@ l_4d22:
 	ror.b	#1,d0                            	| [$4d23: rrca]
 	and.b	#0x7F,d0                         	| [$4d24: and  $7F]
 	move.b	d0,d1                           	| [$4d26: ld   b,a]
-	move.b	l_960B(a6),d0                   	| [$4d27: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$4d27: ld   a,($960B)]
 	move.b	#0x88,d2                        	| [$4d2c: ld   c,$88]
 	cmp.b	#0x16,d0                         	| [$4d2a: cp   $16]
 	jne	l_4d32                             	| [$4d2e: jr   nz,$4D32]
@@ -8909,7 +8915,7 @@ l_4d32:
 write_stage_number_4e27:
 	READ_ROM_BYTE	0x0DD4,d0                       	| [$4e27: ld   a,($0DD4)]
 	jbsr	write_message_07e4                            	| [$4e2a: call $07E4]
-	move.b	starting_stage_9609(a6),d0      	| [$4e2d: ld   a,(starting_stage_9609)]
+	move.b	current_stage_number_9609(a6),d0      	| [$4e2d: ld   a,(current_stage_number_9609)]
 	moveq	#0,d1
 	move.b	d0,d1                           	| [$4e30: ld   b,a]
 	*addq.b	#1,d1    | don't add: dbf                       	| [$4e31: inc  b]
@@ -9070,7 +9076,7 @@ object_movement_4f16:
 	                               	| [$4f1f: and  a]
 	jne	l_4f27                             	| [$4f20: jr   nz,$4F27]
 	moveq	#0,d0
-	move.b	l_960B(a6),d0                   	| [$4f22: ld   a,($960B)]
+	move.b	current_stage_960B(a6),d0                   	| [$4f22: ld   a,($960B)]
 	                             	| [$4f25: jr   $4F2A]
 
 l_4f27:
@@ -10040,7 +10046,7 @@ l_5f4d:
 	
 	* setting this sets starting stage to "5" but still has the
 	* "2 warps to neptune" message at start
-	*move.b	#4,starting_stage_9609+0x20(a6)
+	*move.b	#4,current_stage_number_9609+0x20(a6)
 	
 	moveq	#0,d0                               	| [$5f6d: xor  a]
 	move.b	d0,current_player_9662(a6)                   	| [$5f6e: ld   ($9662),a]

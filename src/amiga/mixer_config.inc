@@ -73,7 +73,7 @@ mixer_output_channels	=	DMAF_AUD3
 									* Note: combining channels is only
 									*       valid when MIXER_MULTI or
 									*       MIXER_MULTI_PAIRED is set.
-									* Note: .ifeq	MIXER_MULTI_PAIRED is set,
+									* Note: if MIXER_MULTI_PAIRED is set,
 									*       valid combinations are:
 									*       * DMAF_AUD2|DMAF_AUD3
 									*       * DMAF_AUD2|DMAF_AUD3|DMAF_AUD0
@@ -211,9 +211,9 @@ MIXER_ENABLE_PLUGINS	= 0
 * Set define below to 1 to .include "the" mixer in .section code,code.
 * .ifeq	set to 0, the mixer will not be set a specific .section (normally this is
 * not needed, but it can be useful in certain cases)
-MIXER_SECTION			=	1
+MIXER_SECTION			=	0
 
-* Set define below to 1 .ifeq	the assembler used does not support the ".error"
+* Set define below to 1 if the assembler used does not support the ".error"
 * command. This blocks mixer.asm displaying messages during assembly.
 MIXER_NO_ECHO			= 0
 	.endif	| MIXER_CONFIG_I

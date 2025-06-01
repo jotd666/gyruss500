@@ -23,7 +23,6 @@
 	.include "lvo/dos_lvos.i"
 	.include "hardware/custom.i"
 	.include "hardware/dmabits.i"
-	*.include "hardware/intbits.i"
 	.include "hardware/cia.i"
 
 	*.include "debug.i"
@@ -35,7 +34,6 @@ custombase			=	0xdff000
 ciaa				=	0xbfe001
 	
 * Start of code
-		.section code,code
 		
 		* Main code
 _main:	
@@ -69,7 +67,7 @@ _main:
 		jbsr		PrintMessage
 		lea.l	txt_13(pc),a0
 		jbsr		PrintMessage
-		
+
 		* Pre-proces the samples
 		moveq	#4,d1						| Set number of channels
 
@@ -184,6 +182,7 @@ _main:
 		
 		* Stop the mixer interrupt handler
 		jbsr		MixerRemoveHandler
+
 		
 		* Close the DOS library
 		jbsr		OSCloseDos

@@ -248,7 +248,7 @@ F22B: B6 28 28    LDA    >$0000
 ; A (aka beamy) varies between $9A and $B4 (approx), rather end of frame
 F22E: B7 EF 32    STA    $6710
 F231: 3B          RTI
-
+; this part is only active when player ship materializes or explodes
 F232: BD 77 44    JSR    ship_coordinate_transform_f566
 F235: BD 74 17    JSR    race_beam_update_sprites_f695
 F238: BD DE E8    JSR    coordinate_transform_zero_f660

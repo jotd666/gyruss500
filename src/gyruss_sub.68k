@@ -426,6 +426,8 @@ l_f226:
 *	move.b	d0,(a0)                         	| [...]
 	rts       	| [$f231: rti]
 
+* this part is only active when player ship materializes or explodes
+
 l_f232:
 	jbsr	ship_coordinate_transform_f566                            	| [$f232: jsr    $f566]
 	* here beamy = 31 on the arcade machine

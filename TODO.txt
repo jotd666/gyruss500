@@ -1,13 +1,8 @@
-- on explosion, some 6809 code is explosion specific I seem to remember
-  some explosion bits aren't erased
+- cut the warp sound off, takes a lot of memory but should be shorter
 
 - clear if blitter busy use cpu clear like dragonninja
 - try to group sprites vertically 16x8 twice => 16x16 once: grouping will depend on xflip!
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes
-- after a good game (level 6+?...) next game ships attack wave
-  is different. Protection? Z80 code? 6809 code? compare memory
-  when starting game, see which RAM values are changed.
-  losing at level 5 => game ok. 8 => different
 
 - highscore save
 - still missing sprites, track red flashes
@@ -19,9 +14,10 @@
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
 
-- log sprites/flash when missing
-
-
+- after a good game (level 6+?...) next game ships attack wave
+  is different. Protection? Z80 code? 6809 code? compare memory
+  when starting game, see which RAM values are changed.
+  losing at level 5 => game ok. 8 => different
 
 ---------------------
 

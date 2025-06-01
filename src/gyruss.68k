@@ -203,12 +203,10 @@
 * The original lsr implementation cleared X which caused issues
 
 	.macro	LOAD_D3_16_FROM_D3D4
-	and.l	#0xFFFF,d3
 	rol.w	#8,d3
 	move.b	d4,d3
 	.endm
 	.macro	LOAD_D5_16_FROM_D5D6
-	and.l	#0xFFFF,d5
 	rol.w	#8,d5
 	move.b	d6,d5
 	.endm

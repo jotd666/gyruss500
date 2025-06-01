@@ -51,6 +51,7 @@ def get_sprite_names():
     add_dual_range(0x88,0x90,"death_ray")
     add_dual_range(0x81,0x88,"ray_emitter")
     add(0x13,"star")
+    add(0x2d,"exploding_particle")
     add(0x134,"iceberg")
     add_dual_range(0xD4,0xDD,"earth")
     add_dual_range(0x2F,0x34,"explosion")

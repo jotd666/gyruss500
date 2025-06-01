@@ -361,7 +361,7 @@
 	.include "exec/types.i"
 	.include "hardware/dmabits.i"
 	
-	.include "mixer_config.i"
+	.include "mixer_config.inc"
 	
 	.ifndef	MIXER_I
 MIXER_I	=	1

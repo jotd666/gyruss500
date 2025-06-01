@@ -194,7 +194,6 @@ osd_sound_start:
 	movem.l	d0/d1/a0/a6,-(a7)
 	
 	* TEMP
-	jbsr	osd_break
 	moveq	#DMAF_AUD3,d0				
 										
 	lea.l	credit_sound,a0			

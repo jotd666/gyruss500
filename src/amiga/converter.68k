@@ -16,6 +16,7 @@
 
 * Includes (OS includes assume at least NDK 1.3) 
 	*.include "converter.i"
+	.global		ConvertSampleDivide
 	
 * Start of code
 
@@ -82,22 +83,22 @@ headroom_values:
 
 		* Pre-calculated division tables to speed up the divisions.
 divide_values_2:
-				.set	REPTN,0
+				.set	creptn,0
 				.rept 256
-				.byte (-128+REPTN)/2
-				.set	REPTN,REPTN+1				
+				.byte (-128+creptn)/2
+				.set	creptn,creptn+1				
 				.endr
 divide_values_3: 
-				.set	REPTN,0
+				.set	creptn,0
 				.rept 256
-				.byte (-128+REPTN)/3
-				.set	REPTN,REPTN+1				
+				.byte (-128+creptn)/3
+				.set	creptn,creptn+1				
 				.endr
 divide_values_4: 
-				.set	REPTN,0
+				.set	creptn,0
 				.rept 256
-				.byte (-128+REPTN)/4
-				.set	REPTN,REPTN+1				
+				.byte (-128+creptn)/4
+				.set	creptn,creptn+1				
 				.endr
 
 * End of File

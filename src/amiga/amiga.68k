@@ -2200,16 +2200,17 @@ platform_init:
 	move.l	a0,(0xD0,a6)
 	move.l	system_vbr(pc),a0
 	moveq	#1,d0	| PAL
-	jsr		_mt_install_cia
+	**jsr		_mt_install_cia
+
 
 	* Setup the mixer
 	move.w	#MIX_PAL,d0					| Set video system to PAL
 	lea.l	mixer_buffer,a0				| Fetch Chip RAM buffer
-	jbsr		MixerSetup				| Set up the mixer
+	jbsr	MixerSetup					| Set up the mixer
 
 	* Start the mixer interrupt handler
-	move.l	system_vbr(pc),a0			| Set VBR to 0
-	jbsr		MixerInstallHandler			| Install the mixer IRQ handler
+	move.l	system_vbr(pc),a0			| Set VBR
+	jbsr	MixerInstallHandler			| Install the mixer IRQ handler
 
 	* Start the mixer
 	jbsr		MixerStart

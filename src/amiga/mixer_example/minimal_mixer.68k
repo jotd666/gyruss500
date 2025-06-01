@@ -1,0 +1,383 @@
+* 0xVER: MinimalMixer.asm 1.1 (05.02.24)
+*
+* MinimalMixer.asm
+* Example showing the audio mixer in MIXER_SINGLE mode.
+* This example is a minimal example that shows of the steps to enable the
+* mixer and play back some SFX.
+*
+* It does not properly disable the OS and assumes a VBR of 0.
+* In 'real' programs, the VBR should be set correctly on non-68000 systems and
+* the OS should be disabled.
+*
+* Author: Jeroen Knoester
+* Version: 1.1
+* Revision: 20240205
+*
+* Assembled using VASM in Amiga-link mode.
+* TAB size = 4 spaces
+* adapted to gcc as by JOTD
+*
+* Includes (OS includes assume at least NDK 1.3) 
+	.include "exec/types.i"
+	.include "lvo/exec_lvos.i"
+	.include "lvo/dos_lvos.i"
+	.include "hardware/custom.i"
+	.include "hardware/dmabits.i"
+	*.include "hardware/intbits.i"
+	.include "hardware/cia.i"
+
+	*.include "debug.i"
+	*.include "../converter.i"
+	.include "mixer.inc"
+	.include "samples.inc"
+
+* Custom chips offsets
+custombase			=	0xdff000
+ciaa				=	0xbfe001
+	
+* Start of code
+		.section code,code
+		
+		* Main code
+_main:	
+		* Open the DOS library to be able to print messages to the CLI
+		jbsr 	OSOpenDos
+		
+		* Print initial messages
+		lea.l	txt_1(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_2(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_3(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_4(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_5(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_6(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_7(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_8(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_9(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_10(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_11(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_12(pc),a0
+		jbsr		PrintMessage
+		lea.l	txt_13(pc),a0
+		jbsr		PrintMessage
+		
+		* Pre-proces the samples
+		moveq	#4,d1						| Set number of channels
+
+		* Sample 1
+		lea.l	sample1,a0					| Sample source
+		lea.l	sample1,a1					| Pre-processed destination
+		move.l	#sample1_size,d0			| Sample size
+		jbsr		ConvertSampleDivide
+		
+		* Sample 2
+		lea.l	sample2,a0					| Sample source
+		lea.l	sample2,a1					| Pre-processed destination
+		move.l	#sample2_size,d0			| Sample size
+		jbsr		ConvertSampleDivide
+		
+		* Sample 3
+		lea.l	sample3,a0					| Sample source
+		lea.l	sample3,a1					| Pre-processed destination
+		move.l	#sample3_size,d0			| Sample size
+		jbsr		ConvertSampleDivide
+		
+		* Sample 4
+		lea.l	sample4,a0					| Sample source
+		lea.l	sample4,a1					| Pre-processed destination
+		move.l	#sample4_size,d0			| Sample size
+		jbsr		ConvertSampleDivide
+
+		* Setup the mixer
+		move.w	#MIX_PAL,d0					| Set video system to PAL
+		lea.l	mixer_buffer,a0				| Fetch Chip RAM buffer
+		jbsr		MixerSetup					| Set up the mixer
+		
+		* Start the mixer interrupt handler
+		moveq	#0,d0						| Save vector
+		move.l	d0,a0						| Set VBR to 0
+		jbsr		MixerInstallHandler			| Install the mixer IRQ handler
+		
+		* Start the mixer
+		jbsr		MixerStart
+
+		* Set up effect structures for all four samples
+		lea.l	effect1,a0
+		lea.l	sample1,a1
+		move.l	#sample1_size,mfx_length(a0)
+		move.l	a1,mfx_sample_ptr(a0)
+		move.w	#MIX_FX_LOOP,mfx_loop(a0)
+		move.w	#1,mfx_priority(a0)
+		clr.l	mfx_loop_offset(a0)
+		clr.l	mfx_plugin_ptr(a0)
+		
+		lea.l	effect2,a0
+		lea.l	sample2,a1
+		move.l	#sample2_size,mfx_length(a0)
+		move.l	a1,mfx_sample_ptr(a0)
+		move.w	#MIX_FX_LOOP,mfx_loop(a0)
+		move.w	#1,mfx_priority(a0)
+		clr.l	mfx_loop_offset(a0)
+		clr.l	mfx_plugin_ptr(a0)
+		
+		lea.l	effect3,a0
+		lea.l	sample3,a1
+		move.l	#sample3_size,mfx_length(a0)
+		move.l	a1,mfx_sample_ptr(a0)
+		move.w	#MIX_FX_LOOP,mfx_loop(a0)
+		move.w	#1,mfx_priority(a0)
+		clr.l	mfx_loop_offset(a0)
+		clr.l	mfx_plugin_ptr(a0)
+		
+		lea.l	effect4,a0
+		lea.l	sample4,a1
+		move.l	#sample4_size,mfx_length(a0)
+		move.l	a1,mfx_sample_ptr(a0)
+		move.w	#MIX_FX_LOOP,mfx_loop(a0)
+		move.w	#1,mfx_priority(a0)
+		clr.l	mfx_loop_offset(a0)
+		clr.l	mfx_plugin_ptr(a0)
+
+		* Play back all four samples
+		* Sample 1
+		moveq	#DMAF_AUD2,d0				| Set HW channel to play on
+											* (not required for MIXER_SINGLE)
+		lea.l	effect1,a0					| Sample 1
+		jbsr		MixerPlayFX					| Play the sample
+
+		* Sample 2
+		moveq	#DMAF_AUD2,d0				| Set HW channel to play on
+											* (not required for MIXER_SINGLE)
+		lea.l	effect2,a0					| Sample 2
+		jbsr		MixerPlayFX					| Play the sample
+		
+		* Sample 3
+		moveq	#DMAF_AUD2,d0				| Set HW channel to play on
+											* (not required for MIXER_SINGLE)
+		lea.l	effect3,a0					| Sample 3
+		jbsr		MixerPlayFX					| Play the sample
+		
+		* Sample 4
+		moveq	#DMAF_AUD2,d0				| Set HW channel to play on
+											* (not required for MIXER_SINGLE)
+		lea.l	effect4,a0					| Sample 4
+		jbsr		MixerPlayFX					| Play the sample
+		
+		* Print end messages
+		lea.l	txt_14(pc),a0
+		jbsr		PrintMessage
+		
+		* Wait for left mouse button to end
+		jbsr		WaitLeftMouse
+		
+		* Stop the mixer
+		jbsr		MixerStop
+		
+		* Stop the mixer interrupt handler
+		jbsr		MixerRemoveHandler
+		
+		* Close the DOS library
+		jbsr		OSCloseDos
+		rts
+		
+*------------------------------------
+* Support routines
+*------------------------------------
+		
+		* Routine: WaitLeftMouse
+		* Waits on the left mouse button being pressed.
+WaitLeftMouse:
+.wait1:
+		btst    #6,ciaa						| Check left mouse button
+		bne		.wait1
+.wait2:
+		btst	#6,ciaa
+		beq		.wait2						| Wait until no longer pressed
+		rts
+		
+		* Routine: PrintMessage
+		* Uses DOS to print a given message
+		* A0 - pointer to message
+PrintMessage:
+		move.l	a6,-(sp)
+		move.l	a0,-(sp)
+		jbsr		OSOpenDos
+		tst.w	d0
+		bne		.no_dos
+		
+		move.l	dosbase(pc),a6
+		jsr		_LVOOutput(a6)
+		move.l	d0,d1
+		move.l	(sp)+,a2
+		moveq	#0,d3
+		move.w	(a2)+,d3
+		move.l	a2,d2
+		jsr		_LVOWrite(a6)
+		
+		jbsr		OSCloseDos
+.done:	move.l	(sp)+,a6
+		rts
+		
+.no_dos:	move.l	(sp)+,a0
+		bra		.done
+		
+		* Routine: OSOpenDos
+		* Opens the DOS.library .ifeq	needed
+		*
+		* Returns
+		* D0 = 0 is OK, non zero is error
+OSOpenDos:
+		move.l	a6,-(sp)		| Stack
+		
+		move.l	0x4.w,a6			| Execbase
+		lea.l	dosname(pc),a1
+		moveq	#0,d0
+		jsr		_LVOOpenLibrary(a6)
+		lea.l	dosbase(pc),a0
+		move.l	d0,(a0)
+		beq		1f
+		
+		moveq	#0,d0		
+0:	move.l	(sp)+,a6		| Stack
+		rts
+		
+1:	moveq	#1,d1
+		bra		0b
+		
+		* Routine: OSCloseDos
+		* Closes the DOS.library .ifeq	needed
+OSCloseDos:
+		movem.l	a1/a6,-(sp)
+		
+		move.l	dosbase(pc),a1
+		cmp.l	#0,a1
+		beq		1f
+		
+		move.l	0x4.w,a6			| Execbase
+		jsr		_LVOCloseLibrary(a6)
+		moveq	#0,d0
+		
+0:	movem.l	(sp)+,a1/a6
+		rts
+		
+1:	moveq	#1,d1
+		bra		0b
+
+*------------------------------------
+* Data follows
+*------------------------------------
+	
+effect1:	.skip mfx_SIZEOF
+effect2:	.skip mfx_SIZEOF
+effect3:	.skip mfx_SIZEOF
+effect4:	.skip mfx_SIZEOF
+	
+dosbase:	.long	0
+dosname: .ascii	"dos.library"
+		.byte 	0,0
+		.align 2
+
+txt_1:	.short	1f-0f
+0:
+		.ascii	"MinimalMixer - minimal example for using the Audio Mixer"
+		.byte	10,0,0
+1:
+		.align 2
+txt_2:	.short	1f-0f
+0:
+		.ascii	"--------------------------------------------------------"
+		.byte  10,0,0
+1:
+		.align 2
+txt_3:	.short	1f-0f
+0:
+		.byte	10,0,0
+1:
+		.align 2
+txt_4:	.short	1f-0f
+0:
+		.ascii	"Note: this example is very short and does not close down the OS"
+		.byte	10,0,0
+1:
+		.align 2
+txt_5:	.short	1f-0f
+0:
+		.ascii	"      properly. The Audio Mixer directly accesses custom chip"
+		.byte	10,0,0
+1:
+		.align 2
+txt_6:	.short	1f-0f
+0:
+		.ascii	"      registers, closing down the OS properly prior to using the"
+		.byte	10,0,0
+1:
+		.align 2
+txt_7:	.short	1f-0f
+0:
+		.ascii	"      mixer is required in real programs."
+		.byte	10,0,0
+1:
+		.align 2
+txt_8:	.short	1f-0f
+0:
+		.ascii	"Note: this program assumes a VBR of 0"
+		.byte	10,0,0
+1:
+		.align 2
+txt_9:	.short	1f-0f
+0:
+		.byte	10,0,0
+1:
+		.align 2
+txt_10:	.short	1f-0f
+0:
+		.ascii	"Samples used are sourced from freesound.org. See the readme file in the data"
+		.byte	10,0,0
+1:
+		.align 2
+txt_11:	.short	1f-0f
+0:
+		.ascii	"subdirectory of the mixer 'example' directory."
+		.byte	10,0,0
+1:
+		.align 2
+		
+txt_12:	.short	1f-0f
+0:
+		.byte	10,0,0
+1:
+		.align 2	
+txt_13:	.short	1f-0f
+0:
+		.ascii	"Pre-processing samples..."
+		.byte	10,0,0
+1:
+		.align 2
+
+txt_14:	.short	1f-0f
+0:
+		.ascii	"Press left mouse button to end program."
+		.byte	10,0,0
+1:
+		.align 2
+
+
+*------------------------------------
+* Chip RAM buffer
+*------------------------------------
+		.section bss_chip
+		.align  4
+mixer_buffer:	
+		.skip	mixer_buffer_size
+
+* End of File

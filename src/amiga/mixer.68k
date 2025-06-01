@@ -195,7 +195,7 @@ mixer_error = 1
 
 * Check .ifeq	the paired mode has both AUD2 and AUD3 selected
 .mxchancheck = mixer_output_aud2+mixer_output_aud3
-	.ifeq	.mxchancheck<2
+	.if	.mxchancheck<2
 		.ifeq	MIXER_MULTI_PAIRED-1
 mixer_error = 1
 			.ifeq	MIXER_NO_ECHO
@@ -1839,7 +1839,7 @@ MixerStopFX:
 		.if	\arg2>2
 			add.l	(a4)+,\arg1
 		.endif
-		.ifeq	\arg2>3
+		.if	\arg2>3
 			add.l	(a5)+,\arg1
 		.endif
 					.endm
@@ -1905,7 +1905,7 @@ MixerStopFX:
 		* 1st block: 32 byte increments
 .mix_\arg\()ch_32b:
 		movem.l	(a2)+,d0-d7
-		.ifeq	\arg>1
+		.if	\arg>1
 			MixLongWords \arg
 		.endif
 		movem.l	d0-d7,(a0)
@@ -1915,7 +1915,7 @@ MixerStopFX:
 		
 		.rept mixer_32b_cnt-1
 		movem.l	(a2)+,d0-d7
-		.ifeq	\arg>1
+		.if	\arg>1
 			MixLongWords \arg
 		.endif
 		movem.l	d0-d7,(a0)
@@ -1981,7 +1981,7 @@ MixerStopFX:
 		.ifeq	\arg-1
 			move.l	(a2)+,(a0)+
 		.endif
-		.ifeq	\arg>1
+		.if	\arg>1
 			move.l	(a2)+,d0
 			MixSingleLongWord d0,\arg
 			move.l	d0,(a0)+
@@ -1994,7 +1994,7 @@ MixerStopFX:
 		.ifeq	\arg-1
 			move.l	(a2)+,(a0)+
 		.endif
-		.ifeq	\arg>1
+		.if	\arg>1
 			move.l	(a2)+,d0
 			MixSingleLongWord d0,\arg
 			move.l	d0,(a0)+
@@ -2032,13 +2032,13 @@ MixerStopFX:
 
 		* Check all active channels
 		MixCheckChannel a2
-		.ifeq	\arg>1
+		.if	\arg>1
 			MixCheckChannel a3
 		.endif
-		.ifeq	\arg>2
+		.if	\arg>2
 			MixCheckChannel a4
 		.endif
-		.ifeq	\arg>3
+		.if	\arg>3
 			MixCheckChannel a5
 		.endif
 		
@@ -2064,7 +2064,7 @@ MixerStopFX:
 		.ifeq	\arg-1
 			move.l	(a2)+,(a0)+
 		.endif
-		.ifeq	\arg>1
+		.if	\arg>1
 			move.l	(a2)+,d0
 			MixSingleLongWord d0,\arg
 			move.l	d0,(a0)+
@@ -2083,11 +2083,11 @@ MixerStopFX:
 .mix_\arg\()ch_ilp:
 			add.b	d2,d0
 			bvs.s	.mix_\arg\()ch_overflow
-			.ifeq	\arg>2
+			.if	\arg>2
 				add.b	d5,d0
 				bvs.s	.mix_\arg\()ch_overflow
 			.endif
-			.ifeq	\arg>3
+			.if	\arg>3
 				add.b	d6,d0
 				bvs.s	.mix_\arg\()ch_overflow
 			.endif
@@ -2095,10 +2095,10 @@ MixerStopFX:
 .mix_\arg\()ch_ilp_done:
 			ror.l	#8,d0
 			lsr.l	#8,d2
-			.ifeq	\arg>2
+			.if	\arg>2
 				lsr.l	#8,d5
 			.endif
-			.ifeq	\arg>3
+			.if	\arg>3
 				lsr.l	#8,d6
 			.endif
 			dbra	d7,.mix_\arg\()ch_ilp
@@ -2106,11 +2106,11 @@ MixerStopFX:
 			move.b	(a2)+,d0
 			add.b	(a3)+,d0
 			bvs.s	.mix_\arg\()ch_overflow_1_\<REPTN>
-			.ifeq	\arg>2
+			.if	\arg>2
 				add.b	(a4)+,d0
 				bvs.s	.mix_\arg\()ch_overflow_2_\<REPTN>
 			.endif
-			.ifeq	\arg>3
+			.if	\arg>3
 				add.b	(a5)+,d0
 				bvs.s	.mix_\arg\()ch_overflow_3_\<REPTN>
 			.endif
@@ -2133,17 +2133,17 @@ MixerStopFX:
 .mix_\arg\()ch_overflow_1_\<REPTN>
 			smi		d0						| 0xff .ifeq	negative, 0x0 .ifeq	positive
 			add.b	d4,d0					| 0x0+0x80 = 0x80, 0xff+0x80 = 0x7f
-			.ifeq	\arg>2
+			.if	\arg>2
 				move.b	(a4)+,d2
 			.endif
-			.ifeq	\arg>3
+			.if	\arg>3
 				move.b	(a5)+,d2
 			.endif
 			bra.s	.mix_\arg\()ch_ilp_done_\<REPTN>
 .mix_\arg\()ch_overflow_2_\<REPTN>
 			smi		d0						| 0xff .ifeq	negative, 0x0 .ifeq	positive
 			add.b	d4,d0					| 0x0+0x80 = 0x80, 0xff+0x80 = 0x7f
-			.ifeq	\arg>3
+			.if	\arg>3
 				move.b	(a5)+,d2
 			.endif
 			bra.s	.mix_\arg\()ch_ilp_done_\<REPTN>
@@ -2173,14 +2173,14 @@ MixerStopFX:
 		.ifeq	\arg-1
 			move.l	(a2)+,(a0)+
 		.endif
-		.ifeq	\arg>1
+		.if	\arg>1
 			.ifeq	MIXER_68020-1
 				move.l	(a2)+,d0
 				move.l	(a3)+,d2
-				.ifeq	\arg>2
+				.if	\arg>2
 					move.l	(a4)+,d5
 				.endif
-				.ifeq	\arg>3
+				.if	\arg>3
 					move.l	(a5)+,d6
 				.endif
 				
@@ -2194,11 +2194,11 @@ MixerStopFX:
 			.endif
 		.endif
 		dbra	d3,.mix_\arg\()ch_lp
-		.ifeq	\arg>1
+		.if	\arg>1
 			bra.s	.mix_\arg\()ch_lp_done
 		.endif
 		
-		.ifeq	\arg>1
+		.if	\arg>1
 			.ifeq	MIXER_68020-1
 				MixHQOverflow \1
 			.else
@@ -2232,7 +2232,7 @@ MixerStopFX:
 		* PAL block (32 bytes)
 		REPT (.mix_\arg\()ch_pal_size_32)/32
 			movem.l	(a2)+,d0-d7
-			.ifeq	\arg>1
+			.if	\arg>1
 				MixLongWords \arg
 			.endif
 			movem.l	d0-d7,(a0)
@@ -2244,7 +2244,7 @@ MixerStopFX:
 				.ifeq	\arg-1
 					move.l	(a2)+,(a0)+
 				.endif
-				.ifeq	\arg>1
+				.if	\arg>1
 					move.l	(a2)+,d0
 					MixSingleLongWord d0,\arg
 					move.l	d0,(a0)+
@@ -2257,7 +2257,7 @@ MixerStopFX:
 		* NTSC block
 		REPT (.mix_\arg\()ch_ntsc_size_32)/32
 			movem.l	(a2)+,d0-d7
-			.ifeq	\arg>1
+			.if	\arg>1
 				MixLongWords \arg
 			.endif
 			movem.l	d0-d7,(a0)
@@ -2268,7 +2268,7 @@ MixerStopFX:
 				.ifeq	\arg-1
 					move.l	(a2)+,(a0)+
 				.endif
-				.ifeq	\arg>1
+				.if	\arg>1
 					move.l	(a2)+,d0
 					MixSingleLongWord d0,\arg
 					move.l	d0,(a0)+
@@ -2290,7 +2290,7 @@ MixerStopFX:
 		.ifeq	mxslength_word-1
 			move.w	mch_remaining_length(a6),d3	| D3 = remaining length
 			sub.w	d2,d3						| Update remaining length
-			.ifeq	.\@_chkch_wlen_dist>-1
+			.if	.\@_chkch_wlen_dist>-1
 				bhi		.\@_write_remaining
 			.else
 				bhi.s	.\@_write_remaining
@@ -2298,7 +2298,7 @@ MixerStopFX:
 		.else
 			move.l	mch_remaining_length(a6),d3	| D3 = remaining length
 			sub.l	d2,d3						| Update remaining length
-			.ifeq	.\@_chkch_wlen_dist>-1
+			.if	.\@_chkch_wlen_dist>-1
 				bgt		.\@_write_remaining
 			.else
 				bgt.s	.\@_write_remaining
@@ -2484,7 +2484,7 @@ MixerStopFX:
 			move.l	\arg,mch_sample_ptr(a6)		| Write sample pointer
 		.endif
 
-		* Check .ifeq	remaining length <= smallest remaining length
+		* Check if remaining length <= smallest remaining length
 		.ifeq	mxslength_word-1
 			cmp.w	d3,d1 
 			bls.s	.\@_next_channel
@@ -2618,7 +2618,7 @@ MixerStopFX:
 .\@_chkch_done_dist	SET	MIXER_ENABLE_PLUGINS+MIXER_ENABLE_CALLBACK
 		tst.w	mch_status(a2)
 		
-		.ifeq	.\@_chkch_done_dist>1
+		.if	.\@_chkch_done_dist>1
 			beq		.\@_done
 		.else
 			beq.s	.\@_done
@@ -2982,13 +2982,13 @@ MixerStopFX:
 .jmp_table:
 		jmp		mix_silence(pc)			| 0
 		jmp		mix_copy_only(pc)			| 1
-		.ifeq	mixer_sw_channels>1
+		.if	mixer_sw_channels>1
 			jmp		.mix_2_channels(pc)		| etc
 		.endif
-		.ifeq	mixer_sw_channels>2
+		.if	mixer_sw_channels>2
 			jmp		.mix_3_channels(pc)
 		.endif
-		.ifeq	mixer_sw_channels>3
+		.if	mixer_sw_channels>3
 			jmp		.mix_4_channels(pc)
 		.endif
 		
@@ -3044,7 +3044,7 @@ mix_1ch_start:
 		MixCalcRem4 2
 	.endif
 		
-	.ifeq	mixer_sw_channels>2
+	.if	mixer_sw_channels>2
 .mix_3_channels:
 		.ifeq	MIXER_MULTI_PAIRED-1
 			move.w	#1,mxe_active(a1)

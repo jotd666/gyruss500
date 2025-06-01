@@ -147,25 +147,25 @@ _main:
 
 		* Play back all four samples
 		* Sample 1
-		moveq	#DMAF_AUD2,d0				| Set HW channel to play on
+		moveq	#DMAF_AUD3,d0				| Set HW channel to play on
 											* (not required for MIXER_SINGLE)
 		lea.l	effect1,a0					| Sample 1
 		jbsr		MixerPlayFX					| Play the sample
 
 		* Sample 2
-		moveq	#DMAF_AUD2,d0				| Set HW channel to play on
+		moveq	#DMAF_AUD3,d0				| Set HW channel to play on
 											* (not required for MIXER_SINGLE)
 		lea.l	effect2,a0					| Sample 2
 		jbsr		MixerPlayFX					| Play the sample
 		
 		* Sample 3
-		moveq	#DMAF_AUD2,d0				| Set HW channel to play on
+		moveq	#DMAF_AUD3,d0				| Set HW channel to play on
 											* (not required for MIXER_SINGLE)
 		lea.l	effect3,a0					| Sample 3
 		jbsr		MixerPlayFX					| Play the sample
 		
 		* Sample 4
-		moveq	#DMAF_AUD2,d0				| Set HW channel to play on
+		moveq	#DMAF_AUD3,d0				| Set HW channel to play on
 											* (not required for MIXER_SINGLE)
 		lea.l	effect4,a0					| Sample 4
 		jbsr		MixerPlayFX					| Play the sample

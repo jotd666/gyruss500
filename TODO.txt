@@ -1,5 +1,5 @@
 - cut the warp sound off, takes a lot of memory but should be shorter
-
+- star restore: could be optimized too by picking the correct pattern instead of blitting
 - clear if blitter busy use cpu clear like dragonninja
 - try to group sprites vertically 16x8 twice => 16x16 once: grouping will depend on xflip!
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes

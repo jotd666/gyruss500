@@ -1,0 +1,21 @@
+The original game uses 28 different colors, but only 16 different
+colors for sprites, which is good!
+
+So the amiga display uses 32 colors but only 16 colors are assigned
+to BOBs which saves some blitting.
+The stars are originally sprites, but now converted to a 
+single pixel on only 1 bitplane, which makes drawing super-fast.
+The possible colors range from white to blue (5 colors) so by using
+palette entries 1,2,4,8,16 it's possible to display them with a single
+BSET instruction (and clear them with a simple CLR.B)
+
+The fonts/tiles use the rest of the colors, so they're displayed
+using the 5 bitplanes.
+
+Display is double-buffered
+
+The game detects when there are fonts/planets in the middle of the
+playfield, and uses blit clear instead of background restore
+(which is the active mode when playing)
+
+No copper tricks or hardware sprites are used.

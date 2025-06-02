@@ -18,6 +18,7 @@
 AttnFlags = 0x128
 AFB_68010 = 0
 AFB_68020 = 1
+AFB_68030 = 2
 
 NO68020 = 1
 
@@ -182,14 +183,6 @@ start:
 	move.l	a7,old_stack
 	jra	_user
     
-	.include	"samples.68k"
-
-
-effect1:	.skip mfx_SIZEOF
-effect2:	.skip mfx_SIZEOF
-effect3:	.skip mfx_SIZEOF
-effect4:	.skip mfx_SIZEOF
-	
 	
 * exports
 
@@ -1904,9 +1897,10 @@ clear_planes_any_blitter_internal:
 	bclr	#0,d2		| make sure D2 is even (else strange things occur!)
     sub.w   d2,d0       | blit width
 
+	move.w	d4,d6		| save height
     lsl.w   #6,d4
     lsr.w   #1,d2
-    add.w   d2,d4       | blit height
+    add.w   d2,d4       | blit height+width
 
     * now just wait for blitter ready to write all registers
 	WAIT_BLIT
@@ -1918,11 +1912,29 @@ clear_planes_any_blitter_internal:
 	subq	#1,d3
 	jeq		4f
 	subq	#1,d3
+	jra		31f
 3:
+	BTST	#6,(dmaconr,a5)
+	jeq		31f
+	* blitter is busy: do it with cpu for that plane
+	move.w	d6,d5
+	subq	#1,d5
+	move.l	a1,a2
+	* no need to know which width in the case of gyruss there are
+	* only 32 bit erase / blits
+55:
+	clr.l	(a2)
+	lea		(NB_BYTES_PER_ROW,a2),a2
+	dbf		d5,55b
+	lea		(SCREEN_PLANE_SIZE,a1),a1
+	dbf		d3,3b			| should send to blitter operation
+	rts
+31:
 	move.l a1,bltdpt(a5)	|destination top left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
+32:
 	dbf		d3,3b
 4:
 	move.l a1,bltdpt(a5)	|destination top left corner
@@ -2003,10 +2015,10 @@ store_system:
 	cmp.l	#0x200000,d0
 	bcs.b	3f				| will crawl if no fastmem
 	move.w	AttnFlags(a6),d0
-	btst	#AFB_68020,d0
+	btst	#AFB_68030,d0
 	bne.b	1f
 3:
-	* no whdload, no 68020: assume slow
+	* no whdload, no 68030: assume slow switch to 25 FPS
 	* if running on PiStorm, well, too bad use whdload
 	st.b	frameskip
 1:

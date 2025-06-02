@@ -1,4 +1,4 @@
-# gyruss500
+# Gyruss
 port of Gyruss for Amiga
 
 Credits:
@@ -26,5 +26,5 @@ Features:
 
 Cheat keys:
 - F1: complete level
-- F3: 
+- F3: add 10000 points
 - F4: toggle invincibility

@@ -165,29 +165,25 @@ save_highscores:
     rts
     
 
-osd_music_stop:
-*	movem.l	d0/a0/a6,-(a7)
-*	lea		_custom,a6
-*	move.w	#3,d0
-*	jbsr	_mt_stopfx
-*	movem.l	(a7)+,d0/a0/a6
-
+osd_sound_stop:
+	movem.l	d0/a0/a6,-(a7)
+	move.w	#DMAF_AUD3,d0
+	jbsr	MixerStopFX
 	
-	tst.b	music_playing
-	jne		force_sound_stop
-rts
-
-force_sound_stop:
-	movem.l	d0-d1/a0/a6,-(a7)
-	lea		_custom,a6
-	move.b	#-1,music_track_start_number
-    clr.w   music_tick   | not playing anymore
+	movem.l	(a7)+,d0/a0/a6
+	* no RTS!!
+osd_music_stop:
+	movem.l	d0/a0/a6,-(a7)
+	
+ 	lea		_custom,a6
 	clr.b	music_playing
-	clr.b	looped_sound_enabled
     jsr		_mt_end
-0:
-	movem.l	(a7)+,d0-d1/a0/a6
+    clr.w   music_tick   | not playing anymore
+	move.b	#-1,music_track_start_number
+	movem.l	(a7)+,d0/a0/a6
 	rts
+	
+	
 	
 * tunes sounds are: sound index followed by 0x15,0x16,0x17 (that we ignore!)
 osd_sound_start:
@@ -196,11 +192,14 @@ osd_sound_start:
 	and.w	#0xFF,d0
 	jne		0f
 	* null sound: stop
-	*jbsr	osd_music_stop
+	*jbsr	osd_sound_stop
 	jra		10f
 0:
 	* original sound stop commands have bit 7 set. But if we follow them, they'll kill the
 
+	cmp.b	#0x80,d0
+	jcc		10f		| above 0x80 => forget it
+	
 	lsl.w	#3,d0
 	lea		sound_table,a0
 	add.w	d0,a0
@@ -238,7 +237,7 @@ osd_sound_start:
 	beq.b	10b		| same track, skip
 
     movem.l d0-a6,-(a7)
-	bsr		force_sound_stop
+	bsr		osd_music_stop
     lea _custom,a6
  	movem.l	d0/a0,-(a7)
 	*lea	pooyan_tunes,a0

@@ -4,7 +4,7 @@ import os,pathlib,struct
 from shared import *
 
 
-sprite_names = get_sprite_names()
+sprite_names,_ = get_sprite_names()
 
 
 
@@ -114,7 +114,7 @@ def process(the_dump,offset=0,base_address=0,name_filter=None,hide_named_sprite=
 
 
 
-process(r"explode",offset=0,base_address=0x4040,hide_named_sprite="star")
+process(r"sprite_ram_4040",offset=0,base_address=0x4040,hide_named_sprite="star")
 #process(r"sprites_4040",offset=0,base_address=0xA000,name_filter="swarm")
 #process(r"sprites_A200",offset=0,base_address=0xA000)
 #process(r"sattelites_A000",offset=0,base_address=0xA000)

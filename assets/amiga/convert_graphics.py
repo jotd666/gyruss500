@@ -4,7 +4,7 @@ import os,sys,bitplanelib
 from shared import *
 
 
-sprite_names = get_sprite_names()
+sprite_names,grouped_sprites = get_sprite_names()
 
 NB_SPRITES = 0x200
 NB_TILES = 0x200
@@ -258,6 +258,8 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
                         wtile = plane_func(tile)
 
                         if is_bob:
+                            if i in grouped_sprites:
+                                print("BBBB",i)
                             # only 4 planes + mask => 5 planes
                             y_start,wtile = bitplanelib.autocrop_y(wtile)
                             height = wtile.size[1]
@@ -308,6 +310,13 @@ sprite_table = read_tileset(sprite_set_list,full_palette[:16],[True,False,True,F
 with open(os.path.join(src_dir,"palette.68k"),"w") as f:
     bitplanelib.palette_dump(full_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
 
+gs_array = [0]*0x200
+for i in grouped_sprites:
+    gs_array[i] = gs_array[i+0x100] = 1
+with open(os.path.join(src_dir,"sprite_groups.68k"),"w") as f:
+    bitplanelib.dump_asm_bytes(gs_array,f)
+
+grouped_sprites
 with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
     f.write("\t.global\tcharacter_table\n")
     f.write("\t.global\tbob_table\n")

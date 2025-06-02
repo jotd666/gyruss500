@@ -1,7 +1,8 @@
+- crash on real machine retrieve coredump
 - try to group sprites vertically 16x8 twice => 16x16 once: grouping will depend on xflip!
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes
-- sound 0: stops sound
-- handle loop (radio)
+- handle loop (radio): when to stop it? maybe if sound 0 played
+  then stop loops and music (not regular SFX)
 - highscore save
 - still missing sprites, track red flashes
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000

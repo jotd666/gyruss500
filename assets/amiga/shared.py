@@ -33,33 +33,39 @@ def ensure_exists(d):
 
 def get_sprite_names():
     rval = {}
+    groups = set()
     def add_range(a,b,name):
         for i in range(a,b):
             rval[i] = name
-    def add_dual_range(a,b,name):
+    def add_dual_range(a,b,name,group=False):
         for i in range(a,b):
             rval[i] = name
             rval[i+0x100] = name
+        if group:
+            groups.update(range(a,b))
+
     def add(i,name):
             rval[i] = name
 
     add_dual_range(0x39,0x40,"furthest_swarm_enemy")
     add_dual_range(1,0x13,"player_ship")
-    add_range(0x1C0,0x1C5,"player_ship")
+    add_range(0x1C0,0x1Cf,"player_ship")
     add_dual_range(0xD0,0xD3,"player_ship")
-    add_dual_range(0x34,0x39,"iceberg")
+    add_dual_range(0x34,0x36,"iceberg")
+    add_dual_range(0x36,0x39,"iceberg",group=True)
     add_dual_range(0x88,0x90,"death_ray")
     add_dual_range(0x81,0x88,"ray_emitter")
     add(0x13,"star")
     add(0x2d,"exploding_particle")
-    add(0x134,"iceberg")
     add_dual_range(0xD4,0xDD,"earth")
-    add_dual_range(0x2F,0x34,"explosion")
-    add_dual_range(0xa0,0xcf,"blue_saucer")
-    add_dual_range(0x4b,0x55,"side_satellite")
-    add_dual_range(0xbc,0xc0,"bonus_satellite")
-    add_dual_range(0xde,0xef,"blue_saucer")
-    add_dual_range(0x71,0x77,"blue_saucer")
+    add_dual_range(0x2F,0x32,"big_explosion",group=True)
+    add_dual_range(0x32,0x34,"explosion")
+    add_dual_range(0xa0,0xbf,"saucer",group=True)
+    add_dual_range(0x4b,0x55,"side_satellite",group=True)
+    add_dual_range(0xbc,0xc0,"bonus_satellite",group=True)
+    add_dual_range(0xde,0xef,"saucer",group=True)
+    add_dual_range(0x71,0x77,"saucer",group=True)
+    add_dual_range(0x5A,0x5E,"chance_ship",group=True)
     add_dual_range(0x18,0x1f,"player_laser")
     add_dual_range(0x1f,0x23,"enemy_bomb")
     add_dual_range(0x78,0x7B,"neptune")
@@ -69,7 +75,7 @@ def get_sprite_names():
 
 
 
-    return rval
+    return rval,groups
 
 # codes representing letters. No logic, duplicate letters, ... horrible
 alphanum_tile_codes = {1,3,0xB,0xD,0xF,0x17,0x1A,0x1C,0x25,0x29,0x2A,0x2C,0x30,

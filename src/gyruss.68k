@@ -554,6 +554,7 @@ fetch_a0_plus_d0_0008:
 load_rom_pointer_in_a1_d3_0010:
 	add.b	d0,d0                            	| [$0010: add  a,a]
 	ADD_D0_TO_A0_0018                            	| [$0011: rst  $18]
+	moveq	#0,d3
 	move.b	(a0)+,d4                         	| [$0012: ld   e,(hl)]
 	                           	| [$0013: inc  hl]
 	move.b	(a0)+,d3                         	| [$0014: ld   d,(hl)]
@@ -1398,6 +1399,7 @@ write_message_07e4:
 								
 
 display_text_07ef:
+	and.l	#0xFFFF,d3 
 	LOAD_D3_16_FROM_D3D4
 	exg	d3,a1
 1:

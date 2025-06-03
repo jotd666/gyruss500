@@ -29,7 +29,8 @@ def ensure_empty(d):
     else:
         os.makedirs(d)
 
-def load_tileset(image_name,palette_index,width,height,tileset_name,dumpdir,dump=False,name_dict=None,cluts=None,tile_number=0):
+def load_tileset(image_name,palette_index,width,height,tileset_name,dumpdir,
+dump=False,name_dict=None,cluts=None,tile_number=0):
 
 ##    if isinstance(image_name,str):
 ##        full_image_path = os.path.join(this_dir,os.path.pardir,"sheets",
@@ -66,6 +67,7 @@ def load_tileset(image_name,palette_index,width,height,tileset_name,dumpdir,dump
 
 
                 tileset_1.append(img)
+
                 if dump:
                     img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
                     if name_dict:
@@ -180,11 +182,40 @@ for j,sprite_sheet_dict in enumerate(sprite_sheet_dicts):
     for clut_index,tsd in sprite_sheet_dict.items():
         # BOBs
         cluts = sprite_cluts
-        sp,sprite_set = load_tileset(tsd,clut_index,16,8,"sprites",dump_dir,dump=dump_it,
+        sp,sprite_set = load_tileset(tsd,clut_index,16,8,"sprites",dump_dir,dump=False,
         name_dict=sprite_names,cluts=sprite_cluts,
         tile_number=j*0x100)
         sprite_set_list[clut_index] += sprite_set
         sprite_palette.update(sp)
+
+sprite_dump_dir = dump_dir / "sprites"
+for sd in ["16x8","16x16"]:
+    for p in (sprite_dump_dir / sd).glob("*"):
+        p.unlink()
+    (sprite_dump_dir / sd).mkdir(exist_ok=True)
+
+for palette_index,sprite_set in enumerate(sprite_set_list):
+    # rework tiles which are grouped now that 2x256 list is composed
+    for tile_number,wtile in enumerate(sprite_set):
+        if wtile and tile_number < 0x100 and tile_number in grouped_sprites:
+            # change wtile, fetch code +0x100
+            other_tile_index = (tile_number+0x100)
+            other_tile = sprite_set[other_tile_index]
+            new_tile = Image.new("RGB",(wtile.size[0],wtile.size[1]*2))
+            new_tile.paste(wtile)
+            new_tile.paste(other_tile,(0,wtile.size[1]))
+            sprite_set[tile_number] = new_tile
+            sprite_set[tile_number+0x100] = None  # no need
+            wtile = new_tile
+        if dump_it and wtile:
+            img = ImageOps.scale(wtile,5,resample=Image.Resampling.NEAREST)
+            if sprite_names:
+                name = sprite_names.get(tile_number,"unknown")
+            else:
+                name = "unknown"
+
+            img.save(sprite_dump_dir / f"16x{wtile.size[1]}" / f"{name}_{tile_number:02x}_{palette_index:02x}.png")
+
 
 # extract star colors (we now where the non-black pixel of the star is
 star_sprite = 0x13
@@ -258,8 +289,15 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
                         wtile = plane_func(tile)
 
                         if is_bob:
-                            if i in grouped_sprites:
-                                print("BBBB",i)
+##                            if i in grouped_sprites:
+##                                # change wtile, fetch code +0x100
+##                                other_tile_index = (i+0x100)%0x200
+##                                other_tile = img_set[other_tile_index]
+##                                new_tile = Image.new("RGB",(wtile.size[0],wtile.size[1]*2))
+##                                new_tile.paste(wtile)
+##                                new_tile.paste(other_tile,(0,wtile.size[1]))
+##                                wtile = new_tile
+##                                print(hex(i))
                             # only 4 planes + mask => 5 planes
                             y_start,wtile = bitplanelib.autocrop_y(wtile)
                             height = wtile.size[1]
@@ -314,7 +352,7 @@ gs_array = [0]*0x200
 for i in grouped_sprites:
     gs_array[i] = gs_array[i+0x100] = 1
 with open(os.path.join(src_dir,"sprite_groups.68k"),"w") as f:
-    bitplanelib.dump_asm_bytes(gs_array,f)
+    bitplanelib.dump_asm_bytes(gs_array,f,mit_format=True)
 
 grouped_sprites
 with open(os.path.join(src_dir,"graphics.68k"),"w") as f:

@@ -611,10 +611,11 @@ start_task_d3d4_0038:
 start_task_d3_0038:
 	move.w	d3,-(sp)
 	move.l	a0,-(sp)                        	| [$0038: push hl]
-	move.b	#0x95,d5                        	| [$0039: ld   h,$95]
-	move.b	l_9432(a6),d0                   	| [$003b: ld   a,($9432)]
-	move.b	d0,d6                           	| [$003e: ld   l,a]
-	LOAD_A0_FROM_D5D6_RAM
+	moveq	#0,d6
+	lea		task_array_9500(a6),a0                        	| [$0039: ld   h,$95]
+	move.b	rolling_task_index_9432(a6),d6          | [$003b: ld   a,($9432)]
+	                           	| [$003e: ld   l,a]
+	add.w	d6,a0
 	btst.b	#7,(a0)                         	| [$003f: bit  7,(hl)]
 	jeq	l_004d                             	| [$0041: jr   z,$004D]
 	LOAD_D3D4_FROM_D3_16
@@ -623,9 +624,9 @@ start_task_d3_0038:
 	move.b	d4,(a0)+                         	| [$0045: ld   (hl),e]
 	                           	| [$0046: inc  l]
 	addq	#2,d6			| follow A0
-	move.b	d6,d0                           	| [$0047: ld   a,l]
-	and.b	#0x3F,d0                         	| [$0048: and  $3F]
-	move.b	d0,l_9432(a6)                   	| [$004a: ld   ($9432),a]
+	                           	| [$0047: ld   a,l]
+	and.b	#0x3F,d6                         	| [$0048: and  $3F]
+	move.b	d6,rolling_task_index_9432(a6)      | [$004a: ld   ($9432),a]
 l_004d:
 	move.l	(sp)+,a0                        	| [$004d: pop  hl]
 	move.w	(sp)+,d3
@@ -1115,33 +1116,33 @@ execute_commands_loop_05f4:
 
 
 	* in ROM there's this RAM MSB address, let's hardcode it
-	move.b	#0x95,d5                       	| [$05f7: ld   a,($5865)]
+	moveq	#0,d6
+	lea		task_array_9500(a6),a0                       	| [$05f7: ld   a,($5865)]
 	                           	| [$05fa: ld   h,a]
 	move.b	task_index_counter_9433(a6),d6                   	| [$05fb: ld   a,($9433)]
-	                           	| [$05fe: ld   l,a]
-	LOAD_A0_FROM_D5D6_RAM
+	add.w	d6,a0                           	| [$05fe: ld   l,a]
 	move.b	(a0),d0                         	| [$05ff: ld   a,(hl)]
 	rol.b	#1,d0                            	| [$0600: rlca]
 	jcs	execute_commands_loop_05f4                             	| [$0601: jp   c,$05F4]
 	* there's a task to execute, get params & ack it
-	move.b	(a0),d2                         	| [$0604: ld   c,(hl)]
+	move.b	(a0),d2                     | [$0604: ld   c,(hl)]
 	st.b	(a0)+                      	| [$0605: ld   (hl),$FF]
-	                           	| [$0607: inc  hl]
-	move.b	(a0),d1                         	| [$0608: ld   b,(hl)]
+										| [$0607: inc  hl]
+	move.b	(a0),d0                     | [$0608: ld   b,(hl)] parameter in D0
 	st.b	(a0)+                      	| [$0609: ld   (hl),$FF]
-	                           	| [$060b: inc  hl]
-	LOAD_D5D6_FROM_A0_RAM
-	move.b	d6,d0                           	| [$060c: ld   a,l]
-	and.b	#0x3F,d0                         	| [$060d: and  $3F]
-	move.b	d0,task_index_counter_9433(a6)                   	| [$060f: ld   ($9433),a]
-	move.b	d2,d0                           	| [$0612: ld   a,c]
-	and.w	#0x0F,d0                         	| [$0613: and  $0F]
-	add.w	d0,d0
-	add.w	d0,d0			| 32 bit!
-	lea		jump_table_0620(pc),a0                          	| [$0615: ld   hl,$0620]
-	move.l	(a0,d0.w),a1                            	| [$0618: rst  $10]
-	move.b	d1,d0                           	| [$0619: ld   a,b]
-	pea		execute_commands_loop_05f4(pc)                          	| [$061a: ld   hl,$05F4]
+										| [$060b: inc  hl]
+	addq	#2,d6						| follow A0
+										| [$060c: ld   a,l]
+	and.b	#0x3F,d6                     | [$060d: and  $3F]
+	move.b	d6,task_index_counter_9433(a6)                   	| [$060f: ld   ($9433),a]
+										| [$0612: ld   a,c]
+	and.w	#0x0F,d2                    | [$0613: and  $0F]
+	add.w	d2,d2
+	add.w	d2,d2			| 32 bit!
+	lea		jump_table_0620(pc),a0       | [$0615: ld   hl,$0620]
+	move.l	(a0,d2.w),a1                 | [$0618: rst  $10]
+										| [$0619: ld   a,b] parameter in D0
+	pea		execute_commands_loop_05f4(pc)             | [$061a: ld   hl,$05F4]
 
 	                        	| [$061d: push hl]
 	                              	| [$061e: ex   de,hl]
@@ -3819,9 +3820,9 @@ l_1a87:
 	jeq	l_1aec                             	| [$1a92: jr   z,$1AEC]
 	lea	l_9900(a6),a3                      	| [$1a94: ld   iy,$9900]
 	lea	aux_objects_9300(a6),a2                      	| [$1a98: ld   ix,$9300]
-	move.w	#0x0004,d3                      	| [$1a9c: ld   de,$0004]
-	move.w	#0x0010,d1                      	| [$1a9f: ld   bc,$0010]
-	jbsr	exx                               	| [$1aa2: exx]
+											| [$1a9c: ld   de,$0004]
+											| [$1a9f: ld   bc,$0010]
+										    | [$1aa2: exx]
 	move.b	#0x0E,d1                        	| [$1aa3: ld   b,$0E]
 	LEA_ROM	0x1AE2,a0                          	| [$1aa5: ld   hl,$1AE2]
 	move.b	l_91CE(a6),d0                   	| [$1aa8: ld   a,($91CE)]
@@ -3830,7 +3831,7 @@ l_1a87:
 	ADD_D0_TO_A0_0018                            	| [$1ab1: rst  $18]
 	move.b	(a0),d2                         	| [$1ab2: ld   c,(hl)]
 l_1ab3:
-	move.b	(0x00,a3),d0                    	| [$1ab3: ld   a,(iy+$00)]
+	move.b	(displayed_y_00,a3),d0                    	| [$1ab3: ld   a,(iy+$00)]
 	cmp.b	#0x02,d0                         	| [$1ab6: cp   $02]
 	jcs	l_1ad3                             	| [$1ab8: jr   c,$1AD3]
 	move.b	(0x03,a3),d0                    	| [$1aba: ld   a,(iy+$03)]
@@ -3841,15 +3842,15 @@ l_1ab3:
 	move.b	general_fast_timer_9400(a6),d0                   	| [$1ac5: ld   a,($9400)]
 	ror.b	#2,d0                            	| [$1ac8: rrca] * 2
 	and.b	#0x0F,d0                         	| [$1aca: and  $0F]
-	move.b	d0,(0x02,a3)                    	| [$1acc: ld   (iy+$02),a]
+	move.b	d0,(sprite_code_02,a3)             | [$1acc: ld   (iy+$02),a]
 	movem.w	(sp)+,d1/d2                    	| [$1acf: pop  bc]
-	move.b	d2,(0x01,a3)                    	| [$1ad0: ld   (iy+$01),c]
+	move.b	d2,(sprite_code_01,a3)          | [$1ad0: ld   (iy+$01),c]
 l_1ad3:
 	* optim, add 4/1 directly
-	jbsr	exx                               	| [$1ad3: exx]
-	add.w	d3,a3                            	| [$1ad4: add  iy,de]
-	add.w	d1,a2                            	| [$1ad6: add  ix,bc]
-	jbsr	exx                               	| [$1ad8: exx]
+	                               	| [$1ad3: exx]
+	addq.w	#4,a3                            	| [$1ad4: add  iy,de]
+	add.w	#0x10,a2                            | [$1ad6: add  ix,bc]
+	                               	| [$1ad8: exx]
 	subq.b	#1,d1                           	| [...]
 	jne	l_1ab3                             	| [$1ad9: djnz $1AB3]
 	rts                                    	| [$1adb: ret]
@@ -3861,9 +3862,9 @@ l_1adc:
 l_1aec:
 	lea	l_9900(a6),a3                      	| [$1aec: ld   iy,$9900]
 	lea	aux_objects_9300(a6),a2                      	| [$1af0: ld   ix,$9300]
-	move.w	#0x0010,d3                      	| [$1af4: ld   de,$0010]
-	move.w	#0x0004,d1                      	| [$1af7: ld   bc,$0004]
-	jbsr	exx                               	| [$1afa: exx]
+										| [$1af4: ld   de,$0010]
+										| [$1af7: ld   bc,$0004]
+											| [$1afa: exx]
 	move.b	player_ship_angle_9001(a6),d0                   	| [$1afb: ld   a,($9001)]
 	add.b	#0x40,d0                         	| [$1afe: add  a,$40]
 	move.b	d0,d2                           	| [$1b00: ld   c,a]
@@ -3886,10 +3887,10 @@ l_1b0b:
 	move.b	#0x67,(0x01,a3)                 	| [$1b1c: ld   (iy+$01),$67]
 	clr.b	(0x02,a3)                        	| [$1b20: ld   (iy+$02),$00]
 	move.b	#0xFF,(0x00,a2)                 	| [$1b24: ld   (ix+$00),$FF]
-	jbsr	exx                               	| [$1b28: exx]
-	add.w	d3,a2                            	| [$1b29: add  ix,de]
-	add.w	d1,a3                            	| [$1b2b: add  iy,bc]
-	jbsr	exx                               	| [$1b2d: exx]
+	                               	| [$1b28: exx]
+	add.w	#0x10,a2                            	| [$1b29: add  ix,de]
+	addq.w	#4,a3                            	| [$1b2b: add  iy,bc]
+										| [$1b2d: exx]
 	subq.b	#1,d1                           	| [...]
 	jne	l_1b0b                             	| [$1b2e: djnz $1B0B]
 	move.b	#0x50,d0                        	| [$1b30: ld   a,$50]
@@ -4175,10 +4176,10 @@ l_1f5c:
 	move.b	#0x10,(a0)                      	| [$1f64: ld   (hl),$10]
 	lea	aux_objects_9300(a6),a2                      	| [$1f66: ld   ix,$9300]
 	lea	l_9900(a6),a3                      	| [$1f6a: ld   iy,$9900]
-	move.w	#0x0010,d3                      	| [$1f6e: ld   de,$0010]
-	jbsr	exx                               	| [$1f71: exx]
-	move.w	#0x0008,d3                      	| [$1f72: ld   de,$0008]
-	jbsr	exx                               	| [$1f75: exx]
+											| [$1f6e: ld   de,$0010]
+												| [$1f71: exx]
+											| [$1f72: ld   de,$0008]
+												| [$1f75: exx]
 	move.b	double_fire_930E(a6),d0         	| [$1f76: ld   a,(double_fire_930E)]
 	                               	| [$1f79: and  a]
 	jne	l_2008                             	| [$1f7a: jp   nz,$2008]
@@ -4188,20 +4189,20 @@ l_1f82:
 	move.b	(0x00,a2),d0                    	| [$1f82: ld   a,(ix+$00)]
 	                               	| [$1f85: and  a]
 	jne	l_1fa4                             	| [$1f86: jr   nz,$1FA4]
-	move.b	#0x28,(0x00,a3)                 	| [$1f88: ld   (iy+$00),$28]
+	move.b	#0x28,(displayed_y_00,a3)                 	| [$1f88: ld   (iy+$00),$28]
 	move.b	player_ship_angle_9001(a6),d0                   	| [$1f8c: ld   a,($9001)]
-	move.b	d0,(0x03,a3)                    	| [$1f8f: ld   (iy+$03),a]
-	move.b	#0x08,(0x02,a3)                 	| [$1f92: ld   (iy+$02),$08]
-	move.b	#0x5B,(0x01,a3)                 	| [$1f96: ld   (iy+$01),$5B]
-	move.b	#0xFF,(0x00,a2)                 	| [$1f9a: ld   (ix+$00),$FF]
+	move.b	d0,(displayed_x_03,a3)                    	| [$1f8f: ld   (iy+$03),a]
+	move.b	#0x08,(sprite_code_02,a3)                 	| [$1f92: ld   (iy+$02),$08]
+	move.b	#0x5B,(sprite_code_01,a3)                 	| [$1f96: ld   (iy+$01),$5B]
+	st.b	(0x00,a2)                 	| [$1f9a: ld   (ix+$00),$FF]
 	jbsr	l_5c8e                            	| [$1f9e: call $5C8E]
 	jra	l_204a                             	| [$1fa1: jp   $204A]
 
 l_1fa4:
-	add.w	d3,a2                            	| [$1fa4: add  ix,de]
-	jbsr	exx                               	| [$1fa6: exx]
-	add.w	d3,a3                            	| [$1fa7: add  iy,de]
-	jbsr	exx                               	| [$1fa9: exx]
+	add.w	#0x10,a2                            	| [$1fa4: add  ix,de]
+	                               	| [$1fa6: exx]
+	addq.w	#8,a3                            	| [$1fa7: add  iy,de]
+	                               	| [$1fa9: exx]
 	subq.b	#1,d1                           	| [...]
 	jne	l_1f82                             	| [$1faa: djnz $1F82]
 	jra	l_204a                             	| [$1fac: jp   $204A]
@@ -4294,19 +4295,19 @@ l_200c:
 	jra	l_204a                             	| [$2040: jr   $204A]
 
 l_2042:
-	add.w	d3,a2                            	| [$2042: add  ix,de]
-	jbsr	exx                               	| [$2044: exx]
-	add.w	d3,a3                            	| [$2045: add  iy,de]
-	jbsr	exx                               	| [$2047: exx]
+	add.w	#0x10,a2                            	| [$2042: add  ix,de]
+	                               	| [$2044: exx]
+	addq.w	#8,a3                            	| [$2045: add  iy,de]
+													| [$2047: exx]
 	subq.b	#1,d1                           	| [...]
 	jne	l_200c                             	| [$2048: djnz $200C]
 l_204a:
 	lea	aux_objects_9300(a6),a2                      	| [$204a: ld   ix,$9300]
 	lea	l_9900(a6),a3                      	| [$204e: ld   iy,$9900]
-	move.w	#0x0008,d3                      	| [$2052: ld   de,$0008]
-	jbsr	exx                               	| [$2055: exx]
+										| [$2052: ld   de,$0008]
+										| [$2055: exx]
 	move.b	#0x03,d1                        	| [$2056: ld   b,$03]
-	move.w	#0x0010,d3                      	| [$2058: ld   de,$0010]
+	                      	| [$2058: ld   de,$0010]
 l_205b:
 	movem.w	d1/d2,-(sp)                    	| [$205b: push bc]
 	movem.w	d3/d4,-(sp)                    	| [$205c: push de]
@@ -4328,10 +4329,10 @@ l_20be:
 
 l_20c7:
 	movem.w	(sp)+,d3/d4                    	| [$20c7: pop  de]
-	add.w	d3,a2                            	| [$20c8: add  ix,de]
-	jbsr	exx                               	| [$20ca: exx]
-	add.w	d3,a3                            	| [$20cb: add  iy,de]
-	jbsr	exx                               	| [$20cd: exx]
+	add.w	#0x10,a2                            	| [$20c8: add  ix,de]
+	                               	| [$20ca: exx]
+	addq.w	#8,a3                            	| [$20cb: add  iy,de]
+	                               	| [$20cd: exx]
 	movem.w	(sp)+,d1/d2                    	| [$20ce: pop  bc]
 	subq.b	#1,d1                           	| [...]
 	jne	l_205b                             	| [$20cf: djnz $205B]
@@ -4405,9 +4406,9 @@ l_2190:
 0:
 	lea	bullet_sprite_structures_9330(a6),a2                      	| [$2195: ld   ix,$9330]
 	lea	bullet_sprite_shadow_ram_9918(a6),a3                      	| [$2199: ld   iy,$9918]
-	move.w	#0x0004,d3                      	| [$219d: ld   de,$0004]
-	move.w	#0x0010,d1                      	| [$21a0: ld   bc,$0010]
-	jbsr	exx                               	| [$21a3: exx]
+												| [$219d: ld   de,$0004]
+												| [$21a0: ld   bc,$0010]
+												| [$21a3: exx]
 	move.b	#0x08,d1                        	| [$21a4: ld   b,$08]
 l_21a6:
 	movem.w	d1/d2,-(sp)                    	| [$21a6: push bc]
@@ -4447,10 +4448,10 @@ l_21a6:
 l_21eb:
 	jbsr	l_3155                            	| [$21eb: call $3155]
 l_21ee:
-	jbsr	exx                               	| [$21ee: exx]
-	add.w	d3,a3                            	| [$21ef: add  iy,de]
-	add.w	d1,a2                            	| [$21f1: add  ix,bc]
-	jbsr	exx                               	| [$21f3: exx]
+	                               	| [$21ee: exx]
+	addq.w	#4,a3                            	| [$21ef: add  iy,de]
+	add.w	#0x10,a2                            	| [$21f1: add  ix,bc]
+	                               	| [$21f3: exx]
 	movem.w	(sp)+,d1/d2                    	| [$21f4: pop  bc]
 	subq.b	#1,d1                           	| [...]
 	jne	l_21a6                             	| [$21f5: djnz $21A6]
@@ -6680,9 +6681,9 @@ enemy_attack_32ee:
 	clr.b	(a0)+                             	| [$3325: ld   (hl),$00]
 												| [$3327: inc  l]
 												| [$3328: inc  e]
-	jbsr	ldi                               	| [$3329: ldi]
-	jbsr	ldi                               	| [$332b: ldi]
-	jbsr	ldi                               	| [$332d: ldi]
+	move.b	(a0)+,(a1)+                               	| [$3329: ldi]
+	move.b	(a0)+,(a1)+                               	| [$332b: ldi]
+	move.b	(a0)+,(a1)+                               	| [$332d: ldi]
 	move.b	l_9605(a6),d0                   	| [$332f: ld   a,($9605)]
 l_3332:
 	cmp.b	#0x03,d0                         	| [$3332: cp   $03]
@@ -6925,7 +6926,7 @@ l_3637:
 	                        	| [$3641: ld   l,a]
 	                       	| [$3642: jr   nc,$3645]
 	                        	| [$3644: inc  h]
-l_3645:
+
 	move.b	(a0)+,d4                         	| [$3645: ld   e,(hl)]
 	                           	| [$3646: inc  hl]
 	move.b	(a0)+,d3                         	| [$3647: ld   d,(hl)]
@@ -6933,7 +6934,7 @@ l_3645:
 	* this is a ROM address
 	LOAD_A1_FROM_D3D4_ROM
 	move.b	(a0),d0                         	| [$3649: ld   a,(hl)]
-	move.b	d0,l_9477(a6)                   	| [$364a: ld   ($9477),a]
+	move.b	d0,alt_attack_wave_type_9477(a6)                   	| [$364a: ld   ($9477),a]
 	move.b	d0,l_9478(a6)                   	| [$364d: ld   ($9478),a]
 	exg	a1,a0                              	| [$3650: ex   de,hl]
 	move.b	d1,d0                           	| [$3651: ld   a,b]
@@ -7005,6 +7006,7 @@ l_36e9:
 	move.b	d0,l_923E(a6)                   	| [$36ed: ld   ($923E),a]
 	lea	l_9860(a6),a3                      	| [$36f0: ld   iy,$9860]
 	lea	l_90B0(a6),a2                      	| [$36f4: ld   ix,$90B0]
+	* TODO optimize exx
 	move.w	#0x0004,d3                      	| [$36f8: ld   de,$0004]
 	move.w	#0x0010,d1                      	| [$36fb: ld   bc,$0010]
 	jbsr	exx                               	| [$36fe: exx]
@@ -7034,6 +7036,7 @@ l_372b:
 	addq.w	#2,a0                           	| [$372b: inc  hl]
 	                           	| [$372c: inc  hl]
 l_372d:
+	* TODO optimize exx
 	jbsr	exx                               	| [$372d: exx]
 	add.w	d3,a3                            	| [$372e: add  iy,de]
 	add.w	d1,a2                            	| [$3730: add  ix,bc]
@@ -7060,6 +7063,7 @@ l_3755:
 	addq.w	#2,a0                           	| [$3755: inc  hl]
 	                           	| [$3756: inc  hl]
 l_3757:
+	* TODO optimize exx
 	jbsr	exx                               	| [$3757: exx]
 	add.w	d3,a3                            	| [$3758: add  iy,de]
 	add.w	d1,a2                            	| [$375a: add  ix,bc]
@@ -9079,12 +9083,13 @@ object_movement_4f16:
 	                               	| [$4f1f: and  a]
 	jne	l_4f27                             	| [$4f20: jr   nz,$4F27]
 	moveq	#0,d0
-	move.b	current_stage_960B(a6),d0                   	| [$4f22: ld   a,($960B)]
-	                             	| [$4f25: jr   $4F2A]
+	move.b	current_stage_960B(a6),d0        | [$4f22: ld   a,($960B)]
+	jra		l_4f2a							 | [$4f25: jr   $4F2A]
 
 l_4f27:
 	moveq	#0,d0
-	move.b	l_9477(a6),d0                   	| [$4f27: ld   a,($9477)] [uncovered]
+	move.b	alt_attack_wave_type_9477(a6),d0                   	| [$4f27: ld   a,($9477)] [uncovered]
+l_4f2a:
 	add.b	d0,d0                            	| [$4f2a: add  a,a]
 	LEA_ROM	0x37B9,a0                          	| [$4f2b: ld   hl,$37B9]
 	add.w	d0,a0                            	| [$4f2e: add  a,l]
@@ -9203,8 +9208,8 @@ l_585c:
 										| [$585f: ld   a,c]
 											| [$5860: or   b]
 	jne	l_585c                             	| [$5861: jr   nz,$585C]
-	* init table with all FFs (tasks?)
-	lea	l_9500(a6),a0                      	| [$5863: ld   hl,$9500]
+	* init task table with all FFs (inactive)
+	lea	task_array_9500(a6),a0                      	| [$5863: ld   hl,$9500]
 	move.b	#0x40,d1                        	| [$5866: ld   b,$40]
 l_5868:
 	move.b	#0xFF,(a0)+                      	| [$5868: ld   (hl),$FF]

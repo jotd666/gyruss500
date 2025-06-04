@@ -1,4 +1,3 @@
-- optimize 2c94 16 bit lsr if needed
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes
 - handle loop (radio): when to stop it? maybe if sound 0 played
   then stop loops and music (not regular SFX)
@@ -10,13 +9,6 @@
 - add ignored sound flag
  
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
-
-
-- after a good game (level 6+?...) next game ships attack wave
-  is different. Protection? Z80 code? 6809 code? compare memory
-  when starting game, see which RAM values are changed.
-  losing at level 5 => game ok. 8 => different
-  not happening when starting at level 8 directly...
 
 ---------------------
 

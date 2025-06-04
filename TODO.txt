@@ -1,8 +1,4 @@
 - optimize 2c94 16 bit lsr if needed
-- if grouped:
-   xflip: false: blit if < 0x100
-   xflip: true: blit if >= 0x100
-   don't forget the 0x10 instead of 0x8 when computing y start!!
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes
 - handle loop (radio): when to stop it? maybe if sound 0 played
   then stop loops and music (not regular SFX)
@@ -20,6 +16,7 @@
   is different. Protection? Z80 code? 6809 code? compare memory
   when starting game, see which RAM values are changed.
   losing at level 5 => game ok. 8 => different
+  not happening when starting at level 8 directly...
 
 ---------------------
 

@@ -1101,7 +1101,7 @@ is_game_playing:
 lose_all_lives:
 	move.l	a6,-(a7)
 	GET_Z80_RAM_START_IN_A6
-	*clr.b	nb_lives_8908(a6)
+	move.b	#1,lives_9600(a6)
 	move.l	(a7)+,a6
 	rts
 
@@ -1327,7 +1327,7 @@ update_bobs_and_hw_sprites:
 	* not forced restore. That depends on sprite Y pos
 	cmp.b	#24,d1
 	jcs		2f
-	cmp.b	#240,d1
+	cmp.b	#232,d1		| 248-16
 	jcc		2f
 	tst.b	d3
 	jeq		21f
@@ -1466,9 +1466,9 @@ update_one_bob:
 	* if not flipped 0x9A is displayed on top and 0x19A is displayed 8 pixels below
 	* if flipped, it's the other way round
 	btst	#6,(TARGET_SPRITE_CODE2,a0)
-	jeq		100f
+	jne		100f
 	* flipped: only display 0x1xx sprite
-	cmp.w	#0x100,d3
+	sub.w	#0x100,d3
 	jcs		2f
 	jra		101f
 100:
@@ -1477,6 +1477,7 @@ update_one_bob:
 	jcc		2f	
 101:
 	add.w	d6,d6		| double the height to add
+	* end grouped 16x16 sprite
 10:
 	add.w	d3,d3
 	add.w	d3,d3
@@ -1485,7 +1486,6 @@ update_one_bob:
 	* entry is valid, now what about clut?
 	
 	move.l	d4,a1
-
 	add.w	d2,d2
 	add.w	d2,d2
 	move.l	(a1,d2.w),d4
@@ -2999,11 +2999,17 @@ handle_keyboard:
 	jbsr	osd_dump_logs
 0:
 	.endif
-	
-	cmp.b	#0x56,d0	| F7 key: hurry up!
-	bne.b	0f
+	cmp.b	#19,d0
+	bne		0f
+	* 'R': reset start level at 1
 	move.w	#0x0FF,_custom+color
+	clr.b	start_level
 0:
+	
+*	cmp.b	#0x56,d0	| F7 key: lose all l
+*	bne.b	0f
+*	move.w	#0x0FF,_custom+color
+*0:
 	* last life, if killed, direct game over
 	cmp.b	#0x57,d0	| F8 key: lose all lives
 	bne.b	0f

@@ -898,8 +898,8 @@ l_020f:
 	LOAD_WORD	screen_address_9409(a6),d5         	| [$021a: ld   hl,($9409)]
 	addq.w	#1,d5                           	| [$021d: inc  hl]
 	STORE_WORD	d5,screen_address_9409(a6)        	| [$021e: ld   ($9409),hl]
-	lea	l_9408(a6),a0                      	| [$0221: ld   hl,$9408]
-	subq.b	#1,(a0)                         	| [$0224: dec  (hl)]
+	subq.b	#1,l_9408(a6)                      	| [$0221: ld   hl,$9408]
+												| [$0224: dec  (hl)]
 	rts                                    	| [$0225: ret]
 
 update_sprites_0244:
@@ -910,9 +910,10 @@ update_sprites_0244:
 	jeq	l_0253                             	| [$024e: jr   z,$0253]
 	lea	sprite_ram_a200(a6),a1                          	| [$0250: ld   de,$A200]
 l_0253:
-	move.w	#0xF0/4-1,d0
+	move.w	#0xF0/8-1,d0
 0:
 	* copy 0xF0 bytes to sprite RAM
+	move.l	(a0)+,(a1)+
 	move.l	(a0)+,(a1)+
 	dbf		d0,0b
 	
@@ -920,11 +921,13 @@ l_0253:
 	                           	| [$0434: ld   e,$00]
 	* stars?
 	lea	l_9900(a6),a0           | [$0436: ld   hl,$9900]
-	move.w	#0x38,d0
+	move.w	#0x38/8-1,d0
 0:
-	* copy bytes to sprite RAM TODO optimize with 32 bit copy + 1 byte copy
-	move.b	(a0)+,(a1)+
+	* copy bytes to sprite RAM optimized with 32 bit copy + 1 byte copy
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
 	dbf		d0,0b
+	move.b	(a0)+,(a1)+
 	| DE = 0xA139, HL = 0x9939
 	* skip code/clut (probably because 6809 sets star code there)
 	addq.w	#2,a0                           	| [$04ab: inc  l] * 2
@@ -4249,8 +4252,8 @@ l_1fe5:
 	jbsr	ldir                              	| [$1feb: ldir]
 	move.b	start_level,d0
 	jeq		0f
-	move.b	d0,(current_stage_960B,a6)
-	move.b	d0,(current_stage_number_9609,a6)
+	move.b	d0,current_stage_960B(a6)
+	move.b	d0,current_stage_number_9609(a6)
 0:
 	jbsr	l_172e                            	| [$1fed: call $172E]
 	jbsr	randomize_18_star_positions_3af2                            	| [$1ff0: call $3AF2]

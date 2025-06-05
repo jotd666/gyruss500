@@ -141,6 +141,11 @@ BIT_FIRE = 4
 	move.l		ram_start_4000,a6
 	move.l		ram_start_8000,a5
 	add.w	#0x2000,a5			      | a5 maps to 0xA000 (at 0x6000)
+	
+	* adjust offsets to avoid subbing at run-time
+	*sub.l	#0x4000,a6
+	*sub.l	#0x6000,a5
+	*sub.l	#0xE000,a3
 	.endif
 	.endm
 	
@@ -1838,7 +1843,6 @@ blit_planes_any_internal_cookie_cut:
 	jbsr	process_1_plane
 	
 	lea		(SCREEN_PLANE_SIZE,a1),a1
-	WAIT_BLIT
 	dbf		d3,6b
 7:
 	jbsr	process_1_plane
@@ -1854,6 +1858,7 @@ process_1_plane:
 	bra.b	61f
 60:
 	.ifeq	OPT_IGNORE_ZERO_BITPLANE
+	WAIT_BLIT
 	* source is 0: just apply mask (less bandwidth lost) and change bltcon
 	move.l	d6,bltcon0(a5)	| sets con0 and con1: C-A->D cookie cut, B fixed
  	move.w	d2,bltbdat(a5)	|B word is zero
@@ -1863,6 +1868,7 @@ process_1_plane:
 	.endif
 	rts
 61:
+	WAIT_BLIT
 	* non-zero: set data source & bltcon
 	move.l  a3,bltapt(a5)	|source graphic top left corner (mask)
 	move.l	d7,bltcon0(a5)	| sets con0 and con1: C-A+B->D cookie cut full
@@ -1955,32 +1961,50 @@ clear_planes_any_blitter_internal:
 	subq	#1,d3
 	jra		31f
 3:
+*	lsr.b	#1,d5
+*	jcc		32f
 	BTST	#6,(dmaconr,a5)
 	jeq		31f
 	* blitter is busy: do it with cpu for that plane
-	move.w	d6,d5
-	subq	#1,d5
+	move.w	d6,d2
+	subq	#1,d2
 	move.l	a1,a2
 	* no need to know which width in the case of gyruss there are
 	* only 32 bit erase / blits
 55:
 	clr.l	(a2)
 	lea		(NB_BYTES_PER_ROW,a2),a2
-	dbf		d5,55b
+	dbf		d2,55b
+	jra 	32f			| should send to blitter operation next time
+	
+31:
+	move.l a1,bltdpt(a5)	|destination top left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+32:
 	lea		(SCREEN_PLANE_SIZE,a1),a1
-	dbf		d3,3b			| should send to blitter operation
+	dbf		d3,3b
+4:
+*	lsr.b	#1,d5
+*	jcs		5f
+*	rts
+*5:
+	* last plane: if blitter busy, do with CPU
+	BTST	#6,(dmaconr,a5)
+	jeq		31f
+	* blitter is busy: do it with cpu for that plane
+	move.w	d6,d2
+	subq	#1,d2
+	move.l	a1,a2
+	* no need to know which width in the case of gyruss there are
+	* only 32 bit erase / blits
+55:
+	clr.l	(a2)
+	lea		(NB_BYTES_PER_ROW,a2),a2
+	dbf		d2,55b
 	rts
 31:
 	move.l a1,bltdpt(a5)	|destination top left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	lea		(SCREEN_PLANE_SIZE,a1),a1
-	WAIT_BLIT
-32:
-	dbf		d3,3b
-4:
-	move.l a1,bltdpt(a5)	|destination top left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-
     rts
 
 

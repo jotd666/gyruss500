@@ -458,9 +458,6 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
                             f.write("* {}\n".format(orientation))
                             active_planes = 0
                             bitplanes = t[orientation]["bitplanes"]
-                            if prefix == "enemy_ship":  # TEMP!!!!
-                                bitplanes[2]=None
-                                bitplanes[3]=None
 
                             for j,bitplane_id in enumerate(bitplanes):
                                 if bitplane_id:

@@ -114,7 +114,7 @@
 	.error	"loading address < 0x4000"
 	.endif
 	lea	\offset,a0
-	jbsr	get_6809_address
+	GET_6809_ADDRESS
 	.endm
 
 	.macro GET_DP_ADDRESS	offset
@@ -125,13 +125,13 @@
 	.macro GET_INDIRECT_ADDRESS	offset
 	GET_ADDRESS	\offset
 	READ_BE_WORD	a0
-	jbsr	get_6809_address
+	GET_6809_ADDRESS
 	.endm
 
 	.macro SET_DP_FROM_A
 	lsl.w    #8,d0
 	move.l    d0,a0
-	jbsr    get_6809_address
+	GET_6809_ADDRESS
 	move.l	a0,a4
 	lsr.w    #8,d0
 	.endm
@@ -150,13 +150,13 @@
 	lea	\offset,a0
 	add.l	d2,a0
 	.endif
-	jbsr	get_6809_address
+	GET_6809_ADDRESS
 	.endm
 
 	.macro GET_X_ADDRESS_FROM_REG	reg
 	move.l	\reg,a0
 	add.l	d2,a0
-	jbsr	get_6809_address
+	GET_6809_ADDRESS
 	.endm
 
 	.macro GET_Y_ADDRESS	offset
@@ -166,13 +166,13 @@
 	lea	\offset,a0
 	add.l	d3,a0
 	.endif
-	jbsr	get_6809_address
+	GET_6809_ADDRESS
 	.endm
 
 	.macro GET_Y_ADDRESS_FROM_REG	reg
 	move.l	\reg,a0
 	add.l	d3,a0
-	jbsr	get_6809_address
+	GET_6809_ADDRESS
 	.endm
 
 	.macro GET_U_ADDRESS	offset
@@ -182,13 +182,13 @@
 	lea	\offset,a0
 	add.l	d4,a0
 	.endif
-	jbsr	get_6809_address
+	GET_6809_ADDRESS
 	.endm
 
 	.macro GET_U_ADDRESS_FROM_REG	reg
 	move.l	\reg,a0
 	add.l	d4,a0
-	jbsr	get_6809_address
+	GET_6809_ADDRESS
 	.endm
 
 gyruss_sub_cpu_init:
@@ -202,6 +202,11 @@ gyruss_sub_cpu_init:
 	moveq	#0,d7
 	rts
 
+	.ifndef	RELEASE
+	.macro	GET_6809_ADDRESS
+	jbsr	get_6809_address
+	.endm
+	
 * < A0: 16-bit address
 * < A3: rom start (0xE000)
 * < A5: ram start (0x6000, maps to 0xA000 in the other CPU)
@@ -248,6 +253,31 @@ get_6809_address:
 	sub.w	#0x6000,a0
 	lea	(a5,a0.w),a0
 	rts
+	
+	.else
+	.macro	GET_6809_ADDRESS
+	cmp.l	#0xE000,a0
+	jcs		0f
+	* ROM
+	sub.l	#0xE000,a0
+	lea		(a3,a0.w),a0
+	jra		2f
+0:
+
+	cmp.w	#0x6000,a0
+	jcc		1f
+	* 0x4000-0x4800 area
+	sub.w	#0x4000,a0
+	lea	(a6,a0.w),a0
+	jra	2f
+1:
+	* 0x6000 area
+	
+	sub.w	#0x6000,a0
+	lea	(a5,a0.w),a0
+2:
+	.endm
+	.endif
 
 
 multiply_ab:

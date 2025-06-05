@@ -63,7 +63,7 @@
 *	map(0x4000, 0x403f).ram();
 *	map(0x4040, 0x40ff).ram().w(FUNC(gyruss_state::spriteram_w)).share(m_spriteram);
 *	map(0x4100, 0x47ff).ram();
-*	map(0x6000, sprite_sync_status_67ff).ram().share("main_cpus");
+*	map(0x6000, 0x67ff).ram().share("main_cpus");
 *	map(0xe000, 0xffff).rom();
 *
 *   to set a breakpoint: bpset $F00F:sub

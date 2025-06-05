@@ -456,8 +456,18 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
                     for orientation,_ in plane_orientations:
                         if orientation in t:
                             f.write("* {}\n".format(orientation))
-                            f.write(f"\t.word\t{height},{width},{offset}\n")
-                            for bitplane_id in t[orientation]["bitplanes"]:
+                            active_planes = 0
+                            bitplanes = t[orientation]["bitplanes"]
+                            if prefix == "enemy_ship":  # TEMP!!!!
+                                bitplanes[2]=None
+                                bitplanes[3]=None
+
+                            for j,bitplane_id in enumerate(bitplanes):
+                                if bitplane_id:
+                                    active_planes |= 1<<j
+
+                            f.write(f"\t.word\t{height},{width},{offset},0x{active_planes:x}\n")
+                            for bitplane_id in bitplanes:
                                 f.write("\t.long\t")
                                 if bitplane_id:
                                     f.write(f"bob_plane_{bitplane_id:02d}")

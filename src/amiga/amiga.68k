@@ -22,8 +22,7 @@ AFB_68030 = 2
 
 NO68020 = 1
 
-PREVIOUS_SPRITE_SIZE = 10
-CURRENT_SPRITE_SIZE = 4
+
 BORDERBLANK = 1
 
 
@@ -94,7 +93,14 @@ NB_TARGET_SPRITES = 0x200/4
 	UBYTE	TARGET_SPRITE_X
 	LABEL	TARGET_SPRITE_SIZEOF
 
-
+	STRUCTURE	PREVIOUS_SPRITE,0
+	UWORD	PREV_X
+	UWORD	PREV_Y
+	UWORD	PREV_HEIGHT			
+	UWORD	PREV_WIDTH			
+	UBYTE	PREV_STAR			
+	UBYTE	PREV_ACTIVE_PLANES	
+	LABEL		PREVIOUS_SPRITE_SIZEOF
 
 * hardware sprite (not used)
 	STRUCTURE	SPRITE,0
@@ -1322,7 +1328,8 @@ update_bobs_and_hw_sprites:
 	clr.l	(a4)+			| ack deletion
 	move.w	(a4)+,d4		| height
 	move.w	(a4)+,d2		| width/clut index (if star)
-	move.w	(a4)+,d3		| set if star
+	move.b	(a4)+,d3		| set if star
+	move.b	(a4)+,d5
 	tst.b	d6
 	jne		2f				| forced restore
 	* not forced restore. That depends on sprite Y pos
@@ -1358,7 +1365,7 @@ update_bobs_and_hw_sprites:
 	dbf		d7,1b	
 	bra.b	12f
 11:
-	lea	(PREVIOUS_SPRITE_SIZE,a4),a4
+	lea	(PREVIOUS_SPRITE_SIZEOF,a4),a4
 	dbf		d7,1b
 12:	
 
@@ -1502,7 +1509,7 @@ update_one_bob:
 	btst	#7,d3
 	jeq		101f
 	* mirror
-	add.w	#((NB_BOB_PLANES+1)*4+6),a0
+	add.w	#((NB_BOB_PLANES+1)*4+8),a0
 101:
 	move.w	(a0)+,d4		| height
 	move.w	(a0)+,d5		| width
@@ -1521,6 +1528,7 @@ update_one_bob:
 	move.l		playfield_drawed_screen_ptr(pc),a1
 	
 	* D0 and D1 are already set
+	move.w	(a0)+,d6				| active plane mask
 	move.l	(NB_BOB_PLANES*4,a0),d2
 	jeq	21f		| mask is zero: blank tile => skip
 	move.l	d2,a3
@@ -1530,7 +1538,8 @@ update_one_bob:
 	move.w	d1,(a6)+			| store current sprite attributes to previous ones
 	move.w	d4,(a6)+			| store height
 	move.w	d5,(a6)+			| store width in bytes
-	clr.w	(a6)+				| not a star
+	clr.b	(a6)+				| not a star
+	move.b	d6,(a6)+		    | active planes (helps for erase)
 	move.w	d5,d2			    | width in bytes, 4 for 16 pixels+shift
 	moveq	#0,d5			    | Y-offset
 
@@ -1549,7 +1558,7 @@ update_one_bob:
 21:
 	move.l	(a7)+,a0
 2:
-	lea		(PREVIOUS_SPRITE_SIZE,a6),a6
+	lea		(PREVIOUS_SPRITE_SIZEOF,a6),a6
 	rts
 	* display star
 20:
@@ -1560,7 +1569,7 @@ update_one_bob:
 	move.w	d1,(a6)+			| store current sprite attributes to previous ones
 	move.w	#1,(a6)+			| height = 1
 	move.w	d2,(a6)+			| store clut instead of width in bytes
-	move.w	#-1,(a6)+			| set "is a star" flag
+	move.w	#-1,(a6)+			| set "is a star" flag, all planes active (who cares)
 	st.b	d3
 	jbra	set_pixel
 
@@ -1888,8 +1897,9 @@ process_1_plane:
 * < D0,D1: x,y
 * < A1: foreground plane pointer (often first plane!)
 * < D2: width in bytes (inc. 2 extra for shifting)
-* < D3: number of planes to clear
+* < D3: nb planes to clear
 * < D4: blit height
+* < D5: plane mask
 
 * trashes D0-D6/A2
 clear_planes_any_blitter_internal:
@@ -1913,14 +1923,16 @@ clear_planes_any_blitter_internal:
     add.w   d1,d1
     move.w  (a2,d1.w),d1
 1:
-	moveq	#1,d5
-	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
     and.w   #0x1F0,d0
     beq.b   2f				| zero X optimization
     lsr.w   #3,d0
     add.w   d0,d1
 2:   
     add.w   d1,a1       | plane position (always even)
+
+	* reuse d1 for bltcon0
+	moveq	#1,d1
+	ror.l	#8,d1     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
 
 	move.w #NB_BYTES_PER_ROW,d0
 	bclr	#0,d2		| make sure D2 is even (else strange things occur!)
@@ -1935,7 +1947,7 @@ clear_planes_any_blitter_internal:
 	WAIT_BLIT
     
 	
-	move.l d5,bltcon0(a5)	
+	move.l d1,bltcon0(a5)	
     move.w  d0,bltdmod(a5)	|D modulo
 	
 	subq	#1,d3
@@ -1968,7 +1980,7 @@ clear_planes_any_blitter_internal:
 4:
 	move.l a1,bltdpt(a5)	|destination top left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	
+
     rts
 
 
@@ -1977,10 +1989,10 @@ nb_stars:
 
 	
 sprite_buffer:
-	.skip	NB_TARGET_SPRITES*CURRENT_SPRITE_SIZE
+	.skip	NB_TARGET_SPRITES*SPRITE_SIZEOF
 	
 bob_previous_positions_1:
-	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE
+	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZEOF
 bob_previous_drawed_sprites:
 	.long	bob_previous_positions_1
 bob_previous_displayed_sprites:
@@ -1989,7 +2001,7 @@ bob_previous_displayed_sprites:
 	.else
 	.long	bob_previous_positions_2	
 bob_previous_positions_2:
-	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE	
+	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZEOF	
 	.endif
 
 		

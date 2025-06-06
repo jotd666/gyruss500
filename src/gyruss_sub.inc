@@ -239,7 +239,6 @@ get_6809_address:
 	.endif
 
 	* 0x4000-0x6800 area
-	sub.w	#0x4000,a0
 	lea	(a6,a0.w),a0
 	rts
 

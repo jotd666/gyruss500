@@ -141,7 +141,7 @@ BIT_FIRE = 4
 	move.l		ram_start_4000,a6
 	
 	* adjust offsets to avoid subbing at run-time
-	*sub.l	#0x4000,a6
+	sub.w	#0x4000,a6
 	*sub.l	#0x6000,a5
 	*sub.l	#0xE000,a3
 	.endif
@@ -977,7 +977,10 @@ osd_read_file:
 * < D5: length
 * < D6: virtual address (16 bit)
 * < D7: 0: main cpu, 1: sub cpu
+* this is broken!
+
 osd_write_file:
+	ILLEGAL
 	movem.l	d0-a6,-(a7)
 	
 	move.l	d5,d0

@@ -18,4 +18,17 @@ The game detects when there are fonts/planets in the middle of the
 playfield, and uses blit clear instead of background restore
 (which is the active mode when playing)
 
+The game uses the blitter to clear the sprites, and the CPU when the blitter
+is busy.
+
+When the game has to blit a 3 plane BOB (with an empty plane) the empty
+plane is skipped altogether, and it's not noticable as there is not a lot
+of overlap between BOBs of different kinds.
+
+Roondar audio mixer is used to output the sfx only on one channel, leaving
+other 3 channels for music
+
 No copper tricks or hardware sprites are used.
+
+Enabling 25 FPS and turning off the starfield allows the game to run at decent
+speed on a low specs machine.

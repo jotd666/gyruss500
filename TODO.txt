@@ -1,12 +1,5 @@
-- optim: make 6809 memory contiguous (only 6k wasted) 0x4000->0x6800
-  make 0xA000 Z80 memory at some different offset to match 6809 0x6000
-  first: avoid the subing 4000/6000 by pre-subbing the A5/A6 pointers
-  6809 differentiate ROM and RAM to avoid memory comparisons 4000/6000/E000
-  but all that only in RELEASE!!
-  
 - missing warp to planet sfx
 - weapon upgrade sound not played
-- option to turn off stars
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 - handle loop (radio): when to stop it? maybe if sound 0 played
   then stop loops and music (not regular SFX)

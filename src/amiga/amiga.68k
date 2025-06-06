@@ -139,8 +139,6 @@ BIT_FIRE = 4
 	lea		z80_ram_buffer+0x2000,a5
 	.else
 	move.l		ram_start_4000,a6
-	move.l		ram_start_8000,a5
-	add.w	#0x2000,a5			      | a5 maps to 0xA000 (at 0x6000)
 	
 	* adjust offsets to avoid subbing at run-time
 	*sub.l	#0x4000,a6
@@ -738,10 +736,13 @@ demo_game:
 	lea		dev_ram_buffer,a6
 	move.l	a6,d0
 	clr.w	d0
-	add.l	#0x14000,d0
-	move.l	d0,ram_start_4000		| 6809 memory
-	add.l	#0x4000,d0
-	move.l	d0,ram_start_8000		| Z80 memory (some shared with 6809)
+	move.l	d0,d1
+	add.l	#0x18000,d1
+	move.l	d1,ram_start_8000		| Z80 memory (0x8000-0x9FFF)
+	
+	move.l	d0,d1
+	add.l	#0x1A000,d1
+	move.l	d1,ram_start_4000		| 6809 memory (0x4000-0x6800) 0x6000/0xA000 shared with Z80
 	.endif
 		
 	GET_M6809_MEMORY_BLOCKS

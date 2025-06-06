@@ -226,33 +226,23 @@ get_6809_address:
 	BREAKPOINT	"invalid 6809 address < 0x4000"
 	rts
 0:
+	cmp.w	#0x6800,a0
+	jcc		2f
 	cmp.w	#0x6000,a0
-	jcc		1f
+	jcc		0f
 	cmp.w	#0x4800,a0
 	jcs		0f
-	BREAKPOINT	"invalid 6809 0x6000 > address > 0x4800"
+2:
+	BREAKPOINT	"invalid 6809 address > 0x4800 or > 0x6800"
 	rts
 0:
 	.endif
-	cmp.w	#0x6000,a0
-	jcc		1f
-	* 0x4000-0x4800 area
+
+	* 0x4000-0x6800 area
 	sub.w	#0x4000,a0
 	lea	(a6,a0.w),a0
 	rts
-1:
-	* 0x6000 area
-	.ifndef	RELEASE
-	cmp.w	#0x6800,a0
-	jcs		0f
-	BREAKPOINT	"invalid 6809 address > 0x67FF"
-	rts
-0:
-	.endif
-	
-	sub.w	#0x6000,a0
-	lea	(a5,a0.w),a0
-	rts
+
 	
 	.else
 	.macro	GET_6809_ADDRESS

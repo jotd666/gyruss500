@@ -39,8 +39,12 @@
 	
 
 	.ifdef	RELEASE
+	* we add 0X2000 offset to map 0xA000 0X2000 bytes further
+	* thus allowing the 6809 0x4000 ram to be located at offset
+	* 0xA000 and have contiguous memory, which increases
+	* performance. Z80 code doesn't need that
 z80_ram_buffer:
-	.skip	0xA800-0x8000
+	.skip	0xC800-0x8000
 m6809_ram_buffer:
 	.skip	0x800
 	.else

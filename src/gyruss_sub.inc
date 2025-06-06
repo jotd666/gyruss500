@@ -11,7 +11,9 @@
 * conditional compilation to select the proper memory banks at compile time
 * (see my burger time 6502 conversion which does that in RELEASE mode)
 
-rom_start_e000 = 0xE000
+* setting the rom start very close to the RAM so memory access can be
+* contiguous and we save a few KB (0xE000-0x6800)
+rom_start_e000 = 0x6800
 	
 	* illegal instruction just in case the main program includes that first!
 	ILLEGAL
@@ -107,8 +109,8 @@ rom_start_e000 = 0xE000
 	.ifeq	\offset-0x2000
 	.error	"loading irq flag address"
 	.endif
-	.ifge	\offset-0x6800
-	.error	"loading address > 0x6800"
+	.ifge	\offset-0x7000
+	.error	"loading address > 0x7000"
 	.endif
 	.iflt	\offset-0x6000
 	.ifge	\offset-0x4800
@@ -216,12 +218,6 @@ gyruss_sub_cpu_init:
 * < A3: rom start (0xE000)
 * < A6: ram start (0x4000) minus 0x4000
 get_6809_address:
-	cmp.l	#rom_start_e000,a0
-	jcs		0f
-	* ROM
-	lea		(a3,a0.l),a0
-	rts
-0:
 	cmp.w	#0x4000,a0
 	.ifndef	RELEASE
 	jcc		0f
@@ -229,7 +225,7 @@ get_6809_address:
 	BREAKPOINT	"invalid 6809 address < 0x4000"
 	rts
 0:
-	cmp.w	#0x6800,a0
+	cmp.w	#0x7000,a0
 	jcc		2f
 	cmp.w	#0x6000,a0
 	jcc		0f
@@ -241,21 +237,14 @@ get_6809_address:
 0:
 	.endif
 
-	* 0x4000-0x6800 area
+	* 0x4000-0x7000 area (ROM is now at 0x6800)
 	lea	(a6,a0.w),a0
 	rts
 
 	
 	.else
 	.macro	GET_6809_ADDRESS
-	cmp.l	#rom_start_e000,a0
-	jcs		0f
-	* ROM
-	lea		(a3,a0.l),a0
-	jra		2f
-0:
 	lea	(a6,a0.w),a0
-2:
 	.endm
 	.endif
 

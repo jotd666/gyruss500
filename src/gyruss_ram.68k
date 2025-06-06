@@ -9,18 +9,20 @@
 	.global sprite_ram_9000
 	.global	regscopy
 	.global vbl_sync_counter
+	.global stars_off_flag
 	.global vbl_sync_flag
-	.global no_sync_flag
 	.global	current_y_beam
 	.global	m6809_interrupts_on
 	
 	.ifdef	RELEASE
+	.global m6809_rom_buffer
 	.global m6809_ram_buffer
 	.global z80_ram_buffer
 	.else
 	.global	dev_ram_buffer
-	.global ram_start_4000
-	.global ram_start_8000
+	.global m6809_ram_start_4000
+	.global z80_ram_start_8000
+	.global m6809_rom_start_e000
 	.endif
 	
 	.include	"gyruss.inc"
@@ -49,12 +51,17 @@ m6809_ram_buffer:		| 6809: 0x4000->0x47ff + gap
 	.skip	0x2000
 z80_m6809_shared:       | 6809: 0x6000->0x67ff, Z80: 0xA000->0xA7ff (shifted by 0x2000)
 	.skip	0x800
+m6809_rom_buffer:
+	.skip	0x800
+	
 	.else
 dev_ram_buffer:
 	.skip	0x20000
-ram_start_8000:
+z80_ram_start_8000:
 	.long	0
-ram_start_4000:
+m6809_ram_start_4000:
+	.long	0
+m6809_rom_start_e000:
 	.long	0
 	.endif
 
@@ -79,6 +86,8 @@ level_skip_flag:
 infinite_lives_flag:
 	.byte	0
 infinite_time_flag:
+	.byte	0
+stars_off_flag:
 	.byte	0
 music_off_flag:
 	.byte 	0

@@ -1,7 +1,6 @@
 	.ifdef	RELEASE
 	.macro	BREAKPOINT comment
 	.endm
-OPT_NO_STARS = 0
 
 	.else
 LOG_BUFFER_SIZE = 0x10000
@@ -19,7 +18,6 @@ next\@:
 	.endm
 
 
-OPT_NO_STARS = 0		| disable stars
      
 
 	.endc

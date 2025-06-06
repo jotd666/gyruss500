@@ -43,6 +43,7 @@ _config
 	dc.b	"C1:X:infinite lives:1;"
 	dc.b	"C1:X:cheat keys:4;"
 	dc.b	"C2:X:25 Hz update:0;"
+	dc.b	"C2:X:no starfield:1;"
 	IFD		CHIP_ONLY
 	dc.b	"C2:X:break at startup:31;"
 	ENDC

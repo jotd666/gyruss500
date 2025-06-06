@@ -7136,9 +7136,10 @@ l_3826:
 
 * able to throw in more stars since most sprites aren't used otherwise
 update_starfield_inter_levels_3831:
-	.ifne	OPT_NO_STARS
+	tst.b	stars_off_flag
+	jeq		0f
 	rts
-	.endif
+0:
 	jbsr	select_stars_buffer_38ef                            	| [$3831: call $38EF]
 	move.b	stars_speed_943B(a6),d0                   	| [$3834: ld   a,($943B)]
 	move.b	d0,d5                           	| [$3837: ld   h,a]
@@ -7340,9 +7341,10 @@ l_3960:
 * < D6
 * use empty slots of bullet sprites to add stars
 update_starfield_using_bullet_slots_39B1:
-	.ifne	OPT_NO_STARS
+	tst.b	stars_off_flag
+	jeq		0f
 	rts
-	.else
+0:
 	lea	bullet_sprite_structures_9330(a6),a2                      	| [$39b1: ld   ix,$9330]
 	lea	bullet_sprite_shadow_ram_9918(a6),a3                      	| [$39b5: ld   iy,$9918]
 											| [$39b9: ld   de,$0010]
@@ -7380,16 +7382,17 @@ l_39ef:
 	subq.b	#1,d1                           	| [...]
 	jne	l_39c6                             	| [$39f4: djnz $39C6]
 	rts                                    	| [$39f6: ret]
-	.endif
+
 	
 * < D1: number of star couples to move (symmetrically)
 *   always 5 means that 10 stars are updated here
 * < A2: A138/A338
 * < A3: 9938
 update_base_stars_3A37:
-	.ifne	OPT_NO_STARS
+	tst.b	stars_off_flag
+	jeq		0f
 	rts
-	.else
+0:
 	move.b	#0x26,d6                        	| [$3a37: ld   l,$26] star code 13<<1
 	move.w	#0x0004,d3                      	| [$3a39: ld   de,$0004]
 l_3a3c:
@@ -7417,7 +7420,7 @@ l_3a3c:
 	subq.b	#1,d1                           	| [...]
 	jne	l_3a3c                             	| [$3a67: djnz $3A3C]
 	rts                                    	| [$3a69: ret]
-	.endif
+
 	
 random_stuff_3a6a:
 	jbsr	exx                               	| [$3a6a: exx]

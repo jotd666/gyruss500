@@ -21,7 +21,7 @@ SCORE_FILE_SIZE = 3+30*3
 	.ifdef	RELEASE
 	lea		z80_ram_buffer,a6
 	.else
-	move.l		ram_start_8000,a6
+	move.l		z80_ram_start_8000,a6
 	.endif
 	.endm
 	

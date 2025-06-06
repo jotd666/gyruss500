@@ -130,17 +130,16 @@ BIT_FIRE = 4
 	.ifdef	RELEASE
 	lea		z80_ram_buffer,a6
 	.else
-	move.l		ram_start_8000,a6
+	move.l		z80_ram_start_8000,a6
 	.endif
 	.endm
 	
-.macro	GET_M6809_MEMORY_BLOCKS
+.macro	GET_M6809_MEMORY_START_IN_A6
 	move.l	m6809_direct_page_pointer,a4
-	lea		sub_rom_base-rom_start_e000,a3
 	.ifdef	RELEASE
 	lea		m6809_ram_buffer-0x4000,a6
 	.else
-	move.l		ram_start_4000,a6
+	move.l		m6809_ram_start_4000,a6
 	
 	* adjust offset to avoid subbing at run-time
 	sub.w	#0x4000,a6
@@ -422,6 +421,8 @@ _user:
 	move.l	misc_options,d1
 	btst	#0,d1
 	sne		frameskip
+	btst	#1,d1
+	sne		stars_off_flag
 	.ifndef	RELEASE
 	btst	#31,d1
 	sne		break_at_startup_flag
@@ -733,19 +734,52 @@ demo_game:
 	* compute ram start for dev mode
 	* align so real addresses LSW match actual arcade addresses
 	* and lower 16-bit match original RAM offsets
+	* (since memory is shared, Z80 addresses match except for
+	* ram after 0xA000 and M6809 addresses are slightly shifted)
+	*
+	* only the game logic & screen memory (0x8000-0x9FFF) is 
+	* perfectly aligned but that's enough to debug the game logic
+	* now that the 6809 code works
+	*
 	lea		dev_ram_buffer,a6
 	move.l	a6,d0
 	clr.w	d0
 	move.l	d0,d1
 	add.l	#0x18000,d1
-	move.l	d1,ram_start_8000		| Z80 memory (0x8000-0x9FFF)
+	move.l	d1,z80_ram_start_8000		| Z80 memory (0x8000-0x9FFF)
 	
 	move.l	d0,d1
 	add.l	#0x1A000,d1
-	move.l	d1,ram_start_4000		| 6809 memory (0x4000-0x6800) 0x6000/0xA000 shared with Z80
+	move.l	d1,m6809_ram_start_4000		| 6809 memory (0x4000-0x6800) 0x6000/0xA000 shared with Z80
+
+	* relocate rom tables just after shared RAM
+	* we changed the ROM offset from E000 to 6800 too
+	* so memory is contiguous (only 1 segment of memory RAM+ROM)
+	* and 6809 memory access is way faster (no bank switching)
+	move.l	d0,d1
+	add.l	#0x1C800,d1
+	move.l	d1,m6809_rom_start_e000
+	
+	* copy the ROM data
+
+	move.l 	d1,a1
+	move.w	#0x1FF,d0
+	lea		sub_rom_base,a0
+0:
+	move.l	(a0)+,(a1)+
+	dbf		d0,0b
+	.else
+	* release mode
+
+	lea		m6809_rom_buffer,a1
+	move.w	#0x1FF,d0
+	lea		sub_rom_base,a0
+0:
+	move.l	(a0)+,(a1)+
+	dbf		d0,0b
 	.endif
-		
-	GET_M6809_MEMORY_BLOCKS
+	
+	GET_M6809_MEMORY_START_IN_A6
 	jbsr		gyruss_sub_reset				| initialize the subcpu memory
 	* direct page won't change, let's store it now for irq
 	move.l	a4,m6809_direct_page_pointer
@@ -770,7 +804,7 @@ osd_queue_sprite:
 
 osd_queue_sprites:
 	movem.l	d0-a6,-(a7)
-	GET_M6809_MEMORY_BLOCKS
+	GET_M6809_MEMORY_START_IN_A6
 	jbsr	gyruss_sub_queue
 	movem.l	(a7)+,d0-a6
 	rts
@@ -778,7 +812,7 @@ osd_queue_sprites:
 osd_draw_sprites:
 	movem.l	d0-a6,-(a7)
 	move.l	#queued_sprite_buffer,queued_sprite_pointer
-	GET_M6809_MEMORY_BLOCKS
+	GET_M6809_MEMORY_START_IN_A6
 	jbsr	gyruss_sub_draw	
 	movem.l	(a7)+,d0-a6
 	rts
@@ -990,7 +1024,7 @@ osd_file_io:
 	tst.b	d7
 	jeq		0f
 	* subcpu
-	GET_M6809_MEMORY_BLOCKS
+	GET_M6809_MEMORY_START_IN_A6
 	cmp.w	#0x6000,d6
 	jcc		1f
 	* 0x4000 rom part
@@ -1383,7 +1417,7 @@ update_bobs_and_hw_sprites:
 	* draw current BOBs from 6809 sprite memory *
 	*********************************************
 
-	GET_M6809_MEMORY_BLOCKS
+	GET_M6809_MEMORY_START_IN_A6
 	* original machine works that way. On the amiga, it
 	* works more or less but sprite multiplexing cannot be
 	* emulated so some blinking could occur
@@ -1681,7 +1715,7 @@ osd_dump_logs:
 	move.l	#16*512,d0
 	jbsr	resload_SaveFile(a2)
 	
-	GET_M6809_MEMORY_BLOCKS
+	GET_M6809_MEMORY_START_IN_A6
   	lea		(0x40,a6),a1
 	lea		sprites_ram_name_4040(pc),a0
 	move.l	#0x100-0x40,d0
@@ -2084,12 +2118,13 @@ store_system:
 	cmp.l	#0x200000,d0
 	bcs.b	3f				| will crawl if no fastmem
 	move.w	AttnFlags(a6),d0
-	btst	#AFB_68030,d0
+	btst	#AFB_68020,d0
 	bne.b	1f
 3:
-	* no whdload, no 68030: assume slow switch to 25 FPS
+	* no whdload, no 68020: assume slow switch to 25 FPS
 	* if running on PiStorm, well, too bad use whdload
 	st.b	frameskip
+	st.b	stars_off_flag
 1:
 
 	lea	_custom,a6
@@ -3062,11 +3097,7 @@ handle_keyboard:
 	bne.b	0f
 	illegal
 0:
-	cmp.b	#0x59,d0	| F10 key toggles sync
-	bne.b	0f
-	move.w	#0xF00,color+_custom
-	eor.b	#1,no_sync_flag
-0:
+
 	.endif
 
 	cmp.b	_keyexit,d0	| "ESC" key or whdload quitkey
@@ -3241,6 +3272,7 @@ pause_flag:
 	.word	0
 frameskip:
 	.word	0
+
 tiles_row_flags:
 	.skip	0x20
 tiles_refresh_table:

@@ -209,8 +209,7 @@ gyruss_sub_cpu_init:
 	
 * < A0: 16-bit address
 * < A3: rom start (0xE000)
-* < A5: ram start (0x6000, maps to 0xA000 in the other CPU)
-* < A6: ram start (0x4000)
+* < A6: ram start (0x4000) minus 0x4000
 get_6809_address:
 	cmp.l	#0xE000,a0
 	jcs		0f
@@ -252,18 +251,7 @@ get_6809_address:
 	lea		(a3,a0.w),a0
 	jra		2f
 0:
-
-	cmp.w	#0x6000,a0
-	jcc		1f
-	* 0x4000-0x4800 area
-	sub.w	#0x4000,a0
 	lea	(a6,a0.w),a0
-	jra	2f
-1:
-	* 0x6000 area
-	
-	sub.w	#0x6000,a0
-	lea	(a5,a0.w),a0
 2:
 	.endm
 	.endif

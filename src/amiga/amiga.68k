@@ -131,12 +131,12 @@ BIT_FIRE = 4
 	move.l		ram_start_8000,a6
 	.endif
 	.endm
+	
 .macro	GET_M6809_MEMORY_BLOCKS
 	move.l	m6809_direct_page_pointer,a4
 	lea		sub_rom_base,a3
 	.ifdef	RELEASE
-	lea		m6809_ram_buffer,a6
-	lea		z80_ram_buffer+0x2000,a5
+	lea		m6809_ram_buffer-0x4000,a6
 	.else
 	move.l		ram_start_4000,a6
 	

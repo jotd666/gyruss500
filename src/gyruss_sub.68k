@@ -126,9 +126,9 @@ next_current_ybeam:
 	add.b	#14,current_y_beam
 	rts
 	
-get_current_ybeam:
+	.macro	GET_CURRENT_YBEAM
 	move.b	current_y_beam,d0
-	rts
+	.endm
 	
 gyruss_sub_reset:
 	jbsr	gyruss_sub_cpu_init
@@ -1112,7 +1112,7 @@ l_f569:
 	addq.w	#0x4,d4                         	| [$f57f: leau   $4,u]
 	addq.b	#1,d1                           	| [$f581: incb]
 	cmp.b	#0x04,d1                         	| [$f582: cmpb   #$04]
-	bcs	l_f569                             	| [$f584: bcs    $f569]
+	jcs	l_f569                             	| [$f584: jcs    $f569]
 	GET_DP_ADDRESS	0x0f                    	| [$f586: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f588: rts]
@@ -1312,14 +1312,15 @@ l_f670:
 	and.b	#0xc0,d0                         	| [$f672: anda   #$c0]
 	GET_DP_ADDRESS	0x12                    	| [$f674: sta    $12]
 	move.b	d0,(a0)                         	| [...]
+	move.l	a0,a1		| save address
 	GET_INDIRECT_ADDRESS	pointer_4211            	| [$f676: inc    [$4211]]
 	addq.b	#1,(a0)                         	| [...]
 					            	| [$f67a: lda    [$4211]]
 	move.b	(a0),d0                         	| [...]
-	GET_DP_ADDRESS	0x12                    	| [$f67e: adda   $12]
-	add.b	(a0),d0                          	| [...]
+										| [$f67e: adda   $12]
+	add.b	(a1),d0                          	| [...]
 				                    	| [$f680: sta    $12]
-	move.b	d0,(a0)                         	| [...]
+	move.b	d0,(a1)                         	| [...]
 	GET_DP_ADDRESS	0x0d                    	| [$f682: stu    $0d]
 	MOVE_W_D4_IN_A0_PLUS_1                         	| [...]
 	                    	| [$f684: ldb    $0e]
@@ -1349,14 +1350,14 @@ update_multiplexed_sprites_f695:
 	move.w	#sprite_ram_4040,d4             	| [$f69f: ldu    #sprite_ram_4040]
 * racing the beam: check if all sprites are above the current beam position
 l_f6a2:
-	jbsr	get_current_ybeam                   | [$f6a2: lda    >$0000]
+	GET_CURRENT_YBEAM                   | [$f6a2: lda    >$0000]
 	GET_U_ADDRESS	0x3                      	| [$f6a5: adda   $3,u]
 	add.b	(a0),d0                          	| [...]			get sprite Y
-	bcs	l_f6b2                             	| [$f6a7: bcs    $f6b2]
+	jcs	l_f6b2                             	| [$f6a7: jcs    $f6b2]
 	addq.w	#0x4,d4                         	| [$f6a9: leau   $4,u]
 l_f6ab:
 	cmp.w	#0x4100,d4                       	| [$f6ab: cmpu   #$4100]
-	bcs	l_f6b2                             	| [$f6af: bcs    $f6a2]
+	jcs	l_f6b2                             	| [$f6af: jcs    $f6a2]
 	rts                                    	| [$f6b1: rts]
 
 l_f6b2:
@@ -1431,14 +1432,14 @@ update_multiplexed_sprites_f6ee:
 	move.w	#sprite_ram_4040,d4             	| [$f6f8: ldu    #sprite_ram_4040]
 * racing the beam again
 l_f6fb:
-	jbsr	get_current_ybeam                   | [$f6a2: lda    >$0000]
+	GET_CURRENT_YBEAM                   | [$f6a2: lda    >$0000]
 	GET_U_ADDRESS	0x3                      	| [$f6fe: adda   $3,u]
 	add.b	(a0),d0                          	| [...]
-	bcs	l_f70b                             	| [$f700: bcs    $f70b]
+	jcs	l_f70b                             	| [$f700: jcs    $f70b]
 	addq.w	#0x4,d4                         	| [$f702: leau   $4,u]
 l_f704:
 	cmp.w	#0x4100,d4                       	| [$f704: cmpu   #$4100]
-	bcs	l_f70b                             	| [$f708: bcs    $f6fb]
+	jcs	l_f70b                             	| [$f708: jcs    $f6fb]
 	rts                                    	| [$f70a: rts]
 
 l_f70b:

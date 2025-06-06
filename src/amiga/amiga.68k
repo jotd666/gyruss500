@@ -4,9 +4,11 @@
 * (c) JOTD 2025
 *
 
-
+	* first instruction (includes contain code)
+	jra		_user
 
 	.include "../src/gyruss.inc"
+	.include "../src/gyruss_sub.inc"
 	.include "../src/data.inc"
 	.include "hardware/custom.i"
 	.include "exec/types2.i"
@@ -134,16 +136,14 @@ BIT_FIRE = 4
 	
 .macro	GET_M6809_MEMORY_BLOCKS
 	move.l	m6809_direct_page_pointer,a4
-	lea		sub_rom_base,a3
+	lea		sub_rom_base-rom_start_e000,a3
 	.ifdef	RELEASE
 	lea		m6809_ram_buffer-0x4000,a6
 	.else
 	move.l		ram_start_4000,a6
 	
-	* adjust offsets to avoid subbing at run-time
+	* adjust offset to avoid subbing at run-time
 	sub.w	#0x4000,a6
-	*sub.l	#0x6000,a5
-	*sub.l	#0xE000,a3
 	.endif
 	.endm
 	

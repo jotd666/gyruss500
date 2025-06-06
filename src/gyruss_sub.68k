@@ -64,7 +64,7 @@
 *	map(0x4040, 0x40ff).ram().w(FUNC(gyruss_state::spriteram_w)).share(m_spriteram);
 *	map(0x4100, 0x47ff).ram();
 *	map(0x6000, 0x67ff).ram().share("main_cpus");
-*	map(0xe000, 0xffff).rom();
+*	map(rom_start_e000, 0xffff).rom();
 *
 *   to set a breakpoint: bpset $F00F:sub
 
@@ -84,6 +84,7 @@ update_sequence_control_flag_67fc = 0x67fc
 update_sequence_control_flag_67fd = 0x67fd
 sprite_index_pointer_4200 = 0x4200
 pointer_4211 = 0x4211
+
 
 * page 42 offsets for work variables
 sprite_index_pointer_4200_lsb_01 = 0x01
@@ -456,7 +457,7 @@ l_f232:
 
 compute_coords_f273:
 	moveq	#0,d2
-	move.w	#0xe000,d2                      	| [$f273: ldx    #$e000]
+	move.w	#rom_start_e000,d2                      	| [$f273: ldx    #$e000]
 	GET_U_ADDRESS	0                        	| [$f276: ldb    ,u]
 	moveq	#0,d1                            	| [$f27a: clra]
 	move.b	(a0),d1                         	| [...]
@@ -465,7 +466,7 @@ compute_coords_f273:
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f27d: sta    $08]
 	move.b	d0,(a0)                         	| [...]
-	move.l	#0xe400,d2                      	| [$f27f: ldx    #$e400]
+	move.l	#rom_start_e000+0x400,d2                      	| [$f27f: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f282: ldb    $3,u]
 	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
@@ -545,7 +546,7 @@ l_f2d5:
 	rts                                    	| [$f2db: rts]
 
 l_f2dc:
-	move.l	#0xe000,d2                      	| [$f2dc: ldx    #$e000]
+	move.l	#rom_start_e000,d2                      	| [$f2dc: ldx    #$e000]
 	GET_U_ADDRESS	0                        	| [$f2df: ldb    ,u]
 	moveq	#0,d1                            	| [$f2e3: clra]
 	move.b	(a0),d1                         	| [...]
@@ -554,7 +555,7 @@ l_f2dc:
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	0x08                    	| [$f2e6: sta    $08]
 	move.b	d0,(a0)                         	| [...]
-	move.l	#0xe400,d2                      	| [$f2e8: ldx    #$e400]
+	move.l	#rom_start_e000+0x400,d2                      	| [$f2e8: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f2eb: ldb    $3,u]
 	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
@@ -683,7 +684,7 @@ l_f368:
 	bra	l_f35f                             	| [$f384: bra    $f35f]
 
 compute_coords_f386:
-	move.l	#0xe000,d2                      	| [$f386: ldx    #$e000] ROM start address
+	move.l	#rom_start_e000,d2                      	| [$f386: ldx    #$e000] ROM start address
 	GET_U_ADDRESS	0                        	| [$f389: ldb    ,u]
 	moveq	#0,d1                            	| [$f38d: clra]
 	move.b	(a0),d1                         	| [...]
@@ -693,7 +694,7 @@ compute_coords_f386:
 	GET_DP_ADDRESS	0x08                    	| [$f390: sta    $08]
 	move.b	d0,(a0)                         	| [...]
 	moveq	#0,d2
-	move.w	#0xe400,d2                      	| [$f392: ldx    #$e400]
+	move.w	#rom_start_e000+0x400,d2                      	| [$f392: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f395: ldb    $3,u]
 	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]
@@ -772,7 +773,7 @@ l_f3ea:
 
 l_f3f1:
 	moveq	#0,d2
-	move.w	#0xe000,d2                      	| [$f3f1: ldx    #$e000]
+	move.w	#rom_start_e000,d2                      	| [$f3f1: ldx    #$e000]
 	GET_U_ADDRESS	0                        	| [$f3f4: ldb    ,u]
 	moveq	#0,d1                            	| [$f3fa: clra]
 	move.b	(a0),d1                         	| [...]
@@ -782,7 +783,7 @@ l_f3f1:
 	GET_DP_ADDRESS	0x08                    	| [$f3fd: sta    $08]
 	move.b	d0,(a0)                         	| [...]
 	moveq	#0,d2
-	move.w	#0xe400,d2                      	| [$f3ff: ldx    #$e400]
+	move.w	#rom_start_e000+0x400,d2                      	| [$f3ff: ldx    #$e400]
 	GET_U_ADDRESS	0x3                      	| [$f402: ldb    $3,u]
 	moveq	#0,d1
 	move.b	(a0),d1                         	| [...]

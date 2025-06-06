@@ -11,6 +11,11 @@
 * conditional compilation to select the proper memory banks at compile time
 * (see my burger time 6502 conversion which does that in RELEASE mode)
 
+rom_start_e000 = 0xE000
+	
+	* illegal instruction just in case the main program includes that first!
+	ILLEGAL
+	
 	.macro	MAKE_D
 	rol.w	#8,d1
 	move.b	d0,d1
@@ -211,11 +216,10 @@ gyruss_sub_cpu_init:
 * < A3: rom start (0xE000)
 * < A6: ram start (0x4000) minus 0x4000
 get_6809_address:
-	cmp.l	#0xE000,a0
+	cmp.l	#rom_start_e000,a0
 	jcs		0f
 	* ROM
-	sub.l	#0xE000,a0
-	lea		(a3,a0.w),a0
+	lea		(a3,a0.l),a0
 	rts
 0:
 	cmp.w	#0x4000,a0
@@ -244,11 +248,10 @@ get_6809_address:
 	
 	.else
 	.macro	GET_6809_ADDRESS
-	cmp.l	#0xE000,a0
+	cmp.l	#rom_start_e000,a0
 	jcs		0f
 	* ROM
-	sub.l	#0xE000,a0
-	lea		(a3,a0.w),a0
+	lea		(a3,a0.l),a0
 	jra		2f
 0:
 	lea	(a6,a0.w),a0

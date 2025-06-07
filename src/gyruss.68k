@@ -1148,7 +1148,8 @@ execute_commands_loop_05f4:
 	                              	| [$061e: ex   de,hl]
 	* another jump table, different from rst_30
 	jra	(a1)                               	| [$061f: jp   (hl)]
-
+	
+* [jump_table]
 jump_table_0620:
 	.long	l_1faf 
 	.long	write_message_07e4
@@ -1222,7 +1223,7 @@ l_06a6:
 	move.b	(a0),d7
 	abcd	d7,d0                         	| [$06b3: adc  a,(hl)] + daa
 	move.b	d0,(a1)                         	| [$06b5: ld   (de),a]
-	lea	l_940D(a6),a0                      	| [$06b6: ld   hl,$940D]
+	lea	highscore_last_digit_940D(a6),a0                      	| [$06b6: ld   hl,$940D]
 	move.w	#0x0003,d1                      	| [$06b9: ld   bc,$0003]
 l_06bc:
 	move.b	(a1),d0                         	| [$06bc: ld   a,(de)]
@@ -1318,7 +1319,7 @@ write_player_2_score_075f:
 
 l_0769:
 	lea	0x8641,a1                          	| [$0769: ld   de,$8641]
-	lea	l_940D(a6),a0                      	| [$076c: ld   hl,$940D]
+	lea	highscore_last_digit_940D(a6),a0                      	| [$076c: ld   hl,$940D]
 	move.b	#0x11,d2                        	| [$076f: ld   c,$11]
 write_player_score_0771:
 	clr.b	d1                               	| [$0771: ld   b,$00]
@@ -1442,28 +1443,28 @@ global_state_demo_or_game_0828:
 	move.b	sub_state_942C(a6),d0                   	| [$082c: ld   a,($942C)]
 	jbsr	jump_table_jump_0030                            	| [$082f: rst  $30]
 * [jump_table]
-	.long	l_5f4d
-	.long	l_45e0
-	.long	l_37e9
-	.long	l_1fce
-	.long	l_3865
-	.long	l_255b
-	.long	l_2e10
-	.long	l_08b3
-	.long	l_4255
-	.long	l_4c54
-	.long	l_0a1a
-	.long	l_13bd
-	.long	l_0b42
-	.long	init_end_of_level_sequence_planet_0b71
-	.long	update_end_of_level_sequence_0b9a
-	.long	l_0bb9
-	.long	l_0be7
-	.long	l_0c04
-	.long	l_0c98
-	.long	l_0cf7
-	.long	init_end_of_level_sequence_404e
-	.long	l_0d97
+	.long	l_5f4d                                   | 0
+	.long	l_45e0                                   | 1
+	.long	l_37e9                                   | 2
+	.long	l_1fce                                   | 3
+	.long	l_3865                                   | 4
+	.long	l_255b                                   | 5
+	.long	l_2e10                                   | 6
+	.long	l_08b3                                   | 7
+	.long	game_over_4255                           | 8
+	.long	clear_after_game_over_4c54                                   | 9
+	.long	enter_high_score_0a1a                    | A
+	.long	l_13bd                                   | B
+	.long	l_0b42                                   | C
+	.long	init_end_of_level_sequence_planet_0b71   | D
+	.long	update_end_of_level_sequence_0b9a        | E
+	.long	l_0bb9                                   | F
+	.long	l_0be7                                   | 10
+	.long	l_0c04                                   | 11
+	.long	l_0c98                                   | 12
+	.long	l_0cf7                                   | 13
+	.long	init_end_of_level_sequence_404e          | 14
+	.long	l_0d97                                   | 15
 	.long	-1
 	.long	l_1580
 
@@ -1696,7 +1697,7 @@ l_0a14:
 	jne	l_09fa                             	| [$0a17: djnz $09FA]
 	rts                                    	| [$0a19: ret]
 
-l_0a1a:
+enter_high_score_0a1a:
 	move.b	#0xFC,d0                        	| [$0a1a: ld   a,$FC]
 	move.b	d0,stars_speed_943B(a6)                   	| [$0a1c: ld   ($943B),a]
 	jbsr	update_starfield_inter_levels_3831                            	| [$0a1f: call $3831]
@@ -1815,6 +1816,8 @@ l_0ad7:
 	move.b	#0x78,d0                        	| [$0ad7: ld   a,$78]
 	move.b	d0,distance_to_center_9465(a6)                   	| [$0ad9: ld   ($9465),a]
 	jbsr	l_5daa                            	| [$0adc: call $5DAA]
+	* highscore entered, save scores
+	jbsr	osd_write_high_scores
 	jra	next_game_state_080b                             	| [$0adf: jp   $080B]
 
 l_0ae2:
@@ -1898,10 +1901,10 @@ l_0b42:
 *	add.b	d5,d0                            	| [$0b5e: add  a,h]
 *	sub.b	#0xDA,d0                         	| [$0b5f: sub  $DA]
 *	jne	l_2964                             	| [$0b61: jp   nz,$2964]
-	READ_ROM_BYTE	0x0068,d0                       	| [$0b64: ld   a,($0068)]
-	move.b	d0,global_state_942B(a6)                   	| [$0b67: ld   ($942B),a]
-	READ_ROM_BYTE	0x0102,d0                       	| [$0b6a: ld   a,($0102)]
-	move.b	d0,sub_state_942C(a6)                   	| [$0b6d: ld   ($942C),a]
+	                       	| [$0b64: ld   a,($0068)]
+	move.b	#1,global_state_942B(a6)                   	| [$0b67: ld   ($942B),a]
+	                       	| [$0b6a: ld   a,($0102)]
+	move.b	#8,sub_state_942C(a6)                   	| [$0b6d: ld   ($942C),a]
 	rts                                    	| [$0b70: ret]
 
 init_end_of_level_sequence_planet_0b71:
@@ -2994,15 +2997,15 @@ l_1400:
 	jbsr	ldir                              	| [$1409: ldir]
 	rts                                    	| [$140b: ret]
 
-l_1428:
+init_default_hiscores_1428:
 	LEA_ROM	0x4AF4,a0                          	| [$1428: ld   hl,$4AF4]
-	lea	l_9488(a6),a1                      	| [$142b: ld   de,$9488]
+	lea	high_score_table_9488(a6),a1                      	| [$142b: ld   de,$9488]
 	move.w	#0x0028,d1                      	| [$142e: ld   bc,$0028]
 	jbsr	ldir                              	| [$1431: ldir]
 	rts                                    	| [$1433: ret]
 
 display_higscore_entries_145e:
-	lea	l_9488(a6),a0                      	| [$143e: ld   hl,$9488]
+	lea	high_score_table_9488(a6),a0                      	| [$143e: ld   hl,$9488]
 	lea	0x8711,a1                          	| [$1441: ld   de,$8711]
 	move.b	#0x01,d2                        	| [$1444: ld   c,$01]
 	jbsr	display_higscore_entry_1476                            	| [$1446: call $1476]
@@ -3133,23 +3136,21 @@ l_1596:
 	move.b	d0,sub_state_942C(a6)                   	| [$159c: ld   ($942C),a]
 	rts                                    	| [$159f: ret]
 
-l_15a0:
-	lea	l_948B(a6),a0                      	| [$15a0: ld   hl,$948B]
+allocate_high_score_entry_15a0:
+	lea	high_score_table_9488+3(a6),a0                      	| [$15a0: ld   hl,$948B]
 	move.b	#0x05,d1                        	| [$15a3: ld   b,$05]
-	move.b	current_player_9662(a6),d0                   	| [$15a5: ld   a,($9662)]
+	lea	player_1_score_9663+2(a6),a1                      	| [$15a9: ld   de,$9665]
+	tst.b	current_player_9662(a6)                   	| [$15a5: ld   a,($9662)]
 	                               	| [$15a8: and  a]
-	lea	l_9665(a6),a1                      	| [$15a9: ld   de,$9665]
 	jeq	l_15b1                             	| [$15ac: jr   z,$15B1]
-	lea	l_9668(a6),a1                      	| [$15ae: ld   de,$9668] [uncovered]
+	lea	player_2_score_9666+2(a6),a1                      	| [$15ae: ld   de,$9668]
 l_15b1:
 
 	move.l	a0,-(sp)                        	| [$15b1: push hl]
-	movem.w	d3/d4,-(sp)                    	| [$15b2: push de]
 	move.l	a1,-(sp)                        	| [$15b2: push de]
-	jbsr	l_1608                            	| [$15b3: call $1608]
-	jcc	l_15c1                             	| [$15b6: jr   nc,$15C1]
+	jbsr	compare_scores_1608                            	| [$15b3: call $1608]
+	jcc	make_room_for_entry_15c1                 | [$15b6: jr   nc,$15C1]
 	move.l	(sp)+,a1                        	| [$15b8: pop  de]
-	movem.w	(sp)+,d3/d4                    	| [$15b8: pop  de]
 	move.l	(sp)+,a0                        	| [$15b9: pop  hl]
 	move.b	#0x08,d0                        	| [$15ba: ld   a,$08]
 	jbsr	fetch_a0_plus_d0_0008                            	| [$15bc: rst  $08]
@@ -3158,9 +3159,10 @@ l_15b1:
 	SET_XC_FLAGS                           	| [$15bf: scf] [uncovered]
 	rts                                    	| [$15c0: ret] [uncovered]
 
-l_15c1:
+make_room_for_entry_15c1:
 	subq.b	#1,d1                           	| [$15c1: dec  b]
-	jeq	l_1603                             	| [$15c2: jr   z,$1603]
+	jeq	l_1603                             	| [$15c2: jr   z,$1603]	last entry: no need
+	* shift as many entries below needed
 	lea	l_94A7(a6),a0                      	| [$15c4: ld   hl,$94A7]
 	lea	l_94AF(a6),a1                      	| [$15c7: ld   de,$94AF]
 	move.b	d1,d0                           	| [$15ca: ld   a,b]
@@ -3172,6 +3174,7 @@ l_15c1:
 	jbsr	lddr                              	| [$15d1: lddr]
 	exg	a1,a0                              	| [$15d3: ex   de,hl]
 l_15d4:
+	* clear score entry
 	                           	| [$15d4: dec  hl]
 	move.b	#0x83,-(a0)                      	| [$15d5: ld   (hl),$83]
 	                           	| [$15d7: dec  hl]
@@ -3182,19 +3185,18 @@ l_15d4:
 l_15e0:
 	subq.w	#1,a0                           	| [$15e0: dec  hl]
 	move.l	(sp)+,a1                        	| [$15e1: pop  de]
-	movem.w	(sp)+,d3/d4                    	| [$15e1: pop  de]
 	move.w	#0x0003,d1                      	| [$15e2: ld   bc,$0003]
 	exg	a1,a0                              	| [$15e5: ex   de,hl]
 	jbsr	lddr                              	| [$15e6: lddr]
 	move.b	(a1),d0                         	| [$15e8: ld   a,(de)]
 	move.l	(sp)+,a0                        	| [$15e9: pop  hl]
-	lea	0x8531,a0                          	| [$15ea: ld   hl,$8531]
+	lea	0x8531,a0                          	| [$15ea: ld   hl,$8531] base score screen address (1ST place)
 	add.b	d0,d0                            	| [$15ed: add  a,a]
 	and.w	#0xFF,d0            | [$0008: add  a,l]
 	add.w	d0,a0               | [$0009: ld   l,a]
 	jbsr	read_videoram_a0                 	| [$15ee: rst  $08]
 	STORE_VIDEO_POINTER	a0,video_address_9413(a6)        	| [$15ef: ld   ($9413),hl]
-	lea	l_9488(a6),a0                      	| [$15f2: ld   hl,$9488]
+	lea	high_score_table_9488(a6),a0                      	| [$15f2: ld   hl,$9488]
 	move.w	#0x0008,d3                      	| [$15f5: ld   de,$0008]
 	move.b	#0x05,d1                        	| [$15f8: ld   b,$05]
 	clr.b	d0                               	| [$15fa: xor  a]
@@ -3212,7 +3214,7 @@ l_1603:
 	lea	l_94AF(a6),a0                      	| [$1603: ld   hl,$94AF]
 	jra	l_15d4                             	| [$1606: jr   $15D4]
 
-l_1608:
+compare_scores_1608:
 	move.b	#0x03,d2                        	| [$1608: ld   c,$03]
 l_160a:
 	move.b	(a1),d0                         	| [$160a: ld   a,(de)]
@@ -4323,8 +4325,13 @@ l_205b:
 	jra	l_2170                             	| [$2070: jp   $2170]
 
 l_20be:
-	READ_ROM_BYTE	0x0117,d0                       	| [$20be: ld   a,($0117)]
-	move.b	d0,l_940D(a6)                   	| [$20c1: ld   ($940D),a]
+	* set default highscore to 10000
+	                       	| [$20be: ld   a,($0117)]
+	move.b	#1,highscore_last_digit_940D(a6)                   	| [$20c1: ld   ($940D),a]
+
+	* now is a good time to load the saved highscores & highscore
+	jbsr	osd_read_high_scores
+
 	jra	l_4e45                             	| [$20c4: jp   $4E45]
 
 l_20c7:
@@ -7720,7 +7727,7 @@ l_4191:
 	move.b	d0,l_92EE(a6)                   	| [$41db: ld   ($92EE),a]
 	rts                                    	| [$41de: ret]
 
-l_4255:
+game_over_4255:
 	LEA_ROM	0x4251,a0                          	| [$4255: ld   hl,$4251]
 	move.b	general_fast_timer_9400(a6),d0                   	| [$4258: ld   a,($9400)]
 	ror.b	#3,d0                            	| [$425b: rrca] * 3
@@ -7754,14 +7761,15 @@ l_4269:
                       	| [$4285: jr   nz,$4282]
                         	| [$4287: sub  $0E]
 	move.b	d0,global_state_942B(a6)                   	| [$4289: ld   ($942B),a]
-	jbsr	l_15a0                            	| [$428c: call $15A0]
+	jbsr	allocate_high_score_entry_15a0              | [$428c: call $15A0]
 	jcc	l_42a3                             	| [$428f: jp   nc,$42A3]
+	* we have a highscore: perform name entry
 	move.w	#0x0309,d3                          	| [$4292: ld   de,$0309] [uncovered]
 	jbsr	start_task_d3_0038                            	| [$4295: rst  $38] [uncovered]
 	move.w	#0x030B,d3                          	| [$4296: ld   de,$030B] [uncovered]
 	jbsr	start_task_d3_0038                            	| [$4299: rst  $38] [uncovered]
-	READ_ROM_BYTE	0x5E25,d0                       	| [$429a: ld   a,($5E25)] [uncovered]
-	move.b	d0,sub_state_942C(a6)                   	| [$429d: ld   ($942C),a] [uncovered]
+												| [$429a: ld   a,($5E25)] [uncovered]
+	move.b	#0xB,sub_state_942C(a6)                   	| [$429d: ld   ($942C),a] [uncovered]
 	jra	l_13d1                             	| [$42a0: jp   $13D1] [uncovered]
 
 l_42a3:
@@ -7776,7 +7784,7 @@ l_42e4:
 	addq.w	#1,a0                           	| [$42e6: inc  hl]
 	WRITE_VIDEORAM	0x83                      	| [$42e7: ld   (hl),$83]
 	add.w	d3,a0                            	| [$42e9: add  hl,de]
-	* game overwrites the screen address
+	* game writes past the screen address, protect against that
 	cmp.l	#0x8800,a0
 	jcc		0f
 	subq.b	#1,d1                           	| [...]
@@ -8750,7 +8758,7 @@ l_4c3e:
 	move.w	#0x010D,d3                          	| [$4c3e: ld   de,$010D]
 	jra	start_task_d3_0038                             	| [$4c41: jp   $0038]
 
-l_4c54:
+clear_after_game_over_4c54:
 	jbsr	update_starfield_inter_levels_3831                            	| [$4c54: call $3831]
 	jbsr	disable_game_objects_0e43                            	| [$4c57: call $0E43]
 	jbsr	clear_screen_row_0207                            	| [$4c5a: call $0207]
@@ -8797,6 +8805,7 @@ l_4c84:
 	sub.l	#0x8000,a1
 	move.b	(a6,a1.w),d0                         	| [$4c98: ld   a,(de)]
 	move.b	d0,saved_character_attribute_9410(a6)  | [$4c99: ld   ($9410),a]
+	* goto name highscore entry
 	jra	next_game_state_080b                             	| [$4c9c: jp   $080B]
 
 l_4c9f:
@@ -9183,10 +9192,17 @@ l_4faf:
 	jra	l_066e                             	| [$4fcf: jp   $066E]
 
 l_52c3:
-	jbsr	l_1428                            	| [$52c3: call $1428]
-                       	| [$52c6: ld   (watchdog_C000),a]
+	jbsr	init_default_hiscores_1428                            	| [$52c3: call $1428]
+											| [$52c6: ld   (watchdog_C000),a]
 	jra	l_20be                             	| [$52c9: jp   $20BE]
-
+	* also propagate the highest score to the
+	* high score (separate memory locations as often)
+	BREAKPOINT	"lfll"
+	lea		high_score_table_9488+1(a6),a0	
+	lea		highscore_last_digit_940D-2(a6),a1
+	move.b	(a0)+,(a1)+
+	move.b	(a0)+,(a1)+
+	move.b	(a0)+,(a1)+
 clear_ram_57dc:
 	lea	level_playing_flag_9000(a6),a0                      	| [$57dc: ld   hl,$9000]
 	                    	| [$57df: ld   de,$9001]

@@ -1,4 +1,4 @@
-- highscore save
+- missing sounds in highscore entry (letter input 0X17 + 0x18 end)
 - player shoot sound accumulates not very nicely
 - missing warp to planet sfx, missing iceberg sound
 - check if vanilla A1200 runs properly with stars

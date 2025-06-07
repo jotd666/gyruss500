@@ -5,7 +5,7 @@
 *
 
 	* first instruction (includes contain code)
-	jra		_user
+	jra		start
 
 	.include "../src/gyruss.inc"
 	.include "../src/gyruss_sub.inc"
@@ -2120,19 +2120,24 @@ store_system:
 	jsr		_LVOSupervisor(a6)
 	move.l	d0,system_vbr
 1:
+	move.w	AttnFlags(a6),d0
+	btst	#AFB_68020,d0
+	beq.b	0f				| no 68020: disable stars & switch to 25FPS
 	
+	* check fastmem
 	pea		2f(pc)	
 2:
 	move.l	(a7)+,d0
 	cmp.l	#0x200000,d0
-	bcs.b	3f				| will crawl if no fastmem
-	move.w	AttnFlags(a6),d0
-	btst	#AFB_68020,d0
-	bne.b	1f
-3:
-	* no whdload, no 68020: assume slow switch to 25 FPS
+	bcc.b	1f				
+0:
+	* no whdload, no fastmem/68020: assume slow switch to 25 FPS
 	* if running on PiStorm, well, too bad use whdload
+	*
+	* note: game crawls on vanilla A1200 too if stars are on
+	*
 	st.b	frameskip
+	* also turn off stars
 	st.b	stars_off_flag
 1:
 
@@ -2150,6 +2155,9 @@ store_system:
 	rts
 
 restore_system:
+	jbsr	MixerStop
+	jbsr	MixerRemoveHandler
+	
 	move.l	system_vbr(pc),a0
 	lea	_custom,a6
 	jsr		_mt_remove_cia
@@ -2166,7 +2174,6 @@ restore_system:
 
 
 	bclr	#6,0xbfee01
-
 
 	lea	_custom,a6
 	move.w	old_intena,d0			| get old val

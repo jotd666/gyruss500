@@ -555,7 +555,7 @@ MixerInstallHandler:
 
 		* Routine: MixerRemoveHandler
 		* This routine disables & removes the audio interrupt.
-		* It also restores the old handler .ifeq	previously stored.
+		* It also restores the old handler if previously stored.
 		*
 		* Note: MixerSetup & MixerInstallHandler must have been called prior to calling
 		*       this routine.

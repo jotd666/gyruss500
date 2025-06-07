@@ -27,6 +27,11 @@ NO68020 = 1
 
 BORDERBLANK = 1
 
+* we plot pixels instead of star sprites
+* star sprites are 16x8 and pixel in star sprite
+* is at the center. Add shift to make position right
+STAR_PIXEL_X = 8
+STAR_PIXEL_Y = 4
 
 SPRITE_X_CORRECTION = 7
 SPRITE_Y_CORRECTION = 0
@@ -72,8 +77,9 @@ NB_BOB_PLANES = 4		| only using 16 first colors
 TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
 NB_BYTES_PER_ROW = 40
 
-
-NB_LINES = 264
+* add 16 so sprites can be drawn at the bottom
+* without corrupting the screen
+NB_LINES = Y_MAX+16
 NB_PLAYFIELD_LINES = NB_LINES
 
 
@@ -1192,6 +1198,7 @@ set_pixel:
 	tst.b	d3
 	jeq		2f
 	* select proper bit
+	and.b	#7,d4
 	neg.b	d4
 	add.b	#7,d4
 	bset	d4,(a1)
@@ -1608,6 +1615,8 @@ update_one_bob:
 	move.l		playfield_drawed_screen_ptr(pc),a1
 	subq	#4,d2	| cluts 4-8 => 0-4 bitplane numbers
 	* note down that this bob will have to be erased
+	addq	#STAR_PIXEL_X,d0	
+	addq	#STAR_PIXEL_Y,d1	
 	move.w	d0,(a6)+			| store current sprite attributes to previous ones
 	move.w	d1,(a6)+			| store current sprite attributes to previous ones
 	move.w	#1,(a6)+			| height = 1

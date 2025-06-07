@@ -1,13 +1,14 @@
-- missing warp to planet sfx
-- weapon upgrade sound not played
+- highscore save
+- player shoot sound accumulates not very nicely
+- missing warp to planet sfx, missing iceberg sound
+- check if vanilla A1200 runs properly with stars
+- weapon upgrade sound increase volume
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 - handle loop (radio): when to stop it? maybe if sound 0 played
   then stop loops and music (not regular SFX)
-- highscore save
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
-
-- missing sounds: flash yellow
-- add ignored sound flag
+- add command line option to turn off stars
+- missing sounds: flash yellow but add ignored sound flag
  
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
@@ -34,7 +35,6 @@ bpset 5c38,,{printf "%x",A;g}
 
 - to redirect "credit" sound to any sound
 bpset 5c38,,{A=xxx;g}
-
 
 
 mot2mit: blk.b => .skip

@@ -1,6 +1,7 @@
 .key nope
 set game gyruss
 copy $game.RNC DF0:$game
+delete DF0:$game.high
 protect DF0:$game RWED
 
 copy readme.md df0:

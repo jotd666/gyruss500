@@ -289,19 +289,10 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
                         wtile = plane_func(tile)
 
                         if is_bob:
-##                            if i in grouped_sprites:
-##                                # change wtile, fetch code +0x100
-##                                other_tile_index = (i+0x100)%0x200
-##                                other_tile = img_set[other_tile_index]
-##                                new_tile = Image.new("RGB",(wtile.size[0],wtile.size[1]*2))
-##                                new_tile.paste(wtile)
-##                                new_tile.paste(other_tile,(0,wtile.size[1]))
-##                                wtile = new_tile
-##                                print(hex(i))
                             # only 4 planes + mask => 5 planes
                             y_start,wtile = bitplanelib.autocrop_y(wtile)
                             height = wtile.size[1]
-                            bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=True,blit_pad=True)
+                            bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=True,blit_pad=False)
                         else:
                             # 5 planes, no mask
                             height = 8
@@ -354,7 +345,7 @@ for i in grouped_sprites:
 with open(os.path.join(src_dir,"sprite_groups.68k"),"w") as f:
     bitplanelib.dump_asm_bytes(gs_array,f,mit_format=True)
 
-grouped_sprites
+
 with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
     f.write("\t.global\tcharacter_table\n")
     f.write("\t.global\tbob_table\n")
@@ -463,7 +454,7 @@ with open(os.path.join(src_dir,"graphics.68k"),"w") as f:
                                 if bitplane_id:
                                     active_planes |= 1<<j
 
-                            f.write(f"\t.word\t{height},{width},{offset},0x{active_planes:x}\n")
+                            f.write(f"\t.word\t{height},{width},{offset},0x{active_planes:x}  | height,width,offset,active planes\n")
                             for bitplane_id in bitplanes:
                                 f.write("\t.long\t")
                                 if bitplane_id:

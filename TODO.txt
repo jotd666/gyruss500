@@ -1,14 +1,17 @@
 - missing sounds in highscore entry (letter input 0X17 + 0x18 end)
 - player shoot sound accumulates not very nicely
-- missing warp to planet sfx, missing iceberg sound
-- check if vanilla A1200 runs properly with stars
-- weapon upgrade sound increase volume
+- increase sound volume
+- test with 1MB
+- missing warp sound to planet sfx, missing iceberg sound
+- sound globally increase volume
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 - handle loop (radio): when to stop it? maybe if sound 0 played
   then stop loops and music (not regular SFX)
+  
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
-- add command line option to turn off stars
 - missing sounds: flash yellow but add ignored sound flag
+- make degraded version for A500, maybe 8k sfx and no music?
+  (and better sfx for others!)
  
 - convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
 
@@ -37,8 +40,7 @@ bpset 5c38,,{printf "%x",A;g}
 bpset 5c38,,{A=xxx;g}
 
 
-mot2mit: blk.b => .skip
-mot2mit: leave .if as is IF => .if
+
 
 6809 converter: optim if 2 exactly identical GET_ADDRESS follow (no branches, just a "move/add"...
 remove the second one

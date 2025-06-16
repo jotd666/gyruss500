@@ -7115,6 +7115,7 @@ update_starfield_in_game_3804:
 	move.b	#0xFC,d5                        	| [$3812: ld   h,$FC]
 	jbsr	update_base_stars_3A37        | [$3814: call update_base_stars_3A37]
 	move.b	#0xFE,d6                        	| [$3817: ld   l,$FE]
+	* extra stars
 	jra	update_starfield_using_bullet_slots_39B1              	| [$3819: jp   update_starfield_using_bullet_slots_39B1]
 
 
@@ -7395,6 +7396,7 @@ l_39ef:
 *   always 5 means that 10 stars are updated here
 * < A2: A138/A338
 * < A3: 9938
+* < D5: ?
 update_base_stars_3A37:
 	tst.b	stars_off_flag
 	jeq		0f

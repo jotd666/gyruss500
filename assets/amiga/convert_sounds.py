@@ -145,15 +145,15 @@ def convert():
                 maxsigned = max(signed_data)
                 minsigned = min(signed_data)
 
-                amp_ratio = max(maxsigned,abs(minsigned))/64
+                amp_ratio = max(maxsigned,abs(minsigned))/32
 
                 # JOTD: for that one, I'm using maxxed out sfx by no9, no amp
                 #amp_ratio = 0.9
 
                 wav = os.path.splitext(wav_name)[0]
-                if amp_ratio > 1:
-                    print(f"{wav}: volume peaked {amp_ratio}")
-                    amp_ratio = 1
+##                if amp_ratio > 1:
+##                    print(f"{wav}: volume peaked {amp_ratio}")
+##                    amp_ratio = 1
 
                 loop = 0xFFFF if details.get('loops') else 1
 

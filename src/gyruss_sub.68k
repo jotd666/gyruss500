@@ -1129,8 +1129,8 @@ enemies_coordinate_transform_f589:
 	move.l	a0,-(a7)				| save address for later
 	MOVE_W_A0_IN_D4                  	| [...]
 	sub.w	#0x0128,d4                       	| [$f590: leau   -$0128,u]
-	move.b	#0x0a,d0                        	| [$f594: lda    #$0a]
-	move.b	d0,(0xC-0xF,a0)                    	| [$f596: sta    $0c]
+	                        	| [$f594: lda    #$0a]
+	move.b	#0xa,(0xC-0xF,a0)                    	| [$f596: sta    $0c]
 	jbsr	l_f2dc                            	| [$f598: jsr    $f2dc]
 	move.l	(a7)+,a0	                    	| [$f59b: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
@@ -1141,10 +1141,10 @@ l_f59e:
 	move.l	a0,-(a7)
 	MOVE_W_A0_IN_D4                  	| [...]
 	sub.w	#0x0128,d4                       	| [$f5a0: leau   -$0128,u]
-	move.b	#0x01,d0                        	| [$f5a4: lda    #$01]
-	lea		(0xC-0xF,a0),a0                    	| [$f5a6: sta    $0c]
-	move.b	d0,(a0)                         	| [...]
-	move.l	a0,-(a7)
+	
+	lea		(0xC-0xF,a0),a0                        	| [$f5a4: lda    #$01]
+	move.b	#0x01,(a0)                   	| [$f5a6: sta    $0c]
+	move.l	a0,-(a7)						| save address for later
 	jbsr	l_f2dc                            	| [$f5a8: jsr    $f2dc]
 	move.l	(a7)+,a0
 	move.b	#0x09,d0                        	| [$f5ab: lda    #$09]
@@ -1210,8 +1210,8 @@ coordinate_transform_two_f5f3:
 	GET_DP_ADDRESS	0x0f                    	| [$f5f3: ldu    $0f]
 	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
-	move.b	#0x08,(0xC-0xF,a0)                        	| [$f5f5: lda    #$08]
-	                    	| [$f5f7: sta    $0c]
+	                        	| [$f5f5: lda    #$08]
+	move.b	#0x08,(0xC-0xF,a0)                    	| [$f5f7: sta    $0c]
 	jbsr	compute_coords_f273                            	| [$f5f9: jsr    $f273]
 	move.l		(a7)+,a0                    	| [$f5fc: stu    $0f]
 	MOVE_W_D4_IN_A0                	| [...]

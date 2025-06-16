@@ -967,6 +967,7 @@ l_f4c7:
 l_f4d0:
 	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f4d0: lda    $01]
 	move.b	(a0),d0                         	| [...]
+	move.l	a0,a1
 	and.b	#0xc0,d0                         	| [$f4d2: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f4d4: suba   #$40]
 										| [$f4d6: sta    $01]
@@ -975,8 +976,8 @@ l_f4d0:
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f4dc: sta    $09]
 	move.b	d0,(a0)                         	| [...]
-	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f4de: inc    $01]
-	addq.b	#1,(a0)                         	| [...]
+	                    	| [$f4de: inc    $01]
+	addq.b	#1,(a1)                         	| [...]
 	GET_DP_ADDRESS	unknown_0b                    	| [$f4e0: inc    $0b]
 	addq.b	#1,(a0)                         	| [...]
 	bra	l_f49d                             	| [$f4e2: bra    $f49d]
@@ -1054,6 +1055,7 @@ l_f520:
 l_f529:
 	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f529: lda    $01]
 	move.b	(a0),d0                         	| [...]
+	move.l	a0,a1
 	and.b	#0xc0,d0                         	| [$f52b: anda   #$c0]
 	sub.b	#0x40,d0                         	| [$f52d: suba   #$40]
 	move.b	d0,(a0)								| [$f52f: sta    $01]
@@ -1061,8 +1063,8 @@ l_f529:
 	move.b	(a0),d0                         	| [...]
 	GET_DP_ADDRESS	number_of_sprites_to_update_09                    	| [$f535: sta    $09]
 	move.b	d0,(a0)                         	| [...]
-	GET_DP_ADDRESS	sprite_index_pointer_4200_lsb_01                    	| [$f537: inc    $01]
-	addq.b	#1,(a0)                         	| [...]
+	                    	| [$f537: inc    $01]
+	addq.b	#1,(a1)                         	| [...]
 	GET_DP_ADDRESS	unknown_0b                    	| [$f539: inc    $0b]
 	addq.b	#1,(a0)                         	| [...]
 	jra	l_f4f6                             	| [$f53b: bra    $f4f6]
@@ -1091,6 +1093,7 @@ l_f529:
 	
 ship_coordinate_transform_f566:
 	GET_DP_ADDRESS	0x0f                    	| [$f566: ldu    $0f]
+	move.l	a0,-(a7)				| save address for later
 	MOVE_W_A0_IN_D4                         	| [...]
 	moveq	#0,d1                            	| [$f568: clrb]
 l_f569:
@@ -1114,7 +1117,7 @@ l_f569:
 	addq.b	#1,d1                           	| [$f581: incb]
 	cmp.b	#0x04,d1                         	| [$f582: cmpb   #$04]
 	jcs	l_f569                             	| [$f584: jcs    $f569]
-	GET_DP_ADDRESS	0x0f                    	| [$f586: stu    $0f]
+	move.l	(a7)+,a0                    	| [$f586: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f588: rts]
 
@@ -1135,6 +1138,7 @@ enemies_coordinate_transform_f589:
 
 l_f59e:
 	GET_DP_ADDRESS	0x0f                    	| [$f59e: ldu    $0f]
+	move.l	a0,-(a7)
 	MOVE_W_A0_IN_D4                  	| [...]
 	sub.w	#0x0128,d4                       	| [$f5a0: leau   -$0128,u]
 	move.b	#0x01,d0                        	| [$f5a4: lda    #$01]
@@ -1186,111 +1190,120 @@ l_f5de:
 	addq.w	#0x8,d4                         	| [$f5de: leau   $8,u]
 	GET_DP_ADDRESS	0x0c                    	| [$f5e0: dec    $0c]
 	subq.b	#1,(a0)                         	| [...]
-	bne	l_f5af                             	| [$f5e2: bne    $f5af]
-	GET_DP_ADDRESS	0x0f                    	| [$f5e4: stu    $0f]
+	jne	l_f5af                             	| [$f5e2: bne    $f5af]
+	move.l		(a7)+,a0                    	| [$f5e4: stu    $0f]
 	MOVE_W_D4_IN_A0                	| [...]
 	rts                                    	| [$f5e6: rts]
 
 coordinate_transform_one_f5e7:
 	GET_DP_ADDRESS	0x0f                    	| [$f5e7: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x0a,d0                        	| [$f5e9: lda    #$0a]
 	GET_DP_ADDRESS	0x0c                    	| [$f5eb: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f5ed: jsr    $f273]
-	GET_DP_ADDRESS	0x0f                    	| [$f5f0: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f5f0: stu    $0f]
 	MOVE_W_D4_IN_A0                	| [...]
 	rts                                    	| [$f5f2: rts]
 
 coordinate_transform_two_f5f3:
 	GET_DP_ADDRESS	0x0f                    	| [$f5f3: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x08,d0                        	| [$f5f5: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f5f7: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f5f9: jsr    $f273]
-	GET_DP_ADDRESS	0x0f                    	| [$f5fc: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f5fc: stu    $0f]
 	MOVE_W_D4_IN_A0                	| [...]
 	rts                                    	| [$f5fe: rts]
 
 coordinate_transform_three_f5ff:
 	GET_DP_ADDRESS	0x0f                    	| [$f5ff: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x0a,d0                        	| [$f601: lda    #$0a]
 	GET_DP_ADDRESS	0x0c                    	| [$f603: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f605: jsr    $f273]
-	GET_DP_ADDRESS	0x0f                    	| [$f608: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f608: stu    $0f]
 	MOVE_W_D4_IN_A0                	| [...]
 	rts                                    	| [$f60a: rts]
 
 coordinate_transform_four_f60b:
 	GET_DP_ADDRESS	0x0f                    	| [$f60b: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x08,d0                        	| [$f60d: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f60f: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f273                            	| [$f611: jsr    $f273]
-	GET_DP_ADDRESS	0x0f                    	| [$f614: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f614: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f616: rts]
 
 coordinate_transform_eight_f617:
 	GET_DP_ADDRESS	0x0f                    	| [$f617: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                    	| [...]
 	add.w	#0x10,d4                         	| [$f619: leau   $10,u]
 	move.b	#0x06,d0                        	| [$f61c: lda    #$06]
 	GET_DP_ADDRESS	0x0c                    	| [$f61e: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f386                            	| [$f620: jsr    $f386]
-	GET_DP_ADDRESS	0x0f                    	| [$f623: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f623: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f625: rts]
 
 enemies_coordinate_transform_f626:
 	GET_DP_ADDRESS	0x0f                    	| [$f626: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
 	add.w	#0x0108,d4                       	| [$f628: leau   $0108,u]
 	move.b	#0x08,d0                        	| [$f62c: lda    #$08]
 	GET_DP_ADDRESS	0x0c                    	| [$f62e: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	compute_coords_f386                            	| [$f630: jsr    $f386]
-	GET_DP_ADDRESS	0x0f                    	| [$f633: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f633: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f635: rts]
 
 coordinate_transform_six_f636:
 	GET_DP_ADDRESS	0x0f                    	| [$f636: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
 	add.w	#0x20,d4                         	| [$f638: leau   $20,u]
 	move.b	#0x04,d0                        	| [$f63b: lda    #$04]
 	GET_DP_ADDRESS	0x0c                    	| [$f63d: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f3f1                            	| [$f63f: jsr    $f3f1]
-	GET_DP_ADDRESS	0x0f                    	| [$f642: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f642: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f644: rts]
 
 coordinate_transform_seven_f645:
 	GET_DP_ADDRESS	0x0f                    	| [$f645: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
 	move.b	#0x04,d0                        	| [$f647: lda    #$04]
 	GET_DP_ADDRESS	0x0c                    	| [$f649: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f3f1                            	| [$f64b: jsr    $f3f1]
-	GET_DP_ADDRESS	0x0f                    	| [$f64e: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f64e: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f650: rts]
 
 coordinate_transform_five_f651:
 	GET_DP_ADDRESS	0x0f                    	| [$f651: ldu    $0f]
+	move.l		a0,-(a7)
 	MOVE_W_A0_IN_D4                         	| [...]
 	add.w	#0x10,d4                         	| [$f653: leau   $10,u]
 	move.b	#0x06,d0                        	| [$f656: lda    #$06]
 	GET_DP_ADDRESS	0x0c                    	| [$f658: sta    $0c]
 	move.b	d0,(a0)                         	| [...]
 	jbsr	l_f670                            	| [$f65a: jsr    $f670]
-	GET_DP_ADDRESS	0x0f                    	| [$f65d: stu    $0f]
+	move.l		(a7)+,a0                    	| [$f65d: stu    $0f]
 	MOVE_W_D4_IN_A0                         	| [...]
 	rts                                    	| [$f65f: rts]
 

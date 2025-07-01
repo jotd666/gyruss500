@@ -8,7 +8,7 @@ sox = "sox"
 # max 4 sounds at once
 nb_mix_channels = 4
 
-def convert():
+def convert(suffix,freq,with_module):
     if not shutil.which("sox"):
         raise Exception("sox command not in path, please install it")
     # BTW convert wav to mp3: ffmpeg -i input.wav -codec:a libmp3lame -b:a 330k output.mp3
@@ -20,8 +20,8 @@ def convert():
 
     this_dir = os.path.dirname(__file__)
     src_dir = os.path.join(this_dir,"../../src/amiga")
-    outfile = os.path.join(src_dir,"sounds.68k")
-    sndfile = os.path.join(src_dir,"sound_entries.68k")
+    outfile = os.path.join(src_dir,f"sounds_{suffix}.68k")
+    sndfile = os.path.join(src_dir,f"sound_entries_{suffix}.68k")
 
 
     hq_sample_rate = 11025  # must be coherent with value in mixer.inc
@@ -190,14 +190,14 @@ def convert():
 
                 write_asm(contents,fw)
 
+        if with_module:
+            # make sure next section will be aligned
+            with open(os.path.join(sound_dir,f"{gamename}_conv.mod"),"rb") as f:
+                contents = f.read()
 
-        # make sure next section will be aligned
-##        with open(os.path.join(sound_dir,f"{gamename}_conv.mod"),"rb") as f:
-##            contents = f.read()
-##
-##        fw.write("{}:".format(music_module_label))
-##        write_asm(contents,fw)
-        fw.write("\t.align\t8\n")
+            fw.write("{}:".format(music_module_label))
+            write_asm(contents,fw)
+            fw.write("\t.align\t8\n")
 
 
         fst.writelines(sound_table)
@@ -206,6 +206,6 @@ def convert():
             fst.write(st)
             fst.write(" | {}\n".format(i))
 
-convert()
+convert(suffix="2mb",freq=11025,with_module=True)
 
 

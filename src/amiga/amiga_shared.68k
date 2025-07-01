@@ -215,8 +215,7 @@ osd_sound_start:
 	bsr		osd_music_stop
     lea _custom,a6
  	movem.l	d0/a0,-(a7)
-	*lea	pooyan_tunes,a0
-	illegal
+	lea	gyruss_tunes,a0
 	
 	moveq	#7,d0		| only 3 first channels enabled for pt player
 	jbsr	_mt_channelmask

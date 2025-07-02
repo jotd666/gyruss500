@@ -2353,16 +2353,6 @@ platform_init:
 
 	* Start the mixer
 	jbsr		MixerStart
-
-	.ifne	OPT_ENABLE_PROFILING
-	* init profiling if enabled
-	lea		0x180000,a0
-	move.l	#0x20000,d0
-	lea		0x100,a1
-	bsr		init_fixed_address
-	bsr		install_profiler_vbl_hook
-	.endif
-
 	
     rts
 	
@@ -2389,7 +2379,8 @@ load_palette:
 osd_interrupt_control:
 	tst.b	d0
 	jeq		0f
-	move.w	#0xC038+0x780,_custom+intena
+	jbsr	get_enabled_interrupts_value
+	move.w	d0,_custom+intena
 	rts
 0:
 	move.w	#0x0030,_custom+intena

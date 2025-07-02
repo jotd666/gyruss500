@@ -52,13 +52,20 @@ def convert(suffix,freq,with_module):
    #"DEATH_RAY_SND" : {"index":0xA,"loops":True},
 
 
-#    "GAME_OVER_TUNE_SND"                :{"index":0x1D,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
+    "TOCATTA_TUNE_SND"                :{"index":0X25,"pattern":0,"volume":32,'loops':True},
+    "TOCATTA_NEXT_TUNE_SND"                :{"index":0X28,"pattern":4,"volume":32,'loops':True},
 
 
     }
 
+    dummy_sounds = [0x24,   # sound stop?
+
+    0x2,  # start music?
+    ]
+
     for s in sound_dict.values():
-        s.update({"channel":3})
+        if "pattern" not in s:
+            s.update({"channel":3})
 
     with open(os.path.join(src_dir,"..","sounds.inc"),"w") as f:
         for k,v in sorted(sound_dict.items(),key = lambda x:x[1]["index"]):
@@ -68,6 +75,8 @@ def convert(suffix,freq,with_module):
     sound_table = [""]*max_sound
     sound_table_set_1 = ["\t.long\t0,0"]*max_sound
 
+    for d in dummy_sounds:
+        sound_table_set_1[d] = "\t.word\t3,0,0,0   | valid but muted"
 
 
 

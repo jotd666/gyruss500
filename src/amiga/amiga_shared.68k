@@ -5,7 +5,7 @@
 		.global osd_sound_start
 		.global osd_music_stop
 		.global music_tick
-		
+		.global	get_enabled_interrupts_value
 
 
 * sound engine and also highscore management, common to all versions
@@ -158,7 +158,9 @@ osd_music_stop:
 	movem.l	(a7)+,d0/a0/a6
 	rts
 	
-	
+get_enabled_interrupts_value:	
+	move.w	#0xC038+0x780,d0
+	rts
 	
 * tunes sounds are: sound index followed by 0x15,0x16,0x17 (that we ignore!)
 osd_sound_start:
@@ -179,8 +181,9 @@ osd_sound_start:
 	lea		sound_table,a0
 	add.w	d0,a0
 	move.w	(a0),d1	| sound type
-	beq.b	10f		| no sound
-
+	beq.b	11f		| no sound, but not expected!
+	cmp.w	#3,d1
+	jeq		10f
 2:
 	cmp.w	#1,d1
 	bne.b	4f		| music module
@@ -191,7 +194,12 @@ osd_sound_start:
 
 	movem.l	(a7)+,d0/d1/a0/a6
 	rts
-
+11:
+	move.w	d0,d1
+	lsr.w	#3,d1
+	BREAKPOINT	"unknown sound played in D1"
+	jra		10b 
+	
 	* music
 4:
 	* don't play if already playing
@@ -205,7 +213,7 @@ osd_sound_start:
 	* play the proper module pattern
 	* load up the countdown if loop
 	
-	move.w	(2,a0,d0.w),d1	| pattern number in .mod file
+	move.w	(2,a0),d1	| pattern number in .mod file
 	* since it's not zero, next vbl tick will play the music
 	
 	cmp.b	music_track_start_number(pc),d1
@@ -217,20 +225,19 @@ osd_sound_start:
  	movem.l	d0/a0,-(a7)
 	lea	gyruss_tunes,a0
 	
-	moveq	#7,d0		| only 3 first channels enabled for pt player
-	jbsr	_mt_channelmask
-	
 	move.b	d1,music_track_start_number
 	move.w	d1,d0	
     sub.l   a1,a1		| samples are in the module
     jsr _mt_init
+	moveq	#7,d0		| only 3 first channels enabled for pt player
+	jbsr	_mt_channelmask
 	movem.l	(a7)+,d0/a0
 
     * set master volume a little less loud if needed
-	move.b	(6,a0,d0.w),music_volume
-	move.b	(7,a0,d0.w),music_loops
-	move.w	(2,a0,d0.w),music_pattern	| pattern number in .mod file
-	move.w	(4,a0,d0.w),d2
+	move.b	(6,a0),music_volume
+	move.b	(7,a0),music_loops
+	move.w	(2,a0),music_pattern	| pattern number in .mod file
+	move.w	(4,a0),d2
 
 	move.w	d2,music_duration
 	move.w	d2,music_tick
@@ -257,7 +264,7 @@ music_loops:
 music_volume:
 	.byte	0
 music_track_start_number:
-	.word	0
+	.word	-1
 music_pattern:
 	.word	0
 music_tick:

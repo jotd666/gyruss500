@@ -63,7 +63,7 @@ _config
 	ENDC
 
 DECL_VERSION:MACRO
-	dc.b	"1.0"
+	dc.b	"1.1"
 	IFD BARFLY
 		dc.b	" "
 		INCBIN	"T:date"
@@ -77,7 +77,7 @@ _data   dc.b    0
 _name	dc.b	'Gyruss',0
 _copy	dc.b	'2025 JOTD',0
 _info
-    ;dc.b    "Music by no9",0
+    dc.b    "Music by no9",0
 	dc.b	0
 _kickname   dc.b    0
 ;--- version id

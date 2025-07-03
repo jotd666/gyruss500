@@ -26,7 +26,8 @@ plane is skipped altogether, and it's not noticable as there is not a lot
 of overlap between BOBs of different kinds.
 
 Roondar audio mixer is used to output the sfx only on one channel, leaving
-other 3 channels for music
+other 3 channels for music. A hacked ptplayer version was done to remove the 4th
+channel usage. Gyruss is one of the first games using ptplayer & AudioMixer.
 
 No copper tricks or hardware sprites are used.
 

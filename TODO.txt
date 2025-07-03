@@ -1,20 +1,20 @@
 - missing sounds in highscore entry (letter input 0X17 + 0x18 end)
-- player shoot sound accumulates not very nicely
-- increase sound volume
 - test with 1MB
-- missing warp sound to planet sfx, missing iceberg sound
 - sound globally increase volume
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
+
+sounds:
+- missing iceberg sound
 - handle loop (radio): when to stop it? maybe if sound 0 played
   then stop loops and music (not regular SFX)
-  
+- player shoot sound accumulates not very nicely
+- planet warp: which part of the tune: pattern 1 but then chains
+- rip planet warp tune + chance for no9: patterns are reused
+
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
-- missing sounds: flash yellow but add ignored sound flag
 - make degraded version for A500, maybe 8k sfx and no music?
   (and better sfx for others!)
  
-- convert music: https://downloads.khinsider.com/game-soundtracks/album/gyruss-arcade/01%2520BGM.mp3
-
 ---------------------
 
 to turn off stars:
@@ -30,7 +30,7 @@ bpset f0cd:sub,,{PC=$F0CF;g}
 turn off music 25/27 and background humming:
 
 bpset 5c38,a==$25 || a==$27 || a == $2,{PC=$3803;g}
-bpset 5c38,a==$25 || a==$27 || a == $2 || a == $a,{PC=$3803;g}
+bpset 5c38,a==$25 || a==$27  || a==$28 || a==$29 | a == $2 || a == $a,{PC=$3803;g}
 
 log sounds:
 

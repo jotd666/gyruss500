@@ -33,6 +33,7 @@ def convert(suffix,freq,with_module):
     "CREDIT_SND"               :{"index":0x1},
     "PLAYER_SINGLE_SHOT_SND"    :{"index":0x3,"priority":1},
     "WARP_SND"          :{"index":0x5,"priority":2},
+    "WARP_2_SND"          :{"index":0x15,"priority":2},
     "STARTUP_SND"          :{"index":0xC,"priority":2},
 
     "ATTACK_WAVE_SND"          :{"index":0x6},
@@ -40,6 +41,7 @@ def convert(suffix,freq,with_module):
     "PLAYER_KILLED_SND"          :{"index":0x11,"priority":10},
     "PLAYER_DOUBLE_SHOT_SND" : {"index":0x4,"priority":1},
     "AWARD_DOUBLE_SHOT_SND" : {"index":0xf},
+    "BONUS_SHOT_SND" : {"index":0xe},
    "SWARM_ENEMY_KILLED_SND" : {"index":0x19},
    "ENEMY_KILLED_1A_SND" : {"index":0x1A},
    "ENEMY_KILLED_1B_SND" : {"index":0x1B},
@@ -52,7 +54,8 @@ def convert(suffix,freq,with_module):
 
 
     "TOCATTA_TUNE_SND"                :{"index":0X25,"pattern":0,"volume":32,'loops':True},
-    "TOCATTA_NEXT_TUNE_SND"                :{"index":0X28,"pattern":4,"volume":32,'loops':True},
+    "TOCATTA_NEXT_TUNE_SND"                :{"index":0X28,"pattern":10,"volume":32,'loops':True},
+    "TOCATTA_PLANET_TUNE_SND"                :{"index":0X29,"pattern":1,"volume":32,'loops':True},
 
 
     }
@@ -60,7 +63,8 @@ def convert(suffix,freq,with_module):
     dummy_sounds = [0x24,   # sound stop?
 
     0x2,  # start music?
-    0x22,0xE,  # shooting orange bonus double shot???
+    0x22,  # same as "chance killed" 0x23
+    0xE,  # shooting orange bonus double shot???
     0x1C,9,     # ice??
     ]
 

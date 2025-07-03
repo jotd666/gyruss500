@@ -6,7 +6,9 @@
 		.global osd_music_stop
 		.global music_tick
 		.global	get_enabled_interrupts_value
-
+		.global	restore_audio
+		.global	setup_audio
+		
 
 * sound engine and also highscore management, common to all versions
 	
@@ -24,6 +26,51 @@ SCORE_FILE_SIZE = 0xB0-0x88
 	move.l		z80_ram_start_8000,a6
 	.endif
 	.endm
+	
+setup_audio:
+	* soundfx lib
+	lea		_custom,a6
+	lea		blank_sound,a0
+	move.l	a0,(0xA0,a6)
+	move.l	a0,(0xB0,a6)
+	move.l	a0,(0xC0,a6)
+	move.l	a0,(0xD0,a6)
+	move.l	system_vbr,a0
+	moveq	#1,d0	| PAL
+	jsr		_mt_install_cia
+
+
+*	moveq	#4,d1
+*	* Sample 1
+*	lea.l	credit_sound,a2	
+*	move.l	(mfx_length,a2),a0 | Sample source
+*	move.l	a0,a1					| Pre-processed destination
+*	move.l	(mfx_length,a2),d0			| Sample size
+*	jbsr		ConvertSampleDivide
+
+
+
+	* Setup the mixer
+	move.w	#MIX_PAL,d0					| Set video system to PAL
+	lea.l	mixer_buffer,a0				| Fetch Chip RAM buffer
+	jbsr	MixerSetup					| Set up the mixer
+
+	* Start the mixer interrupt handler
+	move.l	system_vbr,a0			| Set VBR
+	jbsr	MixerInstallHandler			| Install the mixer IRQ handler
+
+	* Start the mixer
+	jbsr		MixerStart
+	rts
+	
+restore_audio:
+	jbsr	MixerStop
+	jbsr	MixerRemoveHandler
+	
+	move.l	system_vbr,a0
+	lea	_custom,a6
+	jsr		_mt_remove_cia
+	rts
 	
 osd_read_high_scores:
 	movem.l	d0-d7/a0-a6,-(a7)
@@ -159,7 +206,9 @@ osd_music_stop:
 	rts
 	
 get_enabled_interrupts_value:	
-	move.w	#0xC038+0x780,d0
+	*move.w	#0xC038+0x780,d0
+	move.w	#0xC038+1<<10,d0
+	*move.w	#0xC038,d0
 	rts
 	
 * tunes sounds are: sound index followed by 0x15,0x16,0x17 (that we ignore!)
@@ -229,8 +278,6 @@ osd_sound_start:
 	move.w	d1,d0	
     sub.l   a1,a1		| samples are in the module
     jsr _mt_init
-	moveq	#7,d0		| only 3 first channels enabled for pt player
-	jbsr	_mt_channelmask
 	movem.l	(a7)+,d0/a0
 
     * set master volume a little less loud if needed
@@ -283,3 +330,10 @@ normal_hiscorename:
 	.asciz	"gyruss.high"
 
 
+	.section	.bsschip
+	
+mixer_buffer:
+	.skip 	mixer_buffer_size
+	
+blank_sound:
+	.skip	16

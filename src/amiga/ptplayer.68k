@@ -239,9 +239,7 @@ AUD1VOL		=	0x0b8
 AUD2LC		=	0x0c0
 AUD2LEN		=	0x0c4
 AUD2VOL		=	0x0c8
-AUD3LC		=	0x0d0
-AUD3LEN		=	0x0d4
-AUD3VOL		=	0x0d8
+
 
 * Audio channel registers
 AUDLC		=	0
@@ -682,8 +680,6 @@ mt_TimerBsetrep:
 	move.w	mt_chan2+n_replen(a4),AUD1LEN-INTREQ(a0)
 	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
 	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
-	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
-	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
 
 	.else	| !MINIMAL
 	tst.b	mt_chan1+n_enable(a4)
@@ -698,11 +694,7 @@ mt_TimerBsetrep:
 	beq	3f
 	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
 	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
-3:	tst.b	mt_chan4+n_enable(a4)
-	beq	4f
-	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
-	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
-4:
+3:
 	.endif
 
 	move.l	(sp)+,a4
@@ -942,8 +934,6 @@ mt_TimerBsetrep:
 	move.w	mt_chan2+n_replen(a4),AUD1LEN-INTREQ(a0)
 	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
 	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
-	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
-	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
 
 	.else	| !MINIMAL
 	tst.b	mt_chan1+n_enable(a4)
@@ -958,11 +948,7 @@ mt_TimerBsetrep:
 	beq	3f
 	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
 	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
-3:	tst.b	mt_chan4+n_enable(a4)
-	beq	4f
-	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
-	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
-4:
+3:
 	.endif
 
 	move.l	(sp)+,a4
@@ -1017,8 +1003,6 @@ _mt_setrep:
 	move.w	mt_chan2+n_replen(a4),AUD1LEN-INTREQ(a0)
 	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
 	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
-	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
-	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
 
 	.else	| !MINIMAL
 	tst.b	mt_chan1+n_enable(a4)
@@ -1033,11 +1017,7 @@ _mt_setrep:
 	beq	3f
 	move.l	mt_chan3+n_loopstart(a4),AUD2LC-INTREQ(a0)
 	move.w	mt_chan3+n_replen(a4),AUD2LEN-INTREQ(a0)
-3:	tst.b	mt_chan4+n_enable(a4)
-	beq	4f
-	move.l	mt_chan4+n_loopstart(a4),AUD3LC-INTREQ(a0)
-	move.w	mt_chan4+n_replen(a4),AUD3LEN-INTREQ(a0)
-4:
+3:	
 	.endif
 
 	movem.l	(sp)+,a0/a4
@@ -1204,8 +1184,7 @@ _mt_end:
 	move.w	d0,AUD0VOL(a6)
 	move.w	d0,AUD1VOL(a6)
 	move.w	d0,AUD2VOL(a6)
-	move.w	d0,AUD3VOL(a6)
-	move.w	#0x000f,DMACON(a6)
+	move.w	#0x0007,DMACON(a6)
 	ENABLE
 	rts
 
@@ -1763,15 +1742,7 @@ set_all_volumes:
 	bne	3f
 	clr.b	mt_chan3+n_looped(a4)
 	.endif
-3:	tst.b	mt_chan4+n_sfxpri(a4)
-	bne	4f
-	move.w	mt_chan4+n_volume(a4),d0
-	move.b	(a0,d0.w),d0
-	and.b	mt_chan4+n_enable(a4),d0
-	move.w	d0,AUD3VOL(a6)
-	.ifdef	VOL0_UNLOOPS
-	bne	4f
-	clr.b	mt_chan4+n_looped(a4)
+3:
 	.endif
 4:	rts
 
@@ -1800,7 +1771,7 @@ _mt_samplevol:
 	swap	d1
 	move.b	d1,12+3(a0,d0.w)	| set sample's volume
 	rts
-	.endif	| !MINIMAL
+
 
 
 *---------------------------------------------------------------------------
@@ -1854,9 +1825,7 @@ mt_music:
 	lea	AUD2LC(a6),a5
 	lea	mt_chan3(a4),a2
 	bsr	mt_checkfx
-	lea	AUD3LC(a6),a5
-	lea	mt_chan4(a4),a2
-	bsr	mt_checkfx
+
 	bra	settb_step
 
 no_new_note:
@@ -1870,9 +1839,7 @@ no_new_note:
 	lea	AUD2LC(a6),a5
 	lea	mt_chan3(a4),a2
 	bsr	mt_checkfx
-	lea	AUD3LC(a6),a5
-	lea	mt_chan4(a4),a2
-	bsr	mt_checkfx
+
 
 	.ifeq	NO_TIMERS
 	* set one-shot TimerB interrupt for enabling DMA, when needed
@@ -1906,9 +1873,7 @@ get_new_note:
 	lea	AUD2LC(a6),a5
 	lea	mt_chan3(a4),a2
 	bsr	mt_playvoice
-	lea	AUD3LC(a6),a5
-	lea	mt_chan4(a4),a2
-	bsr	mt_playvoice
+
 
 settb_step:
 	.ifeq	NO_TIMERS
@@ -1999,9 +1964,7 @@ mt_sfxonly:
 	lea	AUD2LC(a6),a5
 	lea	mt_chan3(a4),a2
 	bsr	chan_sfx_only
-	lea	AUD3LC(a6),a5
-	lea	mt_chan4(a4),a2
-	bsr	chan_sfx_only
+
 
 	.ifeq	NO_TIMERS
 	move.b	mt_dmaon+1(pc),d0

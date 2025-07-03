@@ -26,7 +26,6 @@ def convert(suffix,freq,with_module):
 
     hq_sample_rate = 11025  # must be coherent with value in mixer.inc
 
-    ignore_sounds = {0,0x82,0x24}
 
     EMPTY_SND = "EMPTY_SND"
     sound_dict = {
@@ -61,6 +60,8 @@ def convert(suffix,freq,with_module):
     dummy_sounds = [0x24,   # sound stop?
 
     0x2,  # start music?
+    0x22,0xE,  # shooting orange bonus double shot???
+    0x1C,9,     # ice??
     ]
 
     for s in sound_dict.values():
@@ -154,7 +155,7 @@ def convert(suffix,freq,with_module):
                 maxsigned = max(signed_data)
                 minsigned = min(signed_data)
 
-                amp_ratio = max(maxsigned,abs(minsigned))/32
+                amp_ratio = max(maxsigned,abs(minsigned))/64
 
                 # JOTD: for that one, I'm using maxxed out sfx by no9, no amp
                 #amp_ratio = 0.9

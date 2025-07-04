@@ -55,17 +55,19 @@ def convert(suffix,freq,with_module):
 
     "TOCATTA_TUNE_SND"                :{"index":0X25,"pattern":0,"volume":32,'loops':True},
     "TOCATTA_NEXT_TUNE_SND"                :{"index":0X28,"pattern":10,"volume":32,'loops':True},
-    "TOCATTA_PLANET_TUNE_SND"                :{"index":0X29,"pattern":1,"volume":32,'loops':True},
+    "TOCATTA_PLANET_TUNE_SND"                :{"index":0X29,"pattern":1,"volume":32,'loops':True}, # change when mod is updated
 
 
     }
 
     dummy_sounds = [0x24,   # sound stop?
 
-    0x2,  # start music?
+    0x2,  # hummiing sound
     0x22,  # same as "chance killed" 0x23
     0xE,  # shooting orange bonus double shot???
-    0x1C,9,     # ice??
+    0x1C,9,     # ice
+    0x1D,0xA,   # death ray
+    0x10,       # killed
     ]
 
     for s in sound_dict.values():
@@ -159,7 +161,7 @@ def convert(suffix,freq,with_module):
                 maxsigned = max(signed_data)
                 minsigned = min(signed_data)
 
-                amp_ratio = max(maxsigned,abs(minsigned))/64
+                amp_ratio = max(maxsigned,abs(minsigned))/32
 
                 # JOTD: for that one, I'm using maxxed out sfx by no9, no amp
                 #amp_ratio = 0.9

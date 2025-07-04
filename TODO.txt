@@ -1,6 +1,5 @@
 - missing sounds in highscore entry (letter input 0X17 + 0x18 end)
 - test with 1MB
-- sound globally increase volume
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 
 sounds:
@@ -8,13 +7,16 @@ sounds:
 - handle loop (radio): when to stop it? maybe if sound 0 played
   then stop loops and music (not regular SFX)
 - player shoot sound accumulates not very nicely
-- planet warp: which part of the tune: pattern 1 but then chains
-- rip planet warp tune + chance for no9: patterns are reused
+- planet warp: which part of the tune: pattern 1 but then chains: ok waiting for no9
 
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
 - make degraded version for A500, maybe 8k sfx and no music?
   (and better sfx for others!)
  
+- rip missing sounds (check valid but off list)
+- know when to turn the music off? either hack way (by tracking down samples: 2nd warp, shot dead)
+  or check > 0x7F sound commands
+
 ---------------------
 
 to turn off stars:

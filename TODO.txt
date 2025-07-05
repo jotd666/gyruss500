@@ -1,8 +1,8 @@
-- missing sounds in highscore entry (letter input 0X17 + 0x18 end)
 - test with 1MB
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 
 sounds:
+- 0: stop sound
 - missing iceberg sound
 - handle loop (radio): when to stop it? maybe if sound 0 played
   then stop loops and music (not regular SFX)

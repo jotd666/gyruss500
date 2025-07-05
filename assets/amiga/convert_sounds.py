@@ -38,7 +38,8 @@ def convert(suffix,freq,with_module):
 
     "ATTACK_WAVE_SND"          :{"index":0x6},
     "ENEMY_BOMB_DROPPED_SND"          :{"index":0x7},
-    "PLAYER_KILLED_SND"          :{"index":0x11,"priority":10},
+    "PLAYER_EXPLOSION_SND"          :{"index":0x11,"priority":10},
+    "PLAYER_KILLED_SND"          :{"index":0x10,"priority":10},
     "PLAYER_DOUBLE_SHOT_SND" : {"index":0x4,"priority":1},
     "AWARD_DOUBLE_SHOT_SND" : {"index":0xf},
     "BONUS_SHOT_SND" : {"index":0xe},
@@ -46,16 +47,21 @@ def convert(suffix,freq,with_module):
    "ENEMY_KILLED_1A_SND" : {"index":0x1A},
    "ENEMY_KILLED_1B_SND" : {"index":0x1B},
    "CHANCE_KILLED_SND" : {"index":0x23},
+   "CHANCE_KILLED_2_SND" : {"index":0x22,"same_as":"CHANCE_KILLED_SND"},
    "PING_SND" : {"index":0x12},
    "SCORE_SND" : {"index":0x13},
    "BOSS_KILLED_1E_SND" : {"index":0x1E},
    "BOSS_KILLED_1F_SND" : {"index":0x1F},
-   #"DEATH_RAY_SND" : {"index":0xA,"loops":True},
+   "HIGH_SCORE_17_SND" : {"index":0x17},
+   "HIGH_SCORE_18_SND" : {"index":0x18},
+   "BOSS_KILLED_1F_SND" : {"index":0x1F},
+   "DEATH_RAY_SND" : {"index":0xA,"loops":True},
+   "HUMMING_SND" : {"index":0x2,"loops":True},
 
 
     "TOCATTA_TUNE_SND"                :{"index":0X25,"pattern":0,"volume":32,'loops':True},
     "TOCATTA_NEXT_TUNE_SND"                :{"index":0X28,"pattern":10,"volume":32,'loops':True},
-    "TOCATTA_PLANET_TUNE_SND"                :{"index":0X29,"pattern":1,"volume":32,'loops':True}, # change when mod is updated
+    "TOCATTA_PLANET_TUNE_SND"                :{"index":0X29,"pattern":0x28,"volume":32,'loops':True}, # change when mod is updated
 
 
     }
@@ -63,11 +69,8 @@ def convert(suffix,freq,with_module):
     dummy_sounds = [0x24,   # sound stop?
 
     0x2,  # hummiing sound
-    0x22,  # same as "chance killed" 0x23
-    0xE,  # shooting orange bonus double shot???
-    0x1C,9,     # ice
-    0x1D,0xA,   # death ray
-    0x10,       # killed
+    0x1C,9,     # ice  (muted/empty)
+    0x1D,   # death ray (muted/empty)
     ]
 
     for s in sound_dict.values():
@@ -131,80 +134,91 @@ def convert(suffix,freq,with_module):
 
         for wav_entry,details in sound_dict.items():
             sound_index = details["index"]
-
-            channel = details.get("channel")
-            if channel is None:
-                # if music loops, ticks are set to 1 so sound orders only can happen once (else music is started 50 times per second!!)
-
-                sound_table_set_1[sound_index] = "\t.word\t{},{},{}\n\t.byte\t{},{}".format(2,details["pattern"],details.get("ticks",0),details["volume"],int(details["loops"]))
-            else:
-                wav_name = os.path.basename(wav_entry).lower()[:-4]
-                wav_file = os.path.join(sound_dir,wav_name+".wav")
-
-                def get_sox_cmd(sr,output):
-                    return [sox,"--volume","0.8",wav_file,"--channels","1","-D","--bits","8","-r",str(sr),"--encoding","signed-integer",output]
-
-
-                used_sampling_rate = hq_sample_rate
-                used_priority = details.get("priority",10)
-
-                cmd = get_sox_cmd(used_sampling_rate,raw_file)
-
-                subprocess.check_call(cmd)
-                with open(raw_file,"rb") as f:
-                    contents = f.read()
-
-                # compute max amplitude so we can feed the sound chip with an amped sound sample
-                # and reduce the replay volume. this gives better sound quality than replaying at max volume
-                # (thanks no9 for the tip!)
-                signed_data = [x if x < 128 else x-256 for x in contents]
-                maxsigned = max(signed_data)
-                minsigned = min(signed_data)
-
-                amp_ratio = max(maxsigned,abs(minsigned))/32
-
-                # JOTD: for that one, I'm using maxxed out sfx by no9, no amp
-                #amp_ratio = 0.9
-
-                wav = os.path.splitext(wav_name)[0]
-##                if amp_ratio > 1:
-##                    print(f"{wav}: volume peaked {amp_ratio}")
-##                    amp_ratio = 1
-
+            same_as = details.get("same_as")
+            if same_as is not None:
+                # reuse the same sample several times
+                # introduced here to avoid duplicating sounds that sound 100% the same,
+                # only with a different ID
+                wav_entry = same_as
+                details = sound_dict[wav_entry]
+                wav = os.path.basename(wav_entry).lower()[:-4]  # same wav name as before
                 loop = 0xFFFF if details.get('loops') else 1
-
-                sound_table[sound_index] = "    SOUND_ENTRY {},{},{},{}\n".format(wav,len(signed_data),used_priority,loop)
+                # create a new entry that points to the other sound data
                 sound_table_set_1[sound_index] = f"\t.word\t1,{loop}\n\t.long\t{wav}_sound"
+            else:
+                channel = details.get("channel")
+                if channel is None:
+                    # if music loops, ticks are set to 1 so sound orders only can happen once (else music is started 50 times per second!!)
 
-
-                amp_ratio *= nb_mix_channels
-
-                if amp_ratio > 0:
-
-                    maxed_contents = [int(x/amp_ratio) for x in signed_data]
+                    sound_table_set_1[sound_index] = "\t.word\t{},{},{}\n\t.byte\t{},{}".format(2,details["pattern"],details.get("ticks",0),details["volume"],int(details["loops"]))
                 else:
-                    maxed_contents = signed_data
+                    wav_name = os.path.basename(wav_entry).lower()[:-4]
+                    wav_file = os.path.join(sound_dir,wav_name+".wav")
 
-                #maxed_contents = signed_data
+                    def get_sox_cmd(sr,output):
+                        return [sox,"--volume","0.8",wav_file,"--channels","1","-D","--bits","8","-r",str(sr),"--encoding","signed-integer",output]
 
-                signed_contents = bytes([x if x >= 0 else 256+x for x in maxed_contents])
-                # pre-pad with 0W, used by ptplayer for idling
-                if signed_contents[0] != b'\x00' and signed_contents[1] != b'\x00':
-                    # add zeroes
-                    signed_contents = struct.pack(">H",0) + signed_contents
 
-                contents = signed_contents
-                # align on 16-bit
-                if len(contents)%2:
-                    contents += b'\x00'
-                # pre-pad with 0W, used by ptplayer for idling
-                if contents[0] != b'\x00' and contents[1] != b'\x00':
-                    # add zeroes
-                    contents = b'\x00\x00' + contents
+                    used_sampling_rate = hq_sample_rate
+                    used_priority = details.get("priority",10)
 
-                fw.write("{}_raw:   | {} bytes".format(wav,len(contents)))
+                    cmd = get_sox_cmd(used_sampling_rate,raw_file)
 
-                write_asm(contents,fw)
+                    subprocess.check_call(cmd)
+                    with open(raw_file,"rb") as f:
+                        contents = f.read()
+
+                    # compute max amplitude so we can feed the sound chip with an amped sound sample
+                    # and reduce the replay volume. this gives better sound quality than replaying at max volume
+                    # (thanks no9 for the tip!)
+                    signed_data = [x if x < 128 else x-256 for x in contents]
+                    maxsigned = max(signed_data)
+                    minsigned = min(signed_data)
+
+                    amp_ratio = max(maxsigned,abs(minsigned))/32
+
+                    # JOTD: for that one, I'm using maxxed out sfx by no9, no amp
+                    #amp_ratio = 0.9
+
+                    wav = os.path.splitext(wav_name)[0]
+    ##                if amp_ratio > 1:
+    ##                    print(f"{wav}: volume peaked {amp_ratio}")
+    ##                    amp_ratio = 1
+
+                    loop = 0xFFFF if details.get('loops') else 1
+
+                    sound_table[sound_index] = "    SOUND_ENTRY {},{},{},{}\n".format(wav,len(signed_data),used_priority,loop)
+                    sound_table_set_1[sound_index] = f"\t.word\t1,{loop}\n\t.long\t{wav}_sound"
+
+
+                    amp_ratio *= nb_mix_channels
+
+                    if amp_ratio > 0:
+
+                        maxed_contents = [int(x/amp_ratio) for x in signed_data]
+                    else:
+                        maxed_contents = signed_data
+
+                    #maxed_contents = signed_data
+
+                    signed_contents = bytes([x if x >= 0 else 256+x for x in maxed_contents])
+                    # pre-pad with 0W, used by ptplayer for idling
+                    if signed_contents[0] != b'\x00' and signed_contents[1] != b'\x00':
+                        # add zeroes
+                        signed_contents = struct.pack(">H",0) + signed_contents
+
+                    contents = signed_contents
+                    # align on 16-bit
+                    if len(contents)%2:
+                        contents += b'\x00'
+                    # pre-pad with 0W, used by ptplayer for idling
+                    if contents[0] != b'\x00' and contents[1] != b'\x00':
+                        # add zeroes
+                        contents = b'\x00\x00' + contents
+
+                    fw.write("{}_raw:   | {} bytes".format(wav,len(contents)))
+
+                    write_asm(contents,fw)
 
         if with_module:
             # make sure next section will be aligned

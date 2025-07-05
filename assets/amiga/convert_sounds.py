@@ -50,18 +50,20 @@ def convert(suffix,freq,with_module):
    "CHANCE_KILLED_2_SND" : {"index":0x22,"same_as":"CHANCE_KILLED_SND"},
    "PING_SND" : {"index":0x12},
    "SCORE_SND" : {"index":0x13},
+   "ICEBERG_SND" : {"index":0x1C},
    "BOSS_KILLED_1E_SND" : {"index":0x1E},
    "BOSS_KILLED_1F_SND" : {"index":0x1F},
    "HIGH_SCORE_17_SND" : {"index":0x17},
    "HIGH_SCORE_18_SND" : {"index":0x18},
    "BOSS_KILLED_1F_SND" : {"index":0x1F},
-   "DEATH_RAY_SND" : {"index":0xA,"loops":True},
-   "HUMMING_SND" : {"index":0x2,"loops":True},
+   #"DEATH_RAY_SND" : {"index":0xA,"loops":True},
+   #"HUMMING_SND" : {"index":0x2,"loops":True},
 
 
     "TOCATTA_TUNE_SND"                :{"index":0X25,"pattern":0,"volume":32,'loops':True},
     "TOCATTA_NEXT_TUNE_SND"                :{"index":0X28,"pattern":10,"volume":32,'loops':True},
     "TOCATTA_PLANET_TUNE_SND"                :{"index":0X29,"pattern":0x28,"volume":32,'loops':True}, # change when mod is updated
+    "TOCATTA_OTHER_TUNE_SND"                :{"index":0X26,"pattern":0xB,"volume":32,'loops':True}, # change when mod is updated
 
 
     }
@@ -69,8 +71,9 @@ def convert(suffix,freq,with_module):
     dummy_sounds = [0x24,   # sound stop?
 
     0x2,  # hummiing sound
-    0x1C,9,     # ice  (muted/empty)
-    0x1D,   # death ray (muted/empty)
+    9,     # ice  (muted/empty)
+    0XA,0x1D,   # death ray (muted/empty)
+    0x20,  # ????
     ]
 
     for s in sound_dict.values():
@@ -175,7 +178,8 @@ def convert(suffix,freq,with_module):
                     maxsigned = max(signed_data)
                     minsigned = min(signed_data)
 
-                    amp_ratio = max(maxsigned,abs(minsigned))/32
+                    # higher => lower volume
+                    amp_ratio = max(maxsigned,abs(minsigned))/110
 
                     # JOTD: for that one, I'm using maxxed out sfx by no9, no amp
                     #amp_ratio = 0.9

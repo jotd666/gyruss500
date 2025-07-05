@@ -16,6 +16,8 @@
 	.include "lvo/dos_lvos.i"
 	.include "lvo/graphics_lvos.i"
 
+	.include	"ReadJoypad.i"
+	.include	"whdload_funcs.i"
 
 AttnFlags = 0x128
 AFB_68010 = 0
@@ -24,6 +26,7 @@ AFB_68030 = 2
 
 NO68020 = 1
 
+SCORE_FILE_SIZE = 0xB0-0x88
 
 BORDERBLANK = 1
 
@@ -218,7 +221,8 @@ start:
 		.global osd_read_inputs_1
 		.global osd_read_inputs_2
 		.global osd_read_system_inputs
-		
+		.global osd_read_high_scores
+		.global osd_write_high_scores
 		.global	osd_queue_sprite
 		.global	osd_queue_sprites
 		.global	osd_draw_sprites
@@ -234,8 +238,6 @@ start:
 
 		.global	is_game_playing
 		
-	.include	"ReadJoypad.i"
-	.include	"whdload_funcs.i"
 		.text
 
 
@@ -3102,6 +3104,121 @@ toggle_pause:
 
 	
 
+osd_read_high_scores:
+	movem.l	d0-d7/a0-a6,-(a7)
+	GET_Z80_RAM_START_IN_A6
+	lea		high_score_table_9488(a6),a5	
+	move.l	_resload,d0
+	beq.b	0f
+	move.l	d0,a2
+	bsr		get_hiscore_name
+ 	jsr		resload_GetFileSize(a2)		
+	tst.l	d0
+	jeq	1f
+	bsr		get_hiscore_name
+	move.l	a5,a1
+	jsr		resload_LoadFile(a2)	
+	bra.b	2f
+0:
+	tst.b	highscore_loaded
+	jeq		1f
+	lea		high_score_buffer,a1
+	lea		high_score_table_9488(a6),a0	
+	move.w	#SCORE_FILE_SIZE-1,d0
+0:
+	move.b	(a1)+,(a0)+
+	dbf		d0,0b
+2:
+	* also propagate the highest score to the
+	* high score (separate memory locations as often)
+
+	lea		high_score_table_9488+1(a6),a0	
+	lea		highscore_last_digit_940D-2(a6),a1
+	move.b	(a0)+,(a1)+
+	move.b	(a0)+,(a1)+
+	move.b	(a0)+,(a1)+
+1:
+	movem.l	(a7)+,d0-d7/a0-a6
+	rts
+	
+osd_write_high_scores:
+	movem.l	d0-d7/a0-a6,-(a7)
+	.ifdef	RELEASE
+	tst.b	cheat_used		| don't save score if cheat on
+	bne.b	1f
+	.endif
+	GET_Z80_RAM_START_IN_A6
+
+	lea		high_score_buffer,a1
+	lea		high_score_table_9488(a6),a0	
+	move.w	#SCORE_FILE_SIZE-1,d0
+0:
+	move.b	(a0)+,(a1)+
+	dbf		d0,0b
+
+	st.b	highscore_needs_saving
+	
+	move.l	_resload,d0
+	beq.b	1f
+	move.l	d0,a2
+	move.l	#SCORE_FILE_SIZE,d0
+	lea		high_score_buffer,a1
+	bsr		get_hiscore_name
+	jsr		resload_SaveFile(a2)
+1:
+
+	movem.l	(a7)+,d0-d7/a0-a6
+	rts
+
+	
+get_hiscore_name:
+    lea normal_hiscorename,a0
+	rts
+	
+load_highscores:
+	bsr.b		get_hiscore_name
+    move.l  _resload,d0
+    bne.b   1f
+
+    move.l  _dosbase,a6
+    move.l  a0,d1
+    move.l  #1005,d2
+    jsr     (_LVOOpen,a6)
+    move.l  d0,d1
+    beq.b   1f
+    move.l  d1,d4
+    move.l  #SCORE_FILE_SIZE,d3
+    move.l  #high_score_buffer,d2
+    jsr (_LVORead,a6)
+    move.l  d4,d1
+    jsr (_LVOClose,a6)   
+	st.b	highscore_loaded
+1:
+
+    rts
+
+save_highscores:
+	tst.l	_resload
+	bne.b	1f
+    tst.b   highscore_needs_saving
+    beq.b   1f
+    move.l  _dosbase,a6
+	bsr.b		get_hiscore_name
+    move.l  a0,d1
+    move.l  #1006,d2
+    jsr     (_LVOOpen,a6)
+    move.l  d0,d1
+    beq.b   1f
+    move.l  d1,d4
+    move.l  #SCORE_FILE_SIZE,d3
+    move.l  #high_score_buffer,d2
+    jsr (_LVOWrite,a6)
+    move.l  d4,d1
+    jsr (_LVOClose,a6)   
+1:	
+    rts
+    
+
     
 * < D0: numbers of vertical positions to wait
 beamdelay:
@@ -3358,6 +3475,15 @@ cpu_log_enable:
 	.word	0
 	.endif
 
+high_score_buffer:
+	.skip	SCORE_FILE_SIZE
+highscore_needs_saving:
+	.byte	0
+highscore_loaded:
+	.byte	0
+
+normal_hiscorename:
+	.asciz	"gyruss.high"
 	
 	* on amiga, this file is included in mpatrol.68k file
 	* so the assembler can optimize by using PC-relative addressing

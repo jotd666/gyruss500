@@ -5,7 +5,7 @@
 
 ;CHIP_ONLY
 
-EXPMEM = $80000
+EXPMEM = $80000+$50000
 CHIPSIZE = $80000
 
 _base	SLAVE_HEADER					; ws_security + ws_id
@@ -13,7 +13,7 @@ _base	SLAVE_HEADER					; ws_security + ws_id
 	dc.w	WHDLF_NoError
     IFD CHIP_ONLY
 	; debug slave runs with dev version which consumes more memory
-	dc.l	CHIPSIZE+EXPMEM+$40000					; ws_basememsize
+	dc.l	CHIPSIZE+EXPMEM					; ws_basememsize
 	ELSE
 	dc.l	CHIPSIZE
 	ENDC

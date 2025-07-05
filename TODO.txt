@@ -1,21 +1,22 @@
-- test with 1MB
+- 1MB cut down version
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 
 sounds:
-- 0: stop sound
-- missing iceberg sound
-- handle loop (radio): when to stop it? maybe if sound 0 played
-  then stop loops and music (not regular SFX)
-- player shoot sound accumulates not very nicely
-- planet warp: which part of the tune: pattern 1 but then chains: ok waiting for no9
+- know when to turn the music off? either hack way (by tracking down samples: first warp, shot dead)
+- 0: stop sound (at least stop music)??
+- music stopped when 3 sattelites appear (no orange bonus): log sound value
+- award double shot sound not playing
+- wave 1000 bonus: increase volume
+- double shot: increase volume
+- missing ambient (looped) sound (needed?)
+- handle loop (death ray): when to stop it? maybe if sound 0 played
+
 
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
 - make degraded version for A500, maybe 8k sfx and no music?
   (and better sfx for others!)
  
-- rip missing sounds (check valid but off list)
-- know when to turn the music off? either hack way (by tracking down samples: 2nd warp, shot dead)
-  or check > 0x7F sound commands
+
 
 ---------------------
 

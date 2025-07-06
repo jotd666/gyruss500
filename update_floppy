@@ -1,8 +1,15 @@
 .key nope
-set game gyruss
+set game gyruss_1mb
 copy $game.RNC DF0:$game
-delete DF0:$game.high
 protect DF0:$game RWED
+set game gyruss_2mb
+copy $game.RNC DF0:$game
+protect DF0:$game RWED
+set game gyruss
+copy $game DF0:$game
+protect DF0:$game RWED
+
+delete DF0:$game.high
 
 copy readme.md df0:
 

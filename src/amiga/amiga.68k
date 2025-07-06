@@ -3410,7 +3410,6 @@ queued_sprite_pointer:
 
 	
 
-	.include	"sound_entries_2mb.68k"
 
 current_column_scroll_values:
 	.long	column_scroll_values_1

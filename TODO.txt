@@ -1,7 +1,9 @@
-- 1MB cut down version
+- 1MB cut down version: need to reduce more
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 
 sounds:
+
+- player_explosion/killed: pareil!!!!!
 - know when to turn the music off? either hack way (by tracking down samples: first warp, shot dead)
 - 0: stop sound (at least stop music)??
 - music stopped when 3 sattelites appear (no orange bonus): log sound value

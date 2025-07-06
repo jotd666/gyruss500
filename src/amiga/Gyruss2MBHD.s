@@ -1,11 +1,11 @@
-; Pooyan OCS slave
+; Gyruss 2MB slave
 	INCDIR	Include:
 	INCLUDE	whdload.i
 	INCLUDE	whdmacros.i
 
 ;CHIP_ONLY
 
-EXPMEM = $80000+$50000
+EXPMEM = $80000+$60000
 CHIPSIZE = $80000
 
 _base	SLAVE_HEADER					; ws_security + ws_id

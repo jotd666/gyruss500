@@ -59,13 +59,7 @@ restore_audio:
 	jsr		_mt_remove_cia
 	rts
 	
-osd_sound_stop:
-	movem.l	d0/a0/a6,-(a7)
-	move.w	#DMAF_AUD3,d0
-	jbsr	MixerStopFX
 	
-	movem.l	(a7)+,d0/a0/a6
-	rts
 osd_music_stop:
 	movem.l	d0/a0/a6,-(a7)
 	
@@ -83,36 +77,71 @@ get_enabled_interrupts_value:
 	*move.w	#0xC038,d0
 	rts
 	
+stop_death_ray:
+	move.w	laser_channel,d0
+	jeq		10f
+	* command 8a: stop laser loop
+	jbsr	MixerStopFX
+	clr.w	laser_channel
+10:
+	rts
+	
+stop_humming:
+	move.w	humming_channel,d0
+	jeq		10f
+	* command 82: stop humming loop
+	jbsr	MixerStopFX
+	clr.w	humming_channel
+10:
+	rts
+	
 * tunes sounds are: sound index followed by 0x15,0x16,0x17 (that we ignore!)
 osd_sound_start:
-	movem.l	d0/d1/a0/a6,-(a7)
+	movem.l	d0/d1/a0/a1/a6,-(a7)
 	
 	and.w	#0xFF,d0
-
+	jne		0f
+	* stop all sounds, specially looped
+	jbsr	stop_humming
+	jbsr	stop_death_ray
+	jra		10f
+0:
 	cmp.b	#0x24,d0
 	jne		0f
+1:
 	jbsr	osd_music_stop
 	jra		10f
 0:
-	cmp.b	#0xFF,d0
-	jeq		10f
 
 
-	cmp.b	#0x82,d0
+	cmp.b	#0x80+DEATH_RAY_SND,d0
 	jne		0f
-	* command 82: stop music
-	jbsr	osd_music_stop
+	jbsr	stop_death_ray
+	jra		10f
+0:
+	cmp.b	#0x80+HUMMING_SND,d0
+	jne		0f
+	jbsr	stop_humming
 	jra		10f
 0:
 	tst.b	d0
-	jne		0f
-	* stop loop??
-	*jbsr	osd_sound_stop
-	jra		10f
-0:
-	* original sound stop commands have bit 7 set. But if we follow them, they'll kill the
-
-	
+	jmi 	10f		| any other sound stop command is ignored
+	* original sound stop commands have bit 7 set.
+	* plus the sound ID. But as we're using 1 channel only, we cannot
+	* stop just this sound fx
+	sub.l	a1,a1
+	cmp.b	#DEATH_RAY_SND,d0
+	jeq		50f
+	cmp.b	#HUMMING_SND,d0
+	jne		52f
+	lea		humming_channel,a1
+	jra		51f
+50:
+	lea		laser_channel,a1
+51:
+	tst.w	(a1)
+	jne		10f		| already playing
+52:
 	lsl.w	#3,d0
 	lea		sound_table,a0
 	add.w	d0,a0
@@ -125,10 +154,13 @@ osd_sound_start:
 	bne.b	4f		| music module
 	moveq	#DMAF_AUD3,d0									
 	move.l	(4,a0),a0
-	jbsr		MixerPlayFX	
+	jbsr		MixerPlayFX
+	cmp.l	#0,a1
+	jeq		10f
+	move.w	d0,(a1)		| store playing virtual channel
 10:
 
-	movem.l	(a7)+,d0/d1/a0/a6
+	movem.l	(a7)+,d0/d1/a0/a1/a6
 	rts
 11:
 	move.w	d0,d1
@@ -207,8 +239,11 @@ music_tick:
 
 music_duration:
 	.word	0
-
-
+humming_channel:
+	.word	0
+laser_channel:
+	.word	0
+	
 	.section	.bsschip
 	
 mixer_buffer:

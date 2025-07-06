@@ -1,17 +1,11 @@
-- 1MB cut down version: need to reduce more
+- 1MB cut down version: retry
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 
 sounds:
-
-- player_explosion/killed: pareil!!!!!
-- know when to turn the music off? either hack way (by tracking down samples: first warp, shot dead)
-- 0: stop sound (at least stop music)??
-- music stopped when 3 sattelites appear (no orange bonus): log sound value
+- PERFECT challenge not ripped
+- player_explosion/killed: pb replay
 - award double shot sound not playing
 - wave 1000 bonus: increase volume
-- double shot: increase volume
-- missing ambient (looped) sound (needed?)
-- handle loop (death ray): when to stop it? maybe if sound 0 played
 
 
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000

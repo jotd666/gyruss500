@@ -5,11 +5,13 @@ Credits:
 
 - jotd: game reverse engineering, M6809/Z80 to 68000 conversion, 
         amiga graphics conversion, amiga sound effects
-- roondar: audio mixing code (amiga version)
+- no9: music (amiga 2MB version)
+- roondar: audio mixing code (amiga 2MB version)
 
 Requirements:
 
-- Any OCS amiga with 1.5 MB RAM
+- Any OCS amiga with 1.5 MB RAM to run full version with music
+- ECS 1MB RAM to run cut-down version with sfx only
 
 Controls:
 
@@ -36,3 +38,9 @@ Cheat keys:
 - F1: complete level
 - F3: add 10000 points
 - F4: toggle invincibility
+
+There are 2 versions of the game. The 1MB version runs on 1MB amigas
+but there will be no music.
+The 2MB version runs on 1.5 MB amigas, with full sounds & music
+
+Fastmem is recommended for smoother gameplay.

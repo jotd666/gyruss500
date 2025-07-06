@@ -2017,8 +2017,10 @@ l_0c2a:
 	clr.b	d0                               	| [$0c2f: xor  a]
 	move.b	d0,l_91AE(a6)                   	| [$0c30: ld   ($91AE),a]
 	move.b	bcd_nb_chance_ships_shot_917e(a6),d0                   	| [$0c33: ld   a,($917E)]
+	.ifne	OPT_PERFECT_CHANCE_STAGE
 	cmp.b	#0x40,d0                         	| [$0c36: cp   $40]
 	jcs	report_chance_stage_results_0c53                             	| [$0c38: jr   c,$0C53]
+	.endif
 	* PERFECT!
 	move.w	#0x0119,d3                          	| [$0c3a: ld   de,$0119] [uncovered]
 	jbsr	start_task_d3_0038                            	| [$0c3d: rst  $38] [uncovered]

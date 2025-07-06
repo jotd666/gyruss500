@@ -17,7 +17,11 @@ comment\@:
 next\@:
 	.endm
 
-
+	.ifdef	RELEASE
+OPT_PERFECT_CHANCE_STAGE = 0		| do not change!!
+	.else
+OPT_PERFECT_CHANCE_STAGE = 1
+	.endif
      
 
 	.endc

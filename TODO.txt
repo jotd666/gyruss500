@@ -2,10 +2,9 @@
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 
 sounds:
-- PERFECT challenge not ripped
-- player_explosion/killed: pb replay
-- award double shot sound not playing
-- wave 1000 bonus: increase volume
+- PERFECT challenge tune: wait no9
+- player_explosion/killed/award double shot: not playing...
+- humming sound not removed at some point??
 
 
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000

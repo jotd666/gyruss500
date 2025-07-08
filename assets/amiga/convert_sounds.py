@@ -20,16 +20,16 @@ shared_sound_dict = {
 
     "CREDIT_SND"               :{"index":0x1,"channel":3},
     "PLAYER_SINGLE_SHOT_SND"    :{"index":0x3,"priority":1,"channel":1},
-    "WARP_SND"          :{"index":0x5,"priority":2,"channel":3},
-    "WARP_2_SND"          :{"index":0x15,"priority":2,"channel":3},
+    "PLAYER_DOUBLE_SHOT_SND" : {"index":0x4,"priority":1,"channel":2},
+    "WARP_SND"          :{"index":0x5,"priority":40,"channel":3},
+    "WARP_2_SND"          :{"index":0x15,"priority":40,"channel":3},
     "STARTUP_SND"          :{"index":0xC,"priority":2,"channel":0},
 
     "ATTACK_WAVE_SND"          :{"index":0x6,"channel":2,"priority":20},
     "ENEMY_BOMB_DROPPED_SND"          :{"index":0x7,"channel":0},
     "PLAYER_EXPLOSION_SND"          :{"index":0x11,"priority":52,"channel":2},
     "PLAYER_KILLED_SND"          :{"index":0x10,"priority":50,"channel":2},
-    "PLAYER_DOUBLE_SHOT_SND" : {"index":0x4,"priority":50,"channel":2},
-    "AWARD_DOUBLE_SHOT_SND" : {"index":0xf,"channel":3,"priority":20},
+    "AWARD_DOUBLE_SHOT_SND" : {"index":0xf,"channel":3,"priority":50},
     "BONUS_SHOT_SND" : {"index":0xe,"channel":3,"priority":20},
    "SWARM_ENEMY_KILLED_SND" : {"index":0x19,"channel":0},
    "ENEMY_KILLED_1A_SND" : {"index":0x1A,"channel":0},
@@ -60,7 +60,7 @@ tunes_dict = {    "TOCATTA_START_TUNE_SND"                :{"index":0X25,"patter
     "TOCATTA_PLANET_TUNE_SND"                :{"index":0X29,"pattern":0x28,"volume":music_volume,'loops':True}, # change when mod is updated
     "TOCATTA_OTHER_TUNE_SND"                :{"index":0X26,"pattern":0xB,"volume":music_volume,'loops':True}, # change when mod is updated
     "TOCATTA_YET_OTHER_TUNE_SND"                :{"index":0X27,"pattern":0x4,"volume":music_volume,'loops':True}, # change when mod is updated
-    "PERFECT_TUNE_SND"                :{"index":0x2A,"pattern":0x36,"volume":music_volume,'"ticks"':150}, # change when mod is updated
+    "PERFECT_TUNE_SND"                :{"index":0x2A,"pattern":0x36,"volume":music_volume,"loops":False,"ticks":300}, # change when mod is updated
 
     }
 
@@ -81,7 +81,7 @@ def mixer_convert(suffix,freq):
     EMPTY_SND = "EMPTY_SND"
 
     dummy_sounds = {
-    2,  # humming, seems buggy
+    #2,  # humming
     9,     # ice  (muted/empty)
     0x1D,   # death ray (muted/empty)
     }
@@ -297,7 +297,7 @@ def std_convert(suffix,freq):
     0x2,  # hummiing sound
     9,     # ice  (muted/empty)
     0x1D,   # death ray (muted/empty)
-    0x17,0x18  # highscore entry, not really useful, saves precious mem
+    0x17,0x18,  # highscore entry, not really useful, saves precious mem
    0x16,0x14,
     }
     # remove tunes from sound list

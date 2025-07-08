@@ -72,14 +72,13 @@ osd_music_stop:
 	rts
 	
 get_enabled_interrupts_value:	
-	*move.w	#0xC038+0x780,d0
 	move.w	#0xC038+1<<10,d0
-	*move.w	#0xC038,d0
 	rts
 	
 stop_death_ray:
 	move.w	laser_channel,d0
 	jeq		10f
+	BREAKPOINT	"LASER STOP"
 	* command 8a: stop laser loop
 	jbsr	MixerStopFX
 	clr.w	laser_channel

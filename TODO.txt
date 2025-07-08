@@ -2,9 +2,9 @@
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
 
 sounds:
-- PERFECT challenge tune: wait no9
 - player_explosion/killed/award double shot: not playing...
-- humming sound not removed at some point??
+- humming sound not removed at some point?? check again it should work now!!!
+  same for laser. loop bug with mixer??
 
 
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000

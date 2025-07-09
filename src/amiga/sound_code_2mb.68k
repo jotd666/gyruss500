@@ -78,7 +78,6 @@ get_enabled_interrupts_value:
 stop_death_ray:
 	move.w	laser_channel,d0
 	jeq		10f
-	BREAKPOINT	"LASER STOP"
 	* command 8a: stop laser loop
 	jbsr	MixerStopFX
 	clr.w	laser_channel

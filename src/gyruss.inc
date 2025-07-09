@@ -1,6 +1,7 @@
 	.ifdef	RELEASE
 	.macro	BREAKPOINT comment
 	.endm
+OPT_PERFECT_CHANCE_STAGE = 0		| do not change!!
 
 	.else
 LOG_BUFFER_SIZE = 0x10000
@@ -17,12 +18,8 @@ comment\@:
 next\@:
 	.endm
 
-	.ifdef	RELEASE
-OPT_PERFECT_CHANCE_STAGE = 0		| do not change!!
-	.else
+
 OPT_PERFECT_CHANCE_STAGE = 0
 	.endif
      
-
-	.endc
 

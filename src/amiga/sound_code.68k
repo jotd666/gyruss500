@@ -111,7 +111,6 @@ osd_sound_start:
 	jra		10f
 0:
 
-
 	cmp.b	#0x80+DEATH_RAY_SND,d0
 	jne		0f
 	jbsr	stop_death_ray
@@ -217,7 +216,6 @@ osd_sound_start:
 	jra	10b
 
 	
-	.include	"sound_entries_2mb.68k"
 
 	
 music_playing:

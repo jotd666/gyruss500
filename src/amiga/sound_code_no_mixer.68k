@@ -1,0 +1,162 @@
+
+		.global osd_sound_start
+		.global osd_music_stop
+		.global music_tick
+		.global	get_enabled_interrupts_value
+		.global	restore_audio
+		.global	setup_audio
+		
+
+* sound engine (no music, low memory)
+	
+.include "gyruss.inc"
+.include "sounds.inc"
+
+
+	
+setup_audio:
+	* soundfx lib
+	lea		_custom,a6
+	lea		blank_sound,a0
+	move.l	a0,(0xA0,a6)
+	move.l	a0,(0xB0,a6)
+	move.l	a0,(0xC0,a6)
+	move.l	a0,(0xD0,a6)
+	move.l	system_vbr,a0
+	moveq	#1,d0	| PAL
+	jsr		_mt_install_cia
+
+
+	rts
+	
+restore_audio:
+
+	
+	move.l	system_vbr,a0
+	lea	_custom,a6
+	jsr		_mt_remove_cia
+	rts
+	
+osd_loop_stop:
+	tst.b	looped_sound_enabled
+	jeq		0f
+	movem.l	d0/a0/a6,-(a7)
+	
+ 	lea		_custom,a6
+	moveq	#3,d0		| loop channel
+    jsr		_mt_stopfx
+	clr.b	looped_sound_enabled
+	movem.l	(a7)+,d0/a0/a6
+0:
+	rts
+	
+osd_music_stop:
+	movem.l	d0/a0/a6,-(a7)
+	
+ 	lea		_custom,a6
+	clr.b	music_playing
+    jsr		_mt_end
+    clr.w   music_tick   | not playing anymore
+	move.b	#-1,music_track_start_number
+	movem.l	(a7)+,d0/a0/a6
+	rts
+	
+get_enabled_interrupts_value:	
+	move.w	#0xC038,d0		| no audio interrupt as no audio mixer
+	rts
+	
+* tunes sounds are: sound index followed by 0x15,0x16,0x17 (that we ignore!)
+osd_sound_start:
+	movem.l	d0/d1/a0/a6,-(a7)
+	
+	and.w	#0xFF,d0
+
+	cmp.b	#0x24,d0
+	jne		0f
+	cmp.b	#0xFF,d0
+	jne		0f
+	jbsr	osd_music_stop
+	jra		10f
+0:
+
+
+	cmp.b	#0x8a,d0
+	jne		0f
+	* command 8a: stop laser buzzing (0xA + 0x80)
+	jbsr	osd_loop_stop
+	jra		10f
+0:
+	tst.b	d0
+	jmi		10f		| all other negative: skip
+0:
+	* original sound stop commands have bit 7 set. But if we follow them, they'll kill the
+
+	lsl.w	#3,d0
+	lea		sound_table,a0
+	add.w	d0,a0
+	move.w	(a0),d1	| sound type
+	beq.b	11f		| no sound, but not expected!
+	cmp.w	#3,d1
+	jeq		10f
+2:
+	cmp.w	#1,d1
+	bne.b	4f		| music module
+	move.w	(2,a0),d1
+	move.l	(4,a0),a0
+	lea		_custom,a6
+	tst.w	d1
+	beq.b	3f
+	tst.b	looped_sound_enabled
+	bne.b	3f
+	* looped sound
+	st.b	looped_sound_enabled
+	jsr		_mt_loopfx
+	bra.b	10f
+3:
+	jsr		_mt_playfx
+10:
+	movem.l	(a7)+,d0/d1/a0/a6
+	rts
+11:
+	move.w	d0,d1
+	lsr.w	#3,d1
+	BREAKPOINT	"unknown sound played in D1"
+	jra		10b 
+	
+	* music: ignored, we don't have enough memory with 1MB
+4:
+
+	
+	
+6:
+	jra	10b
+
+	
+	.include	"sound_entries_1mb.68k"
+
+	
+music_playing:
+	.byte	0
+looped_sound_enabled:
+	.byte	0
+music_loops:
+	.byte	0
+music_volume:
+	.byte	0
+music_track_start_number:
+	.word	-1
+music_pattern:
+	.word	0
+music_tick:
+	.word	0
+
+music_duration:
+	.word	0
+
+
+	.section	.bsschip
+	
+
+	
+blank_sound:
+	.skip	16

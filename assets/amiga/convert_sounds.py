@@ -27,13 +27,13 @@ shared_sound_dict = {
 
     "ATTACK_WAVE_SND"          :{"index":0x6,"channel":2,"priority":20},
     "ENEMY_BOMB_DROPPED_SND"          :{"index":0x7,"channel":0},
-    "PLAYER_EXPLOSION_SND"          :{"index":0x11,"priority":52,"channel":2},
-    "PLAYER_KILLED_SND"          :{"index":0x10,"priority":50,"channel":2},
+   # "PLAYER_EXPLOSION_SND"          :{"index":0x11,"priority":52,"channel":2},
+    "PLAYER_KILLED_SND"          :{"index":0x10,"priority":40,"channel":2},
     "AWARD_DOUBLE_SHOT_SND" : {"index":0xf,"channel":3,"priority":50},
     "BONUS_SHOT_SND" : {"index":0xe,"channel":3,"priority":20},
    "SWARM_ENEMY_KILLED_SND" : {"index":0x19,"channel":0},
-   "ENEMY_KILLED_1A_SND" : {"index":0x1A,"channel":0},
-   "ENEMY_KILLED_1B_SND" : {"index":0x1B,"channel":0},
+   "ENEMY_KILLED_1A_SND" : {"index":0x1A,"channel":0,"priority":5},
+   "ENEMY_KILLED_1B_SND" : {"index":0x1B,"channel":0,"priority":5},
    "PERFECT_SND" : {"index":0x14,"channel":3},
    "CHANCE_KILLED_SND" : {"index":0x23,"channel":0},
    "CHANCE_KILLED_2_SND" : {"index":0x22,"same_as":"CHANCE_KILLED_SND"},
@@ -64,7 +64,7 @@ tunes_dict = {    "TOCATTA_START_TUNE_SND"                :{"index":0X25,"patter
 
     }
 
-def mixer_convert(suffix,freq):
+def mixer_convert(suffix,freq,dummy_sounds):
     # BTW convert wav to mp3: ffmpeg -i input.wav -codec:a libmp3lame -b:a 330k output.mp3
 
     #wav_files = glob.glob("sounds/*.wav")
@@ -80,11 +80,14 @@ def mixer_convert(suffix,freq):
 
     EMPTY_SND = "EMPTY_SND"
 
-    dummy_sounds = {
-    #2,  # humming
-    9,     # ice  (muted/empty)
-    0x1D,   # death ray (muted/empty)
-    }
+    def same_sound(n1,n2):
+        sound_dict[n1]["same_as"] = n2
+    if freq < 10000:
+        # memory saving mode :)
+        same_sound("WARP_2_SND","WARP_SND")
+        same_sound("PLAYER_DOUBLE_SHOT_SND","PLAYER_SINGLE_SHOT_SND")
+        same_sound("ENEMY_KILLED_1A_SND","ENEMY_KILLED_1B_SND")
+        same_sound("BOSS_KILLED_1F_SND","BOSS_KILLED_1E_SND")
 
     # set all channels to 3
     for s in sound_dict.values():
@@ -110,7 +113,8 @@ def mixer_convert(suffix,freq):
     #
 
     .macro    SOUND_ENTRY    sound_name,size,priority,loop
-    \sound_name\()_sound:
+
+\sound_name\()_sound:
         .long   \size
         .long    \sound_name\()_raw
         .word   \loop           | loop
@@ -264,8 +268,6 @@ def std_convert(suffix,freq):
         entry = sound_dict.pop(name)
         dummy_sounds.append(entry["index"])
 
-    def same_sound(n1,n2):
-        sound_dict[n1]["same_as"] = n2
 
 
     if not shutil.which("sox"):
@@ -292,24 +294,13 @@ def std_convert(suffix,freq):
         sound_dict[k] = v
 
 
-    dummy_sounds = {0x24,   # music stop
-    0,
-    0x2,  # hummiing sound
-    9,     # ice  (muted/empty)
-    0x1D,   # death ray (muted/empty)
-    0x17,0x18,  # highscore entry, not really useful, saves precious mem
-   0x16,0x14,
-    }
+
     # remove tunes from sound list
     for v in tunes_dict.values():
         dummy_sounds.add(v["index"])
 
     # merge similar sounds to save memory
 
-    same_sound("WARP_2_SND","WARP_SND")
-    same_sound("PLAYER_DOUBLE_SHOT_SND","PLAYER_SINGLE_SHOT_SND")
-    same_sound("ENEMY_KILLED_1A_SND","ENEMY_KILLED_1B_SND")
-    same_sound("BOSS_KILLED_1F_SND","BOSS_KILLED_1E_SND")
 
     with open(os.path.join(src_dir,"..","sounds.inc"),"w") as f:
         for k,v in sorted(sound_dict.items(),key = lambda x:x[1]["index"]):
@@ -365,7 +356,7 @@ def std_convert(suffix,freq):
 
         for wav_file,details in sound_dict.items():
             wav_name = os.path.basename(wav_file).lower()[:-4]
-            if details.get("channel") is not None:
+            if details.get("channel") is not None and details["index"] not in dummy_sounds:
                 fw.write("\t.global\t{}_raw\n".format(wav_name))
 
 
@@ -462,11 +453,31 @@ def std_convert(suffix,freq):
 
         fst.writelines(sound_table)
         fst.write("\n\t.global\t{0}\n\n{0}:\n".format("sound_table"))
+
         for i,st in enumerate(sound_table_set_1):
+
             fst.write(st)
             fst.write(" | {}\n".format(i))
 
 
-mixer_convert(suffix="2mb",freq=11025)
-std_convert(suffix="1mb",freq=8192)
+dummy_sounds = {
+0x11,   # merged with 0x10 as sound is delayed and always together
+9,     # ice  (muted/empty)
+0x1D,   # death ray (muted/empty)
+}
+
+mixer_convert(suffix="2mb",freq=22050,dummy_sounds=dummy_sounds)
+
+
+dummy_sounds = {0x24,   # music stop
+0,
+0x2,  # hummiing sound
+9,     # ice  (muted/empty)
+0x1D,   # death ray (muted/empty)
+0x11,   # explosion, merged with 0x10
+0x17,0x18,  # highscore entry, not really useful, saves precious mem
+0x16,0x14,
+}
+mixer_convert(suffix="1mb",freq=8192,dummy_sounds=dummy_sounds)
+#std_convert(suffix="1mb",freq=8192)
 

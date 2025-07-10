@@ -460,24 +460,28 @@ def std_convert(suffix,freq):
             fst.write(" | {}\n".format(i))
 
 
+# create sound set for 2MB version
 dummy_sounds = {
 0x11,   # merged with 0x10 as sound is delayed and always together
 9,     # ice  (muted/empty)
 0x1D,   # death ray (muted/empty)
 }
-
 mixer_convert(suffix="2mb",freq=22050,dummy_sounds=dummy_sounds)
 
 
-dummy_sounds = {0x24,   # music stop
+# create sound set for 1MB version (512/512)
+dummy_sounds.update({0x24,   # music stop
 0,
-0x2,  # hummiing sound
-9,     # ice  (muted/empty)
-0x1D,   # death ray (muted/empty)
-0x11,   # explosion, merged with 0x10
-0x17,0x18,  # highscore entry, not really useful, saves precious mem
 0x16,0x14,
-}
+# not really vital sounds, can be cut off
+0xF, # award double shot there's another seq of sounds
+0x1, # credit not really vital
+0x17,0x18,  # highscore entry, not really useful, saves precious mem
+#0x14,  # sound for "perfect" stage. There's the music already
+})
 mixer_convert(suffix="1mb",freq=8192,dummy_sounds=dummy_sounds)
+
+# old version, still used a lot of chipmem and no music...
+# audiomixer uses any mem, and in this game chipmem is really precious
 #std_convert(suffix="1mb",freq=8192)
 

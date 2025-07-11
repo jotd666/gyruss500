@@ -13,7 +13,7 @@ _base	SLAVE_HEADER					; ws_security + ws_id
 	dc.w	WHDLF_NoError
     IFD CHIP_ONLY
 	; debug slave runs with dev version which consumes more memory
-	dc.l	CHIPSIZE+EXPMEM					; ws_basememsize
+	dc.l	$200000					; ws_basememsize
 	ELSE
 	dc.l	CHIPSIZE
 	ENDC

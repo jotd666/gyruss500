@@ -1,9 +1,7 @@
-- 1MB cut down version: retry
 - clear bitplane note the zero bitplanes to avoid clearing the bitplanes: doesn't work properly
-
-sounds:
-- player_explosion/killed: not playing... priority?
-- award double shot: not loud enough
+- player_explosion/killed: retry
+- award double shot: not loud enough retry
+- laser sound not always stopped: FF should stop all sounds? test again
 
 - invincivility: ok except for some rare cases to investigate: factorize the part F0 => 9000
 - make degraded version for A500, maybe 8k sfx and no music?

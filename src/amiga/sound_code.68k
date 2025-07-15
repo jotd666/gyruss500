@@ -105,14 +105,24 @@ osd_sound_start:
 	* stop all sounds, specially looped
 	jbsr	stop_humming
 	jbsr	stop_death_ray
+	* workaround as some sounds seem stuck
+	* just bruteforce sound stop
+	move.w	#DMAF_AUD3+MIX_CH0,d0
+	jbsr	MixerStopFX
+	move.w	#DMAF_AUD3+MIX_CH1,d0
+	jbsr	MixerStopFX
+	move.w	#DMAF_AUD3+MIX_CH2,d0
+	jbsr	MixerStopFX
+	move.w	#DMAF_AUD3+MIX_CH3,d0
+	jbsr	MixerStopFX
+
 	jra		10f
 0:
 	cmp.b	#0x24,d0
 	jne		0f
-1:
-	jbsr	stop_death_ray		| just in case...
+
 	jbsr	osd_music_stop
-	jra		10f
+	jra		1b
 0:
 
 	cmp.b	#0x80+DEATH_RAY_SND,d0
